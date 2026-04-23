@@ -1,0 +1,360 @@
+.form-egresos {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+  align-items: center;
+}
+
+.form-egresos input,
+.form-egresos select {
+  height: 45px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.03);
+  color: var(--text-main);
+  padding: 0 12px;
+  outline: none;
+}
+
+.form-egresos button[type="submit"] {
+  height: 45px;
+  padding: 0 20px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 60, 60, 0.4);
+  background: rgba(255, 60, 60, 0.15);
+  color: #ff3c3c;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.form-egresos button[type="submit"]:hover {
+  background: rgba(255, 60, 60, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 0 10px rgba(255,0,0,0.3);
+}
+
+/* TABLA */
+.tabla-egresos {
+  width: 100%;
+  margin-top: 20px;
+  border-collapse: separate;
+  border-spacing: 0 10px;
+}
+
+.tabla-egresos th,
+.tabla-egresos td {
+  padding: 14px;
+  text-align: left;
+}
+
+.tabla-egresos th {
+  color: var(--text-soft);
+}
+
+.tabla-egresos tr {
+  background: rgba(255,255,255,0.02);
+
+  border-radius: 12px;
+
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.05),
+    0 4px 12px rgba(0,0,0,0.4);
+
+  transition: 0.2s;
+}
+
+.tabla-egresos tr:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(255,60,60,0.2);
+}
+
+.tabla-egresos td:nth-child(3) {
+  color: #ff3c3c;
+  font-weight: bold;
+}
+
+.btn-eliminar {
+  background: rgba(255, 60, 60, 0.2);
+  border: 1px solid rgba(255, 60, 60, 0.5);
+  color: #ff3c3c;
+  padding: 6px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.btn-eliminar:hover {
+  background: rgba(255, 60, 60, 0.4);
+}
+.form-egresos select {
+  appearance: none; /* 🔥 quita estilo nativo */
+  -webkit-appearance: none;
+  -moz-appearance: none;
+
+  background: rgba(255,255,255,0.05);
+  color: white;
+
+  padding-right: 30px;
+  position: relative;
+}
+.form-egresos select option {
+  background: #0a0a0a;
+  color: white;
+}
+.custom-select {
+  position: relative;
+  width: 200px;
+}
+
+.select-box {
+  height: 45px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.05);
+  color: white;
+  display: flex;
+ align-items: center;
+  padding: 0 12px;
+  cursor: pointer;
+}
+
+.select-options {
+  position: absolute;
+  top: 50px;
+  width: 100%;
+  background: #0a0a0a;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  z-index: 10;
+  overflow: hidden;
+}
+
+.select-options li {
+  padding: 10px;
+  cursor: pointer;
+}
+
+.select-options li:hover {
+  background: rgba(57,255,20,0.1);
+}
+.egresos-header {
+  margin-bottom: 30px;
+}
+.egresos-top {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 20px;
+  align-items: start;
+}
+
+/* FILTROS DERECHA */
+.egresos-filtros {
+  display: flex;
+  gap: 10px;
+}
+
+/* SELECT 3D */
+.egresos-filtros select {
+  height: 45px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.05);
+  color: white;
+  border: 1px solid var(--border);
+  padding: 0 12px;
+
+  box-shadow:
+    inset 0 1px 2px rgba(255,255,255,0.1),
+    0 4px 10px rgba(0,0,0,0.4);
+
+  transition: 0.2s;
+}
+
+.egresos-filtros select:hover {
+  transform: translateY(-1px);
+}
+
+/* BOTON SEMANA */
+.btn-semana {
+  height: 45px;
+  padding: 0 15px;
+  border-radius: 12px;
+  border: 1px solid #39ff14;
+  background: rgba(57,255,20,0.1);
+  color: #39ff14;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.btn-semana:hover {
+  background: rgba(57,255,20,0.2);
+}
+.egresos-filtros select {
+  background: rgba(255,255,255,0.05);
+}
+
+.egresos-filtros {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.custom-select {
+  position: relative;
+  z-index: 10;
+}
+
+.select-options {
+  position: absolute;
+  top: 50px;
+  left: 0;
+  z-index: 999;
+}
+.form-egresos button[type="submit"] {
+  height: 45px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,0,0,0.3);
+  background: linear-gradient(180deg, #3a0000, #1a0000);
+  color: #ff4d4d;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.form-egresos button[type="submit"]:hover {
+  transform: translateY(-2px);
+  
+}
+
+.columna,
+.columna-categoria {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* mantiene todo alineado */
+.form-egresos {
+  align-items: flex-start;
+}
+/* BOTONES FILTRO UNIFICADOS */
+.btn-filtro {
+ height: 38px;
+padding: 0 12px;
+font-size: 13px;
+  border-radius: 12px;
+  border: 1px solid rgba(57,255,20,0.4);
+
+  background: rgba(57,255,20,0.08);
+  color: #39ff14;
+
+  font-weight: 500;
+  cursor: pointer;
+
+  box-shadow:
+    inset 0 1px 2px rgba(255,255,255,0.1),
+    0 4px 10px rgba(0,0,0,0.4);
+
+  transition: 0.2s;
+}
+
+.btn-filtro:hover {
+  background: rgba(57,255,20,0.18);
+  transform: translateY(-1px);
+}
+.filtro-select .select-box {
+  border-radius: 12px;
+  background: rgba(57,255,20,0.08);
+  border: 1px solid rgba(57,255,20,0.3);
+  color: #39ff14;
+}
+
+.filtro-select .select-box:hover {
+  background: rgba(57,255,20,0.15);
+}
+.btn-editar {
+  background: rgba(57,255,20,0.1);
+  border: 1px solid rgba(57,255,20,0.4);
+  color: #39ff14;
+  padding: 6px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.btn-editar:hover {
+  background: rgba(57,255,20,0.2);
+}
+
+.btn-guardar {
+  background: rgba(57,255,20,0.2);
+  border: 1px solid #39ff14;
+  color: #39ff14;
+  padding: 6px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.btn-cancelar {
+  background: rgba(255,255,255,0.1);
+  border: 1px solid var(--border);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+/* INPUTS EN MODO EDICION */
+.input-edit {
+  height: 38px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+
+  background: rgba(255,255,255,0.05);
+  color: white;
+
+  padding: 0 10px;
+  outline: none;
+
+  box-shadow:
+    inset 0 1px 2px rgba(255,255,255,0.1),
+    0 2px 6px rgba(0,0,0,0.4);
+
+  transition: 0.2s;
+}
+
+.input-edit:focus {
+  border: 1px solid #39ff14;
+  box-shadow:
+    0 0 6px rgba(57,255,20,0.4);
+}
+
+/* SELECT OPCIONES DARK */
+.input-edit option {
+  background: #0a0a0a;
+  color: white;
+}
+.egresos-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.egresos-filtros-top {
+  display: flex;
+  gap: 8px;
+}
+.btn-agregar-top {
+  height: 38px;
+  padding: 0 14px;
+  border-radius: 10px;
+
+  border: 1px solid rgba(255,0,0,0.4);
+  background: rgba(255,0,0,0.15);
+  color: #ff4d4d;
+
+  font-weight: 600;
+  cursor: pointer;
+
+  transition: 0.2s;
+}
+
+.btn-agregar-top:hover {
+  background: rgba(255,0,0,0.25);
+}

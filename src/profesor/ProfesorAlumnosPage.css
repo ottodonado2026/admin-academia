@@ -1,0 +1,300 @@
+.profesor-alumnos-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.profesor-alumnos-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.profesor-alumnos-header h2 {
+  margin: 0;
+  font-size: 30px;
+  color: #f8fafc;
+}
+
+.profesor-alumnos-header p {
+  margin: 6px 0 0;
+  color: #94a3b8;
+  font-size: 14px;
+  max-width: 720px;
+}
+
+.profesor-alumnos-toolbar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.profesor-alumnos-search {
+  width: 100%;
+  max-width: 420px;
+  border: 1px solid #243041;
+  background: #0f172a;
+  color: white;
+  border-radius: 14px;
+  padding: 12px 14px;
+  box-sizing: border-box;
+  outline: none;
+  transition: 0.2s ease;
+}
+
+.profesor-alumnos-search::placeholder {
+  color: #64748b;
+}
+
+.profesor-alumnos-search:focus {
+  border-color: #22c55e;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.12);
+}
+
+.profesor-alumnos-kpis {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(160px, 1fr));
+  gap: 14px;
+}
+
+.profesor-alumnos-kpi {
+  background: linear-gradient(145deg, #020617, #0f172a);
+  border: 1px solid #1e293b;
+  border-radius: 16px;
+  padding: 16px;
+  transition: 0.2s ease;
+}
+
+.profesor-alumnos-kpi:hover {
+  transform: translateY(-2px);
+  border-color: rgba(34, 197, 94, 0.45);
+}
+
+.profesor-alumnos-kpi span {
+  display: block;
+  color: #94a3b8;
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+
+.profesor-alumnos-kpi strong {
+  font-size: 24px;
+  color: #f8fafc;
+}
+
+.profesor-alumnos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+  gap: 16px;
+}
+
+.profesor-alumnos-empty {
+  background: #0f172a;
+  border: 1px dashed #334155;
+  border-radius: 16px;
+  padding: 26px;
+  text-align: center;
+  color: #94a3b8;
+}
+
+@media (max-width: 900px) {
+  .profesor-alumnos-kpis {
+    grid-template-columns: 1fr;
+  }
+}
+.alumno-card-pro {
+  background: #0b1220;
+  border: 1px solid #1e293b;
+  border-radius: 18px;
+  padding: 16px;
+  transition: 0.2s ease;
+}
+
+.alumno-card-pro:hover {
+  transform: translateY(-3px);
+  border-color: rgba(34, 197, 94, 0.4);
+}
+
+/* header */
+.alumno-card-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.alumno-card-header h3 {
+  margin: 0;
+}
+
+.alumno-card-header p {
+  margin: 0;
+  color: #94a3b8;
+  font-size: 13px;
+}
+
+/* badge */
+.badge {
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: bold;
+}
+
+.badge.ok {
+  background: rgba(34, 197, 94, 0.2);
+  color: #4ade80;
+}
+
+.badge.warn {
+  background: rgba(250, 204, 21, 0.2);
+  color: #fde047;
+}
+
+.badge.danger {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+}
+
+/* kpis */
+.alumno-card-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.alumno-card-kpis span {
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.alumno-card-kpis strong {
+  font-size: 14px;
+}
+
+/* progress */
+.progress-bar {
+  width: 100%;
+  height: 10px;
+  background: #111827;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #22c55e, #06b6d4);
+}
+
+/* footer */
+.alumno-card-footer {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 12px;
+  font-size: 12px;
+}
+
+.pago.ok {
+  color: #4ade80;
+}
+
+.pago.danger {
+  color: #f87171;
+}
+/* ===== BADGE ESTADO ALUMNO ===== */
+
+.estado-badge {
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: bold;
+}
+
+.estado-badge.ok {
+  background: rgba(34, 197, 94, 0.2);
+  color: #4ade80;
+}
+
+.estado-badge.warn {
+  background: rgba(250, 204, 21, 0.2);
+  color: #fde047;
+}
+
+.estado-badge.danger {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+}
+.alumno-card-title-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.alumno-card-curso {
+  margin: 0;
+  color: #e2e8f0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.alumno-card-curso-id {
+  color: #64748b;
+  font-size: 11px;
+  letter-spacing: 0.3px;
+}
+
+.alumno-card-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.alumno-kpi-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.alumno-kpi-item span {
+  display: block;
+  font-size: 11px;
+  color: #94a3b8;
+  line-height: 1.2;
+}
+
+.alumno-kpi-item strong {
+  display: block;
+  font-size: 22px;
+  line-height: 1;
+  color: #f8fafc;
+  white-space: nowrap;
+}
+
+.progress-block {
+  margin-top: 4px;
+}
+
+.alumno-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 16px;
+  font-size: 13px;
+}
+
+.estado {
+  color: #f8fafc;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+@media (max-width: 900px) {
+  .alumno-card-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

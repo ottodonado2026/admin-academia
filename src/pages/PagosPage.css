@@ -1,0 +1,541 @@
+/* =========================
+   FORMULARIO
+========================= */
+
+.pagos-page .form-pagos {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin: 20px 0;
+}
+
+.pagos-page .form-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.pagos-page .form-row input,
+.pagos-page .form-row select {
+  height: 45px;
+  min-width: 140px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-main);
+  padding: 0 12px;
+  outline: none;
+  transition: 0.2s;
+}
+
+.pagos-page .form-row input::placeholder {
+  color: var(--text-soft);
+}
+
+.pagos-page .form-row select option {
+  background: #0a0a0a;
+  color: white;
+}
+
+.pagos-page .form-row input:focus,
+.pagos-page .form-row select:focus {
+  border-color: var(--primary);
+}
+
+.pagos-page .form-row button {
+  height: 45px;
+  padding: 0 18px;
+  border-radius: 10px;
+  border: 1px solid rgba(57, 255, 20, 0.3);
+  background: rgba(57, 255, 20, 0.12);
+  color: var(--primary);
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.pagos-page .form-row button:hover {
+  background: rgba(57, 255, 20, 0.25);
+  border-color: var(--primary);
+}
+
+/* =========================
+   TABLA CONTABLE PRO
+========================= */
+
+.pagos-page .tabla-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.pagos-page .tabla-pagos {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: auto;
+  background: var(--bg-card);
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.pagos-page .tabla-pagos thead {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.pagos-page .tabla-pagos th,
+.pagos-page .tabla-pagos td {
+  font-size: 13px;
+}
+
+.pagos-page .tabla-pagos th {
+  padding: 14px 10px;
+  font-weight: 600;
+  color: var(--text-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid var(--border);
+}
+
+.pagos-page .tabla-pagos td {
+  padding: 14px 10px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  color: var(--text-main);
+}
+
+.pagos-page .tabla-pagos tbody tr:hover {
+  background: rgba(255,255,255,0.02);
+}
+
+/* =========================
+   ALINEACIÓN CONTABLE REAL
+========================= */
+
+/* Alumno */
+.pagos-page .tabla-pagos th:nth-child(1),
+.pagos-page .tabla-pagos td:nth-child(1) {
+  text-align: left;
+  font-weight: 500;
+}
+
+/* ID */
+.pagos-page .tabla-pagos th:nth-child(2),
+.pagos-page .tabla-pagos td:nth-child(2) {
+  text-align: left;        /* 🔥 antes center */
+  padding-left: 6px;       /* 🔥 ajusta qué tan pegado */
+}
+
+/* Numéricos */
+.pagos-page .tabla-pagos th:nth-child(3),
+.pagos-page .tabla-pagos th:nth-child(4),
+.pagos-page .tabla-pagos th:nth-child(5),
+.pagos-page .tabla-pagos th:nth-child(6),
+.pagos-page .tabla-pagos td:nth-child(3),
+.pagos-page .tabla-pagos td:nth-child(4),
+.pagos-page .tabla-pagos td:nth-child(5),
+.pagos-page .tabla-pagos td:nth-child(6) {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Plazo */
+.pagos-page .tabla-pagos th:nth-child(7),
+.pagos-page .tabla-pagos td:nth-child(7) {
+  text-align: center;
+}
+
+/* Estado */
+.pagos-page .tabla-pagos th:nth-child(8),
+.pagos-page .tabla-pagos td:nth-child(8) {
+  text-align: center;
+  padding-left: 4px;
+}
+
+.pagos-page .tabla-pagos td:nth-child(8) .estado {
+  justify-content: flex-start;
+}
+
+/* Acciones */
+.pagos-page .tabla-pagos th:nth-child(9),
+.pagos-page .tabla-pagos td:nth-child(9) {
+  text-align: left;
+  padding-left: 18px;
+  padding-right: 0;
+}
+
+/* =========================
+   DISTRIBUCIÓN
+========================= */
+
+/* DISTRIBUCIÓN PRO SIN COMPRESIÓN */
+
+.pagos-page .tabla-pagos th:nth-child(1),
+.pagos-page .tabla-pagos td:nth-child(1) { width: 22%; }
+
+.pagos-page .tabla-pagos th:nth-child(2),
+.pagos-page .tabla-pagos td:nth-child(2) { width: 10%; }
+
+.pagos-page .tabla-pagos th:nth-child(3),
+.pagos-page .tabla-pagos td:nth-child(3) { width: 11%; }
+
+.pagos-page .tabla-pagos th:nth-child(4),
+.pagos-page .tabla-pagos td:nth-child(4) { width: 11%; }
+
+.pagos-page .tabla-pagos th:nth-child(5),
+.pagos-page .tabla-pagos td:nth-child(5) { width: 11%; }
+
+.pagos-page .tabla-pagos th:nth-child(6),
+.pagos-page .tabla-pagos td:nth-child(6) { width: 11%; }
+
+.pagos-page .tabla-pagos th:nth-child(7),
+.pagos-page .tabla-pagos td:nth-child(7) { width: 8%; }
+
+.pagos-page .tabla-pagos th:nth-child(8),
+.pagos-page .tabla-pagos td:nth-child(8) { width: 12%; } /* 🔥 MÁS ESPACIO ESTADO */
+
+.pagos-page .tabla-pagos th:nth-child(9),
+.pagos-page .tabla-pagos td:nth-child(9) { width: 14%; }
+
+
+/* =========================
+   MEJORA VISUAL FINANCIERA
+========================= */
+
+.pagos-page .tabla-pagos td:nth-child(4) {
+  color: #39ff14;
+}
+
+.pagos-page .tabla-pagos td:nth-child(5) {
+  color: #ff3c3c;
+}
+
+.pagos-page .tabla-pagos td:nth-child(3) {
+  font-weight: 600;
+}
+
+/* =========================
+   ESTADOS
+========================= */
+
+.pagos-page .estado {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 14px;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.pagos-page .estado.pendiente {
+  background: rgba(255, 200, 0, 0.15);
+  color: #ffc800;
+}
+
+.pagos-page .estado.al-día {
+  background: rgba(57, 255, 20, 0.15);
+  color: #39ff14;
+}
+
+.pagos-page .estado.en-mora {
+  background: rgba(255, 60, 60, 0.15);
+  color: #ff3c3c;
+}
+
+.pagos-page .estado.pagado {
+  background: rgba(0, 200, 255, 0.15);
+  color: #00c8ff;
+}
+
+/* =========================
+   ACCIONES PRO
+========================= */
+
+.pagos-page .acciones {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: flex-start;
+}
+
+.pagos-page .btn-ver,
+.pagos-page .btn-editar {
+  height: 24px;
+  padding: 0 8px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.pagos-page .btn-icon {
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+}
+
+/* =========================
+   COLORES BOTONES
+========================= */
+
+.pagos-page .btn-ver {
+  background: rgba(0, 200, 255, 0.15);
+  border: 1px solid rgba(0, 200, 255, 0.4);
+  color: #00c8ff;
+}
+
+.pagos-page .btn-ver:hover {
+  background: rgba(0, 200, 255, 0.3);
+}
+
+.pagos-page .btn-editar {
+  background: rgba(57, 255, 20, 0.15);
+  border: 1px solid rgba(57, 255, 20, 0.4);
+  color: #39ff14;
+}
+
+.pagos-page .btn-editar:hover {
+  background: rgba(57, 255, 20, 0.3);
+}
+
+.pagos-page .btn-eliminar {
+  background: rgba(255, 60, 60, 0.15);
+  border: 1px solid rgba(255, 60, 60, 0.4);
+  color: #ff3c3c;
+}
+
+.pagos-page .btn-eliminar:hover {
+  background: rgba(255, 60, 60, 0.3);
+}
+
+/* =========================
+   MODAL
+========================= */
+
+.pagos-page .modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 999;
+}
+
+.pagos-page .modal-content {
+  width: 100%;
+  max-width: 560px;
+  background: linear-gradient(145deg, #0a0a0a, #111);
+  border: 1px solid rgba(57, 255, 20, 0.2);
+  border-radius: 18px;
+  padding: 28px;
+  color: white;
+  box-sizing: border-box;
+  box-shadow: 0 0 30px rgba(57, 255, 20, 0.15);
+  animation: fadeIn 0.25s ease;
+}
+
+.pagos-page .modal-content h2 {
+  margin: 0 0 20px;
+  color: white;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.pagos-page .modal-content table {
+  width: 100%;
+  margin-bottom: 16px;
+  border-collapse: collapse;
+}
+
+.pagos-page .modal-content td {
+  padding: 10px 8px;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+  color: white;
+  vertical-align: middle;
+}
+
+.pagos-page .modal-content input,
+.pagos-page .modal-content select {
+  width: 100%;
+  height: 42px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.03);
+  color: white;
+  padding: 0 12px;
+  margin-bottom: 10px;
+  box-sizing: border-box;
+  outline: none;
+}
+
+.pagos-page .modal-content input::placeholder {
+  color: var(--text-soft);
+}
+
+.pagos-page .modal-content select option {
+  background: #0a0a0a;
+  color: white;
+}
+
+.pagos-page .modal-content > button {
+  width: 100%;
+  height: 42px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.pagos-page .modal-content > button:first-of-type {
+  background: rgba(57, 255, 20, 0.2);
+  color: var(--primary);
+  margin-bottom: 10px;
+}
+
+.pagos-page .modal-content > button:first-of-type:hover {
+  background: rgba(57, 255, 20, 0.32);
+}
+
+.pagos-page .modal-content > button:last-of-type {
+  background: rgba(255, 255, 255, 0.06);
+  color: white;
+}
+
+.pagos-page .modal-content > button:last-of-type:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* Edición de abonos */
+.pagos-page .input-editar {
+  width: 100px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--primary);
+  background: rgba(255, 255, 255, 0.05);
+  color: white;
+  padding: 0 8px;
+}
+
+.pagos-page .acciones-modal {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.pagos-page .btn-mini-editar,
+.pagos-page .btn-mini-eliminar,
+.pagos-page .btn-guardar {
+  width: 30px;
+  height: 30px;
+  min-width: 30px;
+  padding: 0;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pagos-page .btn-mini-editar {
+  background: rgba(0, 200, 255, 0.15);
+  border: 1px solid rgba(0, 200, 255, 0.4);
+  color: #00c8ff;
+}
+
+.pagos-page .btn-mini-eliminar {
+  background: rgba(255, 60, 60, 0.15);
+  border: 1px solid rgba(255, 60, 60, 0.4);
+  color: #ff3c3c;
+}
+
+.pagos-page .btn-guardar {
+  background: rgba(57, 255, 20, 0.2);
+  border: 1px solid rgba(57, 255, 20, 0.4);
+  color: #39ff14;
+}
+
+/* =========================
+   MOBILE
+========================= */
+
+.pagos-page .pagos-mobile {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .pagos-page .tabla-pagos {
+    display: none;
+  }
+
+  .pagos-page .pagos-mobile {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-top: 20px;
+  }
+
+  .pagos-page .pago-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 16px;
+  }
+
+  .pagos-page .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .pagos-page .card-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .pagos-page .card-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .pagos-page .card-item span {
+    color: var(--text-soft);
+    font-size: 12px;
+  }
+
+  .pagos-page .card-item strong {
+    color: white;
+    font-size: 13px;
+  }
+
+  .pagos-page .card-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .pagos-page .modal-content {
+    max-width: 380px;
+    padding: 20px;
+  }
+}

@@ -1,0 +1,293 @@
+.form-ingresos {
+  display: flex;
+  gap: 12px;
+  margin: 20px 0;
+  flex-wrap: wrap;
+}
+
+.form-ingresos input,
+.form-ingresos select {
+  height: 45px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.03);
+  color: var(--text-main);
+  padding: 0 12px;
+}
+
+/* INPUT TYPE DATE */
+.form-ingresos input[type="date"] {
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+}
+
+/* ICONO CALENDARIO */
+.form-ingresos input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1) opacity(0.6);
+  cursor: pointer;
+}
+
+/* SELECT MODO OSCURO */
+.form-ingresos select {
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+}
+
+.form-ingresos input:hover,
+.form-ingresos select:hover {
+  border-color: #00ff88;
+}
+
+.form-ingresos input:focus,
+.form-ingresos select:focus {
+  outline: none;
+  border-color: #00ff88;
+  box-shadow: 0 0 0 2px rgba(0,255,120,0.2);
+}
+
+.tabla-ingresos {
+  width: 100%;
+  min-width: 1100px;
+  margin-top: 20px;
+  border-collapse: collapse;
+  background: rgba(255,255,255,0.02);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.tabla-ingresos thead {
+  background: rgba(255,255,255,0.04);
+}
+
+.tabla-ingresos th {
+  font-size: 13px;
+  font-weight: 600;
+  color: #a0a0a0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.tabla-ingresos td {
+  font-size: 14px;
+  color: #eaeaea;
+}
+
+.tabla-ingresos tr {
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.tabla-ingresos th,
+.tabla-ingresos td {
+  padding: 14px;
+  text-align: left;
+}
+
+.btn-cobrar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 200, 0, 0.4);
+  background: rgba(255, 200, 0, 0.12);
+  color: #ffc800;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow:
+    inset 0 1px 2px rgba(255,255,255,0.08),
+    0 4px 10px rgba(0,0,0,0.4);
+}
+
+.btn-cobrar:hover {
+  background: rgba(255, 200, 0, 0.22);
+  border-color: #ffc800;
+  transform: translateY(-1px);
+  box-shadow:
+    0 0 12px rgba(255, 200, 0, 0.35),
+    0 6px 14px rgba(0,0,0,0.5);
+}
+
+.btn-cobrar:active {
+  transform: scale(0.95);
+}
+
+.btn-cobrar span {
+  font-size: 14px;
+}
+
+.btn-agregar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 45px;
+  padding: 0 18px;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 255, 120, 0.4);
+  background: linear-gradient(
+    135deg,
+    rgba(0, 255, 120, 0.18),
+    rgba(0, 255, 120, 0.08)
+  );
+  color: #00ff88;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow:
+    inset 0 1px 2px rgba(255,255,255,0.08),
+    0 4px 12px rgba(0,0,0,0.5);
+}
+
+.btn-agregar:hover {
+  background: linear-gradient(
+    135deg,
+    rgba(0, 255, 120, 0.28),
+    rgba(0, 255, 120, 0.12)
+  );
+  border-color: #00ff88;
+  transform: translateY(-1px);
+  box-shadow:
+    0 0 14px rgba(0, 255, 120, 0.4),
+    0 6px 16px rgba(0,0,0,0.6);
+}
+
+.btn-agregar:active {
+  transform: scale(0.95);
+}
+
+.tabla-wrapper {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  border-radius: 14px;
+  padding-bottom: 6px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.tabla-wrapper::-webkit-scrollbar {
+  height: 10px;
+}
+
+.tabla-wrapper::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.18);
+  border-radius: 999px;
+}
+
+.tabla-wrapper::-webkit-scrollbar-track {
+  background: rgba(255,255,255,0.04);
+  border-radius: 999px;
+}
+
+.estado-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 3px 8px;
+  min-height: 28px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.estado-mora {
+  background: rgba(255, 0, 0, 0.12);
+  color: #ff4d4d;
+  border: 1px solid rgba(255,0,0,0.3);
+}
+
+.estado-pendiente {
+  background: rgba(255, 200, 0, 0.12);
+  color: #ffc800;
+  border: 1px solid rgba(255,200,0,0.3);
+}
+
+.estado-dia {
+  background: rgba(0, 255, 120, 0.12);
+  color: #00ff88;
+  border: 1px solid rgba(0,255,120,0.3);
+}
+
+.btn-editar {
+  background: rgba(0,255,120,0.1);
+  border: 1px solid rgba(0,255,120,0.3);
+  color: #00ff88;
+  padding: 6px 12px;
+  border-radius: 10px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-editar:hover {
+  background: rgba(0,255,120,0.2);
+  box-shadow: 0 0 10px rgba(0,255,120,0.4);
+}
+
+.tabla-ingresos tr:hover {
+  background: rgba(255,255,255,0.04);
+  transform: scale(1.002);
+  transition: 0.15s ease;
+}
+
+.en-mora {
+  background: linear-gradient(
+    90deg,
+    rgba(255,0,0,0.12),
+    transparent
+  );
+  border-left: 4px solid #ff3c3c;
+}
+.tabla-ingresos {
+  width: max-content;
+  min-width: 1250px;
+  margin-top: 20px;
+  border-collapse: collapse;
+  background: rgba(255,255,255,0.02);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.tabla-ingresos th,
+.tabla-ingresos td {
+  vertical-align: middle;
+}
+
+.tabla-ingresos td:last-child,
+.tabla-ingresos th:last-child {
+  min-width: 260px;
+}
+.tabla-ingresos td:nth-child(5),
+.tabla-ingresos td:nth-child(6),
+.tabla-ingresos td:nth-child(7),
+.tabla-ingresos td:nth-child(8),
+.tabla-ingresos td:nth-child(9),
+.tabla-ingresos td:nth-child(10) {
+  white-space: nowrap;
+}
+
+.acciones-cuenta {
+  display: flex;
+  gap: 8px;
+  flex-wrap: nowrap;
+  align-items: center;
+  min-width: 260px;
+}
+
+.tabla-ingresos .col-estado {
+  text-align: center;
+}
+
+.tabla-ingresos .col-fecha,
+.tabla-ingresos .col-dias,
+.tabla-ingresos .col-modalidad,
+.tabla-ingresos .col-exigible {
+  white-space: nowrap;
+}

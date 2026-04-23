@@ -1,0 +1,36 @@
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000; /* 🔥 importante */
+}
+
+.modal-card {
+  background: #020617;
+  padding: 20px;
+  border-radius: 16px;
+  width: 400px;
+  border: 1px solid #1e293b;
+}
+
+.modal-card textarea {
+  width: 100%;
+  margin-top: 10px;
+  background: #0f172a;
+  color: white;
+  border: 1px solid #1e293b;
+  padding: 10px;
+  border-radius: 8px;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}

@@ -1,0 +1,401 @@
+/* =========================
+   HEADER
+========================= */
+.profesores-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.profesores-subtitle {
+  color: var(--text-soft);
+  font-size: 14px;
+}
+
+/* RESUMEN CARDS */
+.profesores-resumen {
+  display: flex;
+  gap: 10px;
+}
+
+.mini-card {
+  position: relative;
+  background: linear-gradient(145deg, #0a0a0a, #111);
+  border: 1px solid rgba(57, 255, 20, 0.2);
+  padding: 14px 16px;
+  border-radius: 14px;
+  text-align: center;
+  min-width: 100px;
+
+  box-shadow:
+    inset 0 1px 2px rgba(255,255,255,0.05),
+    0 4px 15px rgba(0,0,0,0.5);
+
+  transition: 0.25s ease;
+}
+
+.mini-card span {
+  font-size: 12px;
+  color: var(--text-soft);
+}
+
+.mini-card strong {
+  font-size: 18px;
+}
+.mini-card:hover {
+  transform: translateY(-2px);
+
+  border-color: #39ff14;
+
+  box-shadow:
+    inset 0 1px 2px rgba(255,255,255,0.08),
+    0 0 12px rgba(57,255,20,0.25),
+    0 8px 20px rgba(0,0,0,0.6);
+}
+.mini-card span {
+  font-size: 11px;
+  color: var(--text-soft);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.mini-card strong {
+  display: block;
+  font-size: 22px;
+  color: #39ff14;
+  margin-top: 4px;
+  font-weight: 700;
+}
+.mini-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 14px;
+  pointer-events: none;
+
+  background: radial-gradient(
+    circle at top,
+    rgba(57,255,20,0.15),
+    transparent 70%
+  );
+
+  opacity: 0;
+  transition: 0.3s;
+}
+
+.mini-card:hover::after {
+  opacity: 1;
+}
+.profesores-resumen {
+  display: flex;
+  gap: 12px;
+}
+
+/* =========================
+   TOOLBAR
+========================= */
+.profesores-toolbar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.profesores-toolbar input {
+  flex: 1;
+  height: 42px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.03);
+  color: white;
+  padding: 0 12px;
+}
+
+.btn-secundario {
+  height: 42px;
+  border-radius: 10px;
+  border: 1px solid var(--primary);
+  background: transparent;
+  color: var(--primary);
+  cursor: pointer;
+}
+
+/* =========================
+   FORMULARIO
+========================= */
+.form-profesores {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.form-profesores input,
+.form-profesores select,
+.form-profesores textarea {
+  height: 42px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.03);
+  color: white;
+  padding: 0 10px;
+}
+
+.form-profesores textarea {
+  height: 70px;
+  width: 100%;
+  padding-top: 8px;
+}
+
+.btn-principal {
+  background: linear-gradient(135deg, #39ff14, #00c8ff);
+  border: none;
+  color: black;
+  font-weight: bold;
+  padding: 10px 16px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+/* =========================
+   TABLA
+========================= */
+.tabla-profesores {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tabla-profesores th {
+  text-align: left;
+  font-size: 13px;
+  color: var(--text-soft);
+  padding: 12px;
+}
+
+.tabla-profesores td {
+  padding: 12px;
+}
+
+.tabla-profesores tr {
+  border-bottom: 1px solid var(--border);
+}
+
+.tabla-profesores tr:hover {
+  background: rgba(255,255,255,0.02);
+}
+
+/* CELDA PRINCIPAL */
+.celda-principal {
+  display: flex;
+  flex-direction: column;
+}
+
+.celda-principal span {
+  font-size: 12px;
+  color: var(--text-soft);
+}
+
+/* =========================
+   ESTADOS
+========================= */
+.estado-chip {
+  padding: 5px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+}
+
+/* COLORES */
+.estado-chip.activo {
+  background: rgba(57,255,20,0.15);
+  color: #39ff14;
+}
+
+.estado-chip.inactivo {
+  background: rgba(255,60,60,0.15);
+  color: #ff3c3c;
+}
+
+/* =========================
+   BOTONES
+========================= */
+.btn-ver {
+  background: rgba(0,200,255,0.15);
+  color: #00c8ff;
+  border: 1px solid rgba(0,200,255,0.4);
+  padding: 6px 10px;
+  border-radius: 8px;
+  margin-right: 5px;
+  cursor: pointer;
+}
+
+.btn-editar {
+  background: rgba(57,255,20,0.15);
+  color: #39ff14;
+  border: 1px solid rgba(57,255,20,0.4);
+  padding: 6px 10px;
+  border-radius: 8px;
+  margin-right: 5px;
+  cursor: pointer;
+}
+
+.btn-eliminar {
+  background: rgba(255,60,60,0.15);
+  color: #ff3c3c;
+  border: 1px solid rgba(255,60,60,0.4);
+  padding: 6px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+/* =========================
+   FILA VACÍA
+========================= */
+.fila-vacia {
+  text-align: center;
+  color: var(--text-soft);
+  padding: 20px;
+}
+
+/* =========================
+   MOBILE
+========================= */
+.profesores-mobile {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .tabla-profesores {
+    display: none;
+  }
+
+  .profesores-mobile {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .profesor-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    padding: 14px;
+    border-radius: 14px;
+  }
+}
+.form-profesores select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+
+  background: rgba(255,255,255,0.03);
+  color: white;
+  border: 1px solid var(--border);
+
+  background-image: url("data:image/svg+xml;utf8,<svg fill='white' height='20' viewBox='0 0 20 20'><path d='M5 7l5 5 5-5z'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 30px;
+}
+.form-profesores select option {
+  background: #111;
+  color: white;
+}
+.form-profesores select:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 1px var(--primary);
+}
+.form-profesores select[multiple] {
+  height: auto;
+  min-height: 80px;
+  padding: 8px;
+}
+.chip {
+  display: inline-block;
+  background: rgba(57,255,20,0.15);
+  color: #39ff14;
+  padding: 4px 10px;
+  border-radius: 20px;
+  margin: 2px;
+  font-size: 12px;
+}
+/* =========================
+   SELECT ESPECIALIDADES PRO
+========================= */
+
+.especialidades-select {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-height: 42px;
+  align-items: center;
+}
+
+.chip-select {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: 0.2s;
+}
+
+/* hover */
+.chip-select:hover {
+  border-color: #39ff14;
+  color: #39ff14;
+}
+
+/* seleccionado */
+.chip-select.active {
+  background: rgba(57,255,20,0.15);
+  border-color: #39ff14;
+  color: #39ff14;
+
+  box-shadow: 0 0 8px rgba(57,255,20,0.3);
+}
+.chip {
+  display: inline-block;
+  background: linear-gradient(135deg, rgba(57,255,20,0.2), rgba(0,200,255,0.15));
+  color: #39ff14;
+
+  padding: 6px 12px;
+  border-radius: 20px;
+
+  margin: 4px;
+  font-size: 12px;
+  font-weight: 500;
+
+  border: 1px solid rgba(57,255,20,0.3);
+
+  box-shadow: 0 0 6px rgba(57,255,20,0.2);
+
+  transition: 0.2s;
+}
+
+.chip:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0 10px rgba(57,255,20,0.4);
+}
+/* =========================
+   FIX BOTONES ACCIONES TABLA
+========================= */
+
+.acciones {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap; /* 🔥 clave */
+  justify-content: flex-end;
+}
+
+/* botones más compactos */
+.acciones button {
+  padding: 5px 10px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+/* evita que la celda colapse */
+.tabla-pagos td:last-child {
+  min-width: 160px;
+}

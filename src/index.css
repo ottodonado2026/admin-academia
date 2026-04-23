@@ -1,0 +1,25 @@
+body {
+  background: var(--bg-main);
+  color: var(--text-main);
+  min-height: 100vh;
+}
+
+:root {
+  --bg-main: #050505;
+  --bg-card: rgba(18, 18, 18, 0.9);
+  --border: rgba(255, 255, 255, 0.08);
+
+  --text-main: #f5f5f5;
+  --text-soft: #b3b3b3;
+
+  --primary: #39ff14; /* verde neón */
+  --primary-soft: rgba(57, 255, 20, 0.12);
+  --primary-hover: #2ee60f;
+
+  --danger: #ff5a5a;
+
+  font-family: Inter, system-ui, sans-serif;
+}
+html, body {
+  overflow-x: hidden;
+}

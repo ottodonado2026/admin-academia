@@ -1,0 +1,769 @@
+/* =========================
+   BASE
+========================= */
+.panel-profesor {
+  padding: 30px;
+  color: white;
+  min-height: 100vh;
+  background: radial-gradient(circle at 20% 20%, rgba(57,255,20,0.08), transparent),
+              radial-gradient(circle at 80% 30%, rgba(0,200,255,0.08), transparent),
+              #050505;
+}
+
+/* =========================
+   HEADER
+========================= */
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+}
+
+.panel-header h1 {
+  font-size: 30px;
+  font-weight: bold;
+  background: linear-gradient(135deg, #39ff14, #00c8ff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.panel-header p {
+  color: #aaa;
+}
+
+.panel-badge {
+  background: rgba(0,200,255,0.1);
+  border: 1px solid rgba(0,200,255,0.4);
+  padding: 8px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+}
+
+/* =========================
+   TABS
+========================= */
+.panel-tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.panel-tab {
+  height: 42px;
+  padding: 0 18px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.04);
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 600;
+}
+
+.panel-tab:hover {
+  border-color: rgba(0,200,255,0.4);
+  transform: translateY(-1px);
+}
+
+.panel-tab.active {
+  background: linear-gradient(135deg, #39ff14, #00c8ff);
+  color: black;
+  border: none;
+}
+
+/* =========================
+   KPIs
+========================= */
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 25px;
+}
+
+.kpi {
+  background: rgba(16,18,27,0.7);
+  padding: 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.08);
+  transition: 0.2s;
+}
+
+.kpi:hover {
+  transform: translateY(-3px);
+  border-color: rgba(0,200,255,0.3);
+}
+
+.kpi span {
+  font-size: 11px;
+  color: #aaa;
+}
+
+.kpi strong {
+  font-size: 22px;
+}
+
+/* =========================
+   CARD GENERAL
+========================= */
+.card {
+  background: rgba(16,18,27,0.85);
+  padding: 22px;
+  border-radius: 18px;
+  margin-bottom: 20px;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+/* =========================
+   FORM
+========================= */
+.form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.form input,
+.form select {
+  height: 42px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+  color: white;
+  padding: 0 12px;
+}
+
+.form button {
+  height: 42px;
+  padding: 0 20px;
+  border-radius: 12px;
+  border: none;
+  background: linear-gradient(135deg, #39ff14, #00c8ff);
+  color: black;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.form button:hover {
+  transform: scale(1.05);
+}
+
+/* =========================
+   GRID CLASES
+========================= */
+.clases-list {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+
+/* =========================
+   CARD CLASE
+========================= */
+.clase-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.clase-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(0,200,255,0.4);
+  box-shadow: 0 0 14px rgba(0,200,255,0.2);
+}
+
+/* TOP */
+.clase-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.clase-curso {
+  font-weight: bold;
+  color: #39ff14;
+}
+
+/* BODY */
+.clase-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.clase-line {
+  font-size: 12px;
+  color: #aaa;
+}
+
+/* =========================
+   ESTADOS
+========================= */
+.estado {
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+}
+
+.estado.activa {
+  background: rgba(57,255,20,0.2);
+  color: #39ff14;
+}
+
+.estado.completada {
+  background: rgba(0,200,255,0.2);
+  color: #00c8ff;
+}
+
+.estado.cancelada {
+  background: rgba(255,60,60,0.2);
+  color: #ff3c3c;
+}
+
+/* =========================
+   ACCIONES
+========================= */
+.acciones {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+}
+
+.acciones button {
+  background: rgba(255,255,255,0.08);
+  border: none;
+  border-radius: 6px;
+  padding: 4px 8px;
+  cursor: pointer;
+}
+
+.acciones button:hover {
+  background: rgba(255,255,255,0.2);
+}
+
+/* =========================
+   MODAL PRO
+========================= */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(6px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+}
+
+.modal-card {
+  width: 100%;
+  max-width: 520px;
+  max-height: 88vh;
+  overflow-y: auto;
+  background: rgba(16,18,27,0.95);
+  border-radius: 20px;
+  padding: 25px;
+  border: 1px solid rgba(255,255,255,0.1);
+  animation: fadeIn 0.25s ease;
+}
+
+/* HEADER MODAL */
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header h2 {
+  color: #39ff14;
+}
+
+.modal-icons span {
+  margin-left: 8px;
+}
+
+/* GRID */
+.modal-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-top: 15px;
+}
+
+.modal-item {
+  background: rgba(255,255,255,0.03);
+  padding: 10px;
+  border-radius: 10px;
+}
+
+.modal-item span {
+  font-size: 11px;
+  color: #888;
+  display: block;
+  margin-top: 4px;
+}
+
+.modal-item strong {
+  display: block;
+}
+
+.modal-item-full {
+  width: 100%;
+}
+
+.modal-section {
+  margin-top: 18px;
+}
+
+.modal-note {
+  margin-top: 6px;
+  color: #9aa0a6;
+  font-size: 12px;
+}
+
+.modal-checks {
+  display: flex;
+  gap: 16px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.check-inline {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 13px;
+}
+
+/* =========================
+   ALUMNOS
+========================= */
+.alumnos-registrados {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.alumno-chip {
+  background: rgba(0,200,255,0.15);
+  padding: 6px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+}
+
+.alumno-chip.principal {
+  background: rgba(57,255,20,0.2);
+}
+
+/* =========================
+   EXTRA
+========================= */
+.extra-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.extra-row select {
+  flex: 1;
+}
+
+.extra-row button {
+  background: linear-gradient(135deg, #39ff14, #00c8ff);
+  border: none;
+  border-radius: 10px;
+  padding: 0 15px;
+}
+
+/* =========================
+   MODAL ACTIONS
+========================= */
+.modal-actions {
+  margin-top: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.btn-secundario-modal {
+  height: 42px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  background: rgba(0,200,255,0.2);
+}
+
+.btn-secundario-modal.danger {
+  background: rgba(255,60,60,0.2);
+}
+
+.btn-cerrar {
+  height: 42px;
+  border-radius: 12px;
+  border: none;
+  background: linear-gradient(135deg, #39ff14, #00c8ff);
+}
+
+/* =========================
+   ANIMACIÓN
+========================= */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* =========================
+   BOTONES PRO NIVEL EMPRESA
+========================= */
+
+/* BOTÓN AGREGAR */
+.extra-row button {
+  height: 42px;
+  padding: 0 18px;
+  border-radius: 12px;
+  border: none;
+  background: linear-gradient(135deg, #39ff14, #00c8ff);
+  color: black;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.extra-row button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 10px rgba(0,200,255,0.5);
+}
+
+/* BOTONES MODAL */
+.modal-actions button {
+  height: 45px;
+  border-radius: 14px;
+  font-weight: bold;
+  font-size: 14px;
+  cursor: pointer;
+  transition: 0.25s;
+}
+
+/* COMPLETAR */
+.btn-secundario-modal {
+  background: linear-gradient(135deg, #00c8ff, #0088ff);
+  color: white;
+}
+
+.btn-secundario-modal:hover {
+  transform: scale(1.03);
+  box-shadow: 0 0 12px rgba(0,200,255,0.4);
+}
+
+/* CANCELAR */
+.btn-secundario-modal.danger {
+  background: linear-gradient(135deg, #ff3c3c, #a80000);
+  color: white;
+}
+
+.btn-secundario-modal.danger:hover {
+  transform: scale(1.03);
+  box-shadow: 0 0 12px rgba(255,60,60,0.4);
+}
+
+/* CERRAR */
+.btn-cerrar {
+  background: linear-gradient(135deg, #39ff14, #00c8ff);
+  color: black;
+}
+
+.btn-cerrar:hover {
+  transform: scale(1.03);
+  box-shadow: 0 0 12px rgba(57,255,20,0.4);
+}
+
+/* =========================
+   SELECT PRO DARK (MODAL)
+========================= */
+
+.extra-row select {
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.05);
+  color: white;
+  padding: 0 14px;
+  font-size: 14px;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+/* HOVER */
+.extra-row select:hover {
+  border-color: rgba(0,200,255,0.4);
+}
+
+/* FOCUS */
+.extra-row select:focus {
+  border-color: #00c8ff;
+  box-shadow: 0 0 10px rgba(0,200,255,0.3);
+}
+
+/* OPCIONES */
+.extra-row select option {
+  background: #0f111a;
+  color: white;
+}
+
+/* FLECHA CUSTOM */
+.extra-row {
+  position: relative;
+}
+
+.extra-row select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg fill='%23ffffff' height='20' viewBox='0 0 24 24' width='20' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px;
+}
+
+/* SELECT MULTIPLE PRO */
+.form select[multiple] {
+  height: 120px;
+  padding: 8px;
+  overflow-y: auto;
+}
+
+.form select[multiple] option {
+  padding: 6px;
+  border-radius: 6px;
+}
+
+.form select[multiple] option:checked {
+  background: linear-gradient(135deg, #39ff14, #00c8ff);
+  color: black;
+}
+
+.alumnos-seleccionados {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.alumno-chip {
+  background: linear-gradient(135deg, #39ff14, #00c8ff);
+  color: black;
+  padding: 6px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.alumno-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.alumno-chip-remove {
+  border: none;
+  background: rgba(0, 0, 0, 0.18);
+  color: inherit;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1;
+  padding: 0;
+}
+
+.alumno-chip-remove:hover {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* =========================
+   PANEL ASISTENCIA PRO
+========================= */
+
+.asistencia-panel {
+  margin-top: 20px;
+}
+
+.asistencia-clase {
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 14px;
+  background: rgba(255,255,255,0.02);
+}
+
+.asistencia-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+  color: #39ff14;
+  flex-wrap: wrap;
+}
+
+.asistencia-header > div:first-child {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.asistencia-meta {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  color: #aaa;
+  font-size: 12px;
+}
+
+.asistencia-alumnos {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.asistencia-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 10px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.03);
+  flex-wrap: wrap;
+}
+
+.asistencia-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.asistencia-info span {
+  font-size: 12px;
+  color: #aaa;
+}
+
+.asistencia-actions {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.asistencia-actions label {
+  display: flex;
+  gap: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  align-items: center;
+}
+
+/* =========================
+   UTILIDADES
+========================= */
+.sin-clases {
+  padding: 18px;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.03);
+  color: #aaa;
+  text-align: center;
+}
+
+/* =========================
+   RESPONSIVE
+========================= */
+@media (max-width: 1200px) {
+  .clases-list {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 800px) {
+  .clases-list {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .kpis {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .modal-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 500px) {
+  .clases-list {
+    grid-template-columns: 1fr;
+  }
+
+  .kpis {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .panel-profesor {
+    padding: 18px;
+  }
+
+  .panel-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .asistencia-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .asistencia-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+.alumnos-modal-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.alumno-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.03);
+  font-size: 13px;
+}
+
+.estado.ok {
+  color: #39ff14;
+  font-weight: bold;
+}

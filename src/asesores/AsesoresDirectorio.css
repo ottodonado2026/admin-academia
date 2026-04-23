@@ -1,0 +1,296 @@
+.asesor-item {
+  display: grid;
+  grid-template-columns: minmax(320px, 1fr) 420px auto;
+  align-items: center;
+  column-gap: 110px;
+
+  padding: 20px 22px;
+  margin-bottom: 14px;
+
+  border-radius: 16px;
+  background: linear-gradient(
+    145deg,
+    rgba(255,255,255,0.04),
+    rgba(255,255,255,0.01)
+  );
+  border: 1px solid rgba(255,255,255,0.08);
+  backdrop-filter: blur(6px);
+  transition: all 0.25s ease;
+}
+
+.asesor-item:hover {
+  transform: translateY(-2px);
+  border: 1px solid rgba(0,255,136,0.25);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+}
+
+/* 🔥 BOTONES ACCIONES PRO */
+.asesor-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Botón VER */
+.asesor-actions button:first-child {
+  padding: 8px 16px;
+  border-radius: 10px;
+
+  background: rgba(255,255,255,0.08);
+  color: #ffffff;
+
+  border: 1px solid rgba(255,255,255,0.15);
+
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+
+  transition: all 0.2s ease;
+}
+
+.asesor-actions button:first-child:hover {
+  background: rgba(0,255,136,0.15);
+  border: 1px solid rgba(0,255,136,0.4);
+  color: #00ff88;
+}
+
+/* Botón ELIMINAR */
+.btn-delete {
+  width: 36px;
+  height: 36px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 10px;
+
+  background: rgba(255, 77, 79, 0.15);
+  color: #ff4d4f;
+
+  border: 1px solid rgba(255, 77, 79, 0.3);
+
+  cursor: pointer;
+
+  transition: all 0.2s ease;
+}
+
+.btn-delete:hover {
+  background: #ff4d4f;
+  color: #fff;
+  transform: scale(1.05);
+}
+
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal {
+  background: #111;
+  padding: 30px;
+  border-radius: 12px;
+  width: 500px;
+}
+
+/* 🔥 INPUT MODAL ESTILO PRO */
+.modal-info-card input {
+  width: 100%;
+  margin-top: 8px;
+  padding: 10px 12px;
+
+  border-radius: 10px;
+  border: 1px solid rgba(0, 255, 136, 0.3);
+
+  background: rgba(255, 255, 255, 0.04);
+  color: #ffffff;
+
+  outline: none;
+  font-size: 14px;
+
+  transition: all 0.2s ease;
+}
+
+.modal-info-card input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.modal-info-card input:focus {
+  border: 1px solid #00ff88;
+  box-shadow: 0 0 0 2px rgba(0, 255, 136, 0.15);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+
+/* 🔥 MÉTRICAS PRO (alineación real) */
+.asesor-metricas {
+  display: grid;
+  grid-template-columns: repeat(3, 100px);
+
+  justify-content: center; /* 🔥 centrado real dentro de su columna */
+
+  gap: 50px;
+}
+
+.metrica-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* 🔥 CENTRADO REAL */
+
+  min-width: 90px; /* todas las columnas iguales */
+}
+
+.metrica-item span {
+  font-size: 12px;
+  color: rgba(255,255,255,0.5);
+  margin-bottom: 6px;
+  letter-spacing: 0.5px;
+}
+
+.metrica-item strong {
+  font-size: 18px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.metrica-item span {
+  font-size: 12px;
+  color: rgba(255,255,255,0.5);
+}
+
+.metrica-item strong {
+  font-size: 15px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+/* 🔥 RESPONSIVE PRO */
+
+/* 📱 TABLETS */
+@media (max-width: 1024px) {
+  .asesor-item {
+    grid-template-columns: 1fr;
+    row-gap: 14px;
+    column-gap: 0;
+  }
+
+  .asesor-metricas {
+    justify-content: flex-start;
+  }
+
+  .asesor-actions {
+    justify-content: flex-end;
+  }
+}
+
+/* 📱 MÓVIL */
+@media (max-width: 640px) {
+  .asesor-item {
+    padding: 16px;
+  }
+
+  .asesor-left {
+    margin-bottom: 6px;
+  }
+
+  .asesor-nombre {
+    font-size: 15px;
+    font-weight: 600;
+  }
+
+  .asesor-email {
+    font-size: 13px;
+    opacity: 0.7;
+  }
+
+  .asesor-metricas {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    margin-top: 6px;
+  }
+
+  .metrica-item strong {
+    font-size: 16px;
+  }
+
+  .asesor-actions {
+    margin-top: 8px;
+    justify-content: space-between;
+  }
+
+  .asesor-actions button:first-child {
+    flex: 1;
+  }
+
+  .btn-delete {
+    width: 40px;
+    height: 40px;
+  }
+}
+/* 🔥 FIX MODAL MOBILE (sin scroll lateral) */
+@media (max-width: 768px) {
+
+  .asesor-modal-overlay {
+    padding: 12px;
+  }
+
+  .asesor-modal {
+    width: 100%;
+    max-width: 100%;
+    max-height: 90vh;
+
+    overflow-y: auto;
+    overflow-x: hidden; /* 🔥 elimina scroll horizontal */
+
+    padding: 16px;
+  }
+
+  .asesor-modal-head {
+  position: relative;
+
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+}
+.modal-close-btn {
+  position: absolute;
+
+  top: 10px;
+  right: 10px;
+
+  width: 36px;
+  height: 36px;
+
+  border-radius: 10px;
+}
+
+  .meta-badge {
+    width: 100%;
+  }
+
+ .modal-info-grid {
+  grid-template-columns: repeat(2, 1fr); /* 🔥 2 columnas */
+  gap: 12px;
+}
+/* 🔥 BLOQUE CORREO FULL WIDTH (FIX REAL) */
+.modal-info-grid-stack-mobile {
+  grid-template-columns: 1fr !important;
+}
+
+  .modal-two-columns {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .modal-panel {
+    width: 100%;
+  }
+  
+}

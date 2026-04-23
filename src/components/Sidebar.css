@@ -1,0 +1,316 @@
+.sidebar {
+  width: 270px;
+  min-height: 100vh;
+  background: rgba(10, 11, 18, 0.98);
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+gap: 20px;
+overflow-y: auto;
+}
+
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 30px;
+}
+
+.brand-badge {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: white;
+  background: linear-gradient(135deg, #ff2ea6, #7c3aed);
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sidebar-nav a {
+  padding: 12px 14px;
+  border-radius: 12px;
+  color: #dbe2f0;
+  text-decoration: none;
+}
+.sidebar {
+  height: 100vh;
+  position: sticky;
+  top: 0;
+}
+
+.sidebar-nav a:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.sidebar-nav a.active {
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+
+.logout-btn {
+  height: 48px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 60, 60, 0.3);
+
+  background: rgba(255, 60, 60, 0.08);
+  color: #ff4d4d;
+
+  cursor: pointer;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+
+  transition: all 0.25s ease;
+}
+.sidebar-content {
+  flex: 1;
+}
+/* HOVER PRO */
+.logout-btn:hover {
+  background: rgba(255, 60, 60, 0.18);
+  border-color: rgba(255, 60, 60, 0.6);
+  transform: translateY(-1px);
+}
+
+/* ACTIVE (click) */
+.logout-btn:active {
+  transform: scale(0.96);
+}
+
+/* Tablet */
+@media (max-width: 768px) {
+  .sidebar {
+    width: 100%;
+    min-height: auto;
+    padding: 16px;
+    border-right: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    gap: 16px;
+  }
+
+  .sidebar-brand {
+    margin-bottom: 16px;
+  }
+
+  .sidebar-nav {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .sidebar-nav a {
+    text-align: center;
+    padding: 10px 12px;
+    font-size: 14px;
+  }
+
+  .logout-btn {
+    width: 100%;
+  }
+}
+
+/* Mobile pequeño */
+@media (max-width: 480px) {
+  .sidebar-nav {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar-brand h2 {
+    font-size: 18px;
+  }
+
+  .sidebar-brand p {
+    font-size: 12px;
+  }
+
+  .brand-badge {
+    width: 42px;
+    height: 42px;
+    font-size: 14px;
+  }
+}
+/* 🔥 TOPBAR MOBILE */
+.topbar-mobile {
+  display: none;
+}
+
+/* MOBILE */
+@media (max-width: 768px) {
+  .topbar-mobile {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 20px;
+    padding: 12px 16px;
+    background: rgba(10, 11, 18, 0.98);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  .sidebar-nav {
+  flex: 1;
+}
+
+  .topbar-mobile button {
+    font-size: 20px;
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+  }
+
+  .topbar-mobile h2 {
+    font-size: 18px;
+  }
+
+  /* 🔥 SIDEBAR OCULTO */
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: -100%;
+    width: 240px;
+    height: 100%;
+    z-index: 999;
+    transition: 0.3s ease;
+  }
+
+  /* 🔥 CUANDO ABRE */
+  .sidebar.open {
+    left: 0;
+  }
+}
+/* 🔥 OVERLAY OSCURO */
+.overlay {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .overlay {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.6);
+    z-index: 998;
+  }
+}
+.sidebar-footer-info {
+  margin-top: 20px;
+  padding: 16px;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.05);
+}
+
+.sidebar-footer-info p {
+  font-size: 12px;
+  color: #888;
+  margin: 4px 0;
+}
+
+.sidebar-footer-info strong {
+  display: block;
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+.sidebar-user-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  margin-top: 10px;
+  margin-bottom: 28px; /* 👈 AGREGA ESTO */
+
+  padding: 12px;
+
+  border-radius: 14px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+
+  transition: 0.2s ease;
+}
+
+/* hover suave */
+.sidebar-user-card:hover {
+  background: rgba(255,255,255,0.06);
+}
+
+/* avatar */
+.user-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+padding-bottom: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-weight: bold;
+  color: white;
+
+  background: linear-gradient(135deg, #39ff14, #00c8ff);
+}
+
+/* info */
+.user-info strong {
+  display: block;
+  font-size: 14px;
+}
+
+.user-info span {
+  font-size: 12px;
+  color: #aaa;
+}
+
+/* estado activo */
+.user-status {
+  color: #39ff14;
+}
+.user-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #aaa;
+}
+
+/* 🔥 PUNTO VERDE PRO */
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+
+  background: #39ff14;
+
+  box-shadow: 0 0 6px #39ff14; /* glow */
+}
+.status-dot {
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% { box-shadow: 0 0 4px #39ff14; }
+  50% { box-shadow: 0 0 10px #39ff14; }
+  100% { box-shadow: 0 0 4px #39ff14; }
+}
+.sidebar-nav a[href="/balance"] {
+  font-weight: 600;
+}
+
+.badge {
+  margin-left: 8px;
+  background: #ff4d4f;
+  color: white;
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 999px;
+}

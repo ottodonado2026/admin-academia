@@ -1,13 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./AsesoresPanel.css";
-import { db } from "../firebase";
-import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
-import { collection, getDocs } from "firebase/firestore";
+
 
 import { supabase } from "../services/supabaseClient";
 
-const auth = getAuth();
+
 
 function AsesoresLogin() {
   const navigate = useNavigate();
@@ -32,19 +30,20 @@ function AsesoresLogin() {
 
 try {
   // 🔐 LOGIN CON FIREBASE AUTH
-  await signInWithEmailAndPassword(
-    auth,
-    form.email,
-    form.password
-  );
-  const user = auth.currentUser;
+ 
 
-const { data: asesor, error } = await supabase
-  .from("asesores")
-  .select("*")
-  .eq("auth_uid", user.uid)
-  .single();
+// 🔐 LOGIN CON SUPABASE
+const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
+  email: form.email,
+  password: form.password,
+});
 
+if (loginError) {
+  setError("Credenciales incorrectas");
+  return;
+}
+
+const user = loginData.user;
 
       if (!asesor) {
         setError("Credenciales incorrectas o usuario inactivo");

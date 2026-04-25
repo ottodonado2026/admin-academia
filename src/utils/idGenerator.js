@@ -1,5 +1,4 @@
-import { collection, getDocs } from "firebase/firestore";
-import { db } from "../firebase";
+import { supabase } from "../services/supabaseClient";
 
 // 🔵 GENERADOR DE ID DE ALUMNO (GLOBAL Y ÚNICO)
 export const generarIdAlumnoBonito = async (nombre) => {
@@ -43,9 +42,13 @@ export const generarIdAlumnoBonito = async (nombre) => {
   }
 
   // 🔥 leer alumnos existentes
-  const snapshot = await getDocs(collection(db, "alumnos"));
 
-  const usados = snapshot.docs.map(doc => doc.data().alumnoId || "");
+const { data } = await supabase
+  .from("alumnos")
+  .select("alumno_id");
+
+const usados = data?.map(item => item.alumno_id || "") || [];
+ 
 
   // 🔥 buscar primera combinación libre
   for (let combo of combinaciones) {

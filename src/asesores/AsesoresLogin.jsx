@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./AsesoresPanel.css";
 
-
 import { supabase } from "../services/supabaseClient";
 
 

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "../services/supabaseClient";
 
 function LoginPage() {
   const navigate = useNavigate();
@@ -9,26 +10,28 @@ function LoginPage() {
 
   const [fade, setFade] = useState(false);
 
-  const handleLogin = (e) => {
-    e.preventDefault();
+const handleLogin = async (e) => {
+  e.preventDefault();
 
-    if (!email || !password) {
-      alert("Completa todos los campos");
-      return;
-    }
+  if (!email || !password) {
+    alert("Completa todos los campos");
+    return;
+  }
 
-   if (email === "admin@test.com" && password === "123456") {
-  localStorage.setItem("user", JSON.stringify({
-    id: 999,
-    role: "admin",
-    email: "admin@test.com"
-  }));
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
+
+  if (error) {
+    alert("Credenciales incorrectas");
+    return;
+  }
 
   navigate("/dashboard");
-} else {
-      alert("Credenciales incorrectas");
-    }
-  };
+};
+
+
 
   return (
     <>

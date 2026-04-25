@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../services/supabaseClient";
 
-
+const cleanEmail = email.trim().toLowerCase();
 function LoginPage() {
   const navigate = useNavigate();
 
@@ -33,7 +33,7 @@ const handleLogin = async (e) => {
   const { data: usuario } = await supabase
     .from("usuarios")
     .select("role")
-    .eq("email", email)
+    .eq("email", email.toLowerCase())
     .single();
 
   if (!usuario || usuario.role !== "admin") {

@@ -7,6 +7,7 @@ import { getAuth } from "firebase/auth";
 import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
 import { db } from "../firebase";
+import { supabase } from "../services/supabaseClient";
 
 
 const EXPORTACIONES_COLLECTION = "historial_descargas";
@@ -26,15 +27,33 @@ const auth = getAuth();
 useEffect(() => {
   const fetchData = async () => {
     try {
-      // 🔹 HISTORIAL REAL
-      const snapshotHistorial = await getDocs(
-        query(collection(db, "historial_pagos"), orderBy("createdAt", "desc"))
-      );
 
-      const historialData = snapshotHistorial.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
+
+      // 🔹 HISTORIAL REAL
+      const { data, error } = await supabase
+  .from("historial_pagos")
+  .select("*")
+  .order("created_at", { ascending: false });
+
+if (error) {
+  console.error("Error cargando historial desde Supabase:", error);
+  setHistorialRaw([]);
+  return;
+}
+
+const historialData = (data || []).map((item) => ({
+  id: item.id,
+  alumno: item.alumno,
+  alumnoId: item.alumno_id,
+  alumnoDbId: item.alumno_db_id,
+  curso: item.curso,
+  cursoId: item.curso_id,
+  monto: Number(item.monto),
+  metodoPago: item.metodo_pago,
+  referenciaPago: item.referencia_pago,
+  fechaPago: item.fecha_pago,
+  createdAt: item.created_at,
+}));
 
       // 🔹 PAGOS ANTIGUOS (planes)
       
@@ -429,14 +448,27 @@ const historial = useMemo(() => {
     );
 
     // Auditoría en Firebase
-    await addDoc(collection(db, EXPORTACIONES_COLLECTION), {
+   // 🔥 GUARDAR AUDITORÍA EN SUPABASE
+const { error: errorExport } = await supabase
+  .from("historial_descargas")
+  .insert([
+    {
       usuario: user?.email || "desconocido",
       uid: user?.uid || null,
-      fechaDescarga: serverTimestamp(),
-      cantidadRegistros: historial.length,
-      filtroFecha,
-      filtroMetodo,
-    });
+      fecha_descarga: new Date().toISOString(),
+      cantidad_registros: historial.length,
+      filtro_fecha: filtroFecha,
+      filtro_metodo: filtroMetodo,
+      filtro_curso: filtroCurso,
+    },
+  ]);
+
+if (errorExport) {
+  console.error("Error guardando auditoría en Supabase:", errorExport);
+  alert("Error guardando auditoría: " + errorExport.message);
+} else {
+  console.log("✅ Auditoría guardada en Supabase");
+}
   } catch (error) {
     console.error("Error exportando Excel:", error);
     alert("Error al generar el archivo Excel");

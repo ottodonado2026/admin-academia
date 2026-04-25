@@ -1,11 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./AsesoresPanelPro.css";
-import { getLeads } from "../services/leadsService";
-import { addDoc, collection, doc, updateDoc, arrayUnion, getDocs } from "firebase/firestore";
-import { db } from "../firebase";
-import { query, where } from "firebase/firestore";
+
 import { generarIdAlumnoBonito, generarIdCurso } from "../utils/idGenerator";
+import { supabase } from "../services/supabaseClient";
 
 
 const LEADS_KEY = "leads";
@@ -226,6 +224,7 @@ if (!auth) {
 }
 
   const [refresh, setRefresh] = useState(0);
+  const [leads, setLeads] = useState([]);
   const [vista, setVista] = useState("dashboard");
   const [search, setSearch] = useState("");
   const [estadoFiltro, setEstadoFiltro] = useState("todos");
@@ -239,12 +238,21 @@ const [tipoModal, setTipoModal] = useState("");
 const [motivoEdicion, setMotivoEdicion] = useState("");
 
 const [cursos, setCursos] = useState([]);  
+
 const cursoModalSeleccionado = cursos.find(
-  (c) => c.id === cursoModal
+  (c) =>
+    c.id === cursoModal ||
+    cursoModal.includes(c.categoria) // 👈 fallback inteligente
 );
+const tipoNormalizado = (tipoModal || "").toLowerCase().trim();
 
 const precioBaseModal =
-  cursoModalSeleccionado?.tipos?.[tipoModal]?.precio || 0;
+  cursoModalSeleccionado?.tipos?.[tipoNormalizado]?.precio || 0;
+
+  console.log("cursoModal:", cursoModal);
+console.log("tipoModal:", tipoModal);
+console.log("curso encontrado:", cursoModalSeleccionado);
+console.log("precioBase:", precioBaseModal);
 
 const descuentoNumero = aplicarDescuentoAutorizado
   ? Number(descuentoModal) || 0
@@ -253,6 +261,8 @@ const descuentoNumero = aplicarDescuentoAutorizado
 const precioFinalModal = Math.round(
   precioBaseModal * (1 - descuentoNumero / 100)
 );
+
+/*
 useEffect(() => {
   if (!leadActivo) return;
 
@@ -274,7 +284,7 @@ useEffect(() => {
   precioBaseModal,
   descuentoNumero,
   precioFinalModal,
-]);
+]);*/
 
 const [form, setForm] = useState({
   nombre: "",
@@ -308,52 +318,47 @@ aceptaTerminos: false,
   }, [auth, navigate]);
 
 useEffect(() => {
-  const fetchCursos = async () => {
+  setCursos(obtenerCursosBase());
+}, []);
+ 
+useEffect(() => {
+  const fetchLeads = async () => {
     try {
-      const snapshot = await getDocs(collection(db, "cursos"));
+      const { data, error } = await supabase
+        .from("leads")
+        .select("*")
+        .order("created_at", { ascending: false });
 
-     let data = snapshot.docs.map(doc => ({
-  ...doc.data(),
-  id: doc.id,
+      if (error) {
+        console.error("Error cargando leads:", error);
+        setLeads([]);
+        return;
+      }
+
+      // 🔥 adaptar nombres para tu UI
+      const adaptados = data.map((l) => ({
+  ...l,
+  cursoId: l.curso_id,
+  cursoNombre: l.curso_nombre,
+  asesorId: l.asesor_id,
+  createdAt: l.created_at,
+
+  // 🔥 AGREGA ESTO
+  tipoCliente: l.tipo_cliente,
+  modalidad: l.modalidad,
+  tipoPrograma: l.tipo_programa,
+  descuento: l.descuento
 }));
 
-// 🔥 eliminar duplicados por nombre
-const cursosUnicos = data.filter(
-  (curso, index, self) =>
-    index === self.findIndex((c) => c.nombre === curso.nombre)
-);
-
-setCursos(cursosUnicos);
-
-    } catch (error) {
-      setCursos(obtenerCursosBase());
+      setLeads(adaptados);
+    } catch (err) {
+      console.error(err);
+      setLeads([]);
     }
   };
 
-  fetchCursos();
-}, []);
-
-  useEffect(() => {
-  setLeadActivo(null);
-}, [vista]);
-  const [leads, setLeads] = useState([]);
-
-useEffect(() => {
-const fetchLeads = async () => {
-  try {
-    const data = await getLeads();
-   
-
-    setLeads(Array.isArray(data) ? data : []);
-  } catch (error) {
-  
-    setLeads([]);
-  }
-};
-
   fetchLeads();
-},[refresh]);
-
+}, [refresh]);
 
 
 const misLeads = useMemo(() => {
@@ -363,6 +368,8 @@ const misLeads = useMemo(() => {
   const cursoSeleccionado = useMemo(() => {
     return cursos.find((c) => c.id === form.cursoId) || null;
   }, [form.cursoId, cursos]);
+
+  
 
   const precioBaseCurso = cursoSeleccionado?.tipos?.[form.tipoPrograma]?.precio || 0;
   const inicioCurso = cursoSeleccionado?.tipos?.[form.tipoPrograma]?.inicio || "";
@@ -515,62 +522,18 @@ const handleSubmit = async (e) => {
   });
   return;
 }
-const leadsRef = collection(db, "leads");
+
 const documentoLimpio = form.numeroDocumento
   .replace(/\D/g, "") // elimina todo lo que no sea número
   .trim();
-const qMismoCurso = query(
-  leadsRef,
-  where("numeroDocumento", "==", documentoLimpio),
-  where("cursoId", "==", form.cursoId)
-);
-const snapshotDuplicado = await getDocs(qMismoCurso);
 
-if (!snapshotDuplicado.empty) {
-  setAlerta({
-    visible: true,
-    mensaje: "Este usuario ya está registrado en este curso",
-  });
-  return;
-}
+
 const telefonoLimpio = form.telefono
   .replace(/\D/g, "")
   .trim();
 
-const qTelefono = query(
-  leadsRef,
-  where("telefono", "==", telefonoLimpio),
-  where("cursoId", "==", form.cursoId)
-);
-
-const snapshotTelefono = await getDocs(qTelefono);
-
-if (!snapshotTelefono.empty) {
-  setAlerta({
-    visible: true,
-    mensaje: "Este número ya está registrado en este curso",
-  });
-  return;
-}
 const emailLimpio = form.email.trim().toLowerCase();
 
-if (emailLimpio) {
-  const qEmail = query(
-    leadsRef,
-    where("email", "==", emailLimpio),
-    where("cursoId", "==", form.cursoId)
-  );
-
-  const snapshotEmail = await getDocs(qEmail);
-
-  if (!snapshotEmail.empty) {
-    setAlerta({
-      visible: true,
-      mensaje: "Este correo ya está registrado en este curso",
-    });
-    return;
-  }
-}
 
 
   const valorFinal = Number(form.valor || 0);
@@ -627,13 +590,47 @@ if (emailLimpio) {
   }
 
   try {
-    await addDoc(collection(db, "leads"), payload);
+
+
+    // 🔥 Guardar también en Supabase (FORMA CORRECTA)
+const { data, error } = await supabase
+  .from("leads")
+  .insert([
+    {
+      id: crypto.randomUUID(),
+      nombre: payload.nombre,
+      telefono: payload.telefono,
+      email: payload.email,
+      curso_id: payload.cursoId,
+      curso_nombre: payload.cursoNombre,
+      estado: payload.estado,
+      valor: payload.valor,
+      asesor_id: payload.asesorId,
+
+      // 🔥 AGREGA ESTO
+      tipo_cliente: payload.tipoCliente,
+      duracion: payload.duracion,
+      modalidad: payload.modalidad,
+      tipo_programa: payload.tipoPrograma,
+      descuento: payload.descuento,
+
+      created_at: new Date().toISOString()
+    }
+  ])
+  .select();
+
+
+if (error) {
+  console.error("Error Supabase (lead):", error);
+} else {
+  console.log("Lead guardado en Supabase ✅");
+}
 
     resetForm();
     
     setRefresh((v) => v + 1);
 
-    alert("Lead guardado en Firebase ✅");
+  alert("Lead guardado en Supabase ✅");
   } catch (error) {
   if (import.meta.env.DEV) {
     console.error("ERROR LEADS:", error);
@@ -650,10 +647,13 @@ const crearAlumnoDesdeLead = async (lead) => {
 
     const cursoIdBonito = lead.cursoId;
 
-    const nuevoAlumno = {
-      alumnoId: alumnoIdBonito,
-      nombre: lead.nombre,
-      telefono: lead.telefono || "",
+   const nuevoAlumno = {
+  alumnoId: alumnoIdBonito,
+  nombre: lead.nombre,
+  telefono: lead.telefono || "",
+  email: lead.email && lead.email.trim() !== ""
+    ? lead.email
+    : "sin-email@temp.com",
       tipoDocumento: lead.tipoDocumento || "",
       numeroDocumento: lead.numeroDocumento || "",
 
@@ -682,12 +682,34 @@ const crearAlumnoDesdeLead = async (lead) => {
     };
 // 🔥 GUARDAR TAMBIÉN EN SESIÓN ALUMNOS (localStorage)
 
-   const docRef = await addDoc(collection(db, "alumnos"), nuevoAlumno);
+  
+
+   // 🔥 Guardar alumno también en Supabase
+
+const { error } = await supabase
+  .from("alumnos")
+  .insert([
+    {
+      id: crypto.randomUUID(),
+      nombre: nuevoAlumno.nombre,
+      telefono: nuevoAlumno.telefono,
+     email: nuevoAlumno.email || "sin-email@temp.com",
+      curso_id: nuevoAlumno.cursoId,
+      estado: "activo",
+      valor: nuevoAlumno.valor,
+      descuento: nuevoAlumno.descuento,
+      asesor_id: nuevoAlumno.asesorId,
+      created_at: new Date().toISOString()
+    }
+  ]);
+
+if (error) {
+  console.error("Error Supabase (alumno):", error);
+} else {
+  console.log("Alumno guardado en Supabase ✅");
+}
 
 // 🔥 guardar también el id de firebase dentro del documento
-await updateDoc(docRef, {
-  id: docRef.id
-});
 
 return alumnoIdBonito;
 
@@ -697,12 +719,10 @@ return alumnoIdBonito;
   }
 };
 
-
 const guardarCambiosLead = async () => {
   if (!leadActivo) return;
 
-  // 🔒 VALIDACIÓN
-  if (!leadActivo?.duracion) {
+  if (!duracionModal) {
     setAlerta({
       visible: true,
       mensaje: "Debe seleccionar la duración del curso",
@@ -710,58 +730,63 @@ const guardarCambiosLead = async () => {
     return;
   }
 
-  try {
-    const leadRef = doc(db, "leads", leadActivo.id);
+  const descuentoFinal = aplicarDescuentoAutorizado
+    ? Number(descuentoModal || 0)
+    : 0;
 
-    await updateDoc(leadRef, {
-      cursoId: leadActivo.cursoId,
-      tipoPrograma: leadActivo.tipoPrograma,
-      duracion: leadActivo.duracion,
-      descuento: leadActivo.descuento,
-      valor: leadActivo.valor,
-      valorBase: leadActivo.valorBase,
-      estado: leadActivo.estado || "lead",
-    });
+  const cursoNombreFinal = obtenerNombreCurso(cursoModal);
 
+  const payloadUpdate = {
+    curso_id: cursoModal,
+    curso_nombre: cursoNombreFinal,
+    duracion: duracionModal,
+    tipo_programa: tipoModal,
+    descuento: descuentoFinal,
+    valor: precioFinalModal,
+  };
+
+  const { data, error } = await supabase
+    .from("leads")
+    .update(payloadUpdate)
+    .eq("id", String(leadActivo.id))
+    .select("*")
+    .single();
+
+  if (error) {
+    console.error("ERROR UPDATE LEAD:", error);
     setAlerta({
       visible: true,
-      mensaje: "Cambios guardados correctamente",
+      mensaje: "Error guardando cambios en Supabase",
     });
-
-    setRefresh((v) => v + 1);
-
-  } catch (error) {
-    console.error(error);
-
-    setAlerta({
-      visible: true,
-      mensaje: "Error guardando cambios",
-    });
+    return;
   }
+
+  const leadActualizado = {
+    ...data,
+    descuento: data.descuento,
+    cursoId: data.curso_id,
+    cursoNombre: data.curso_nombre,
+    asesorId: data.asesor_id,
+    createdAt: data.created_at,
+    tipoCliente: data.tipo_cliente,
+    modalidad: data.modalidad,
+    tipoPrograma: data.tipo_programa,
+  };
+
+  setLeads((prev) =>
+    prev.map((l) =>
+      String(l.id) === String(leadActivo.id) ? leadActualizado : l
+    )
+  );
+
+  setLeadActivo(leadActualizado);
+
+  setAlerta({
+    visible: true,
+    mensaje: "Cambios guardados correctamente",
+  });
 };
 
-const agregarNotaLead = async (leadId) => {
-  if (!notaTexto.trim()) return;
-
-  try {
-    const leadRef = doc(db, "leads", leadId);
-
-    await updateDoc(leadRef, {
-      notas: arrayUnion({
-        id: crypto.randomUUID(),
-        texto: notaTexto.trim(),
-        fecha: new Date().toISOString(),
-        autor: auth?.nombre || "Asesor",
-      }),
-    });
-
-    setNotaTexto("");
-    setRefresh((v) => v + 1);
-  } catch (error) {
-    console.error(error);
-    alert("Error guardando nota");
-  }
-};
 
 const actualizarEstadoLead = async (id, nuevoEstado, lead) => {
   try {
@@ -778,7 +803,7 @@ const actualizarEstadoLead = async (id, nuevoEstado, lead) => {
       return;
     }
 
-    const leadRef = doc(db, "leads", id);
+   
 
     let alumnoId = lead.alumnoId || null;
 
@@ -803,11 +828,17 @@ telefonoAcudiente: leadActivo?.telefonoAcudiente || lead.telefonoAcudiente || ""
   alumnoId = await crearAlumnoDesdeLead(leadActualizado);
 }
 
-    await updateDoc(leadRef, {
-      estado: nuevoEstado,
-      bloqueado: nuevoEstado === "pagado",
-      alumnoId: alumnoId, // 🔥 IMPORTANTE
-    });
+  const { error } = await supabase
+  .from("leads")
+  .update({
+    estado: nuevoEstado
+  })
+  .eq("id", id);
+
+if (error) {
+  console.error("Error actualizando lead:", error);
+  return;
+}
 
     setLeads((prev) =>
       prev.map((l) =>
@@ -826,6 +857,8 @@ telefonoAcudiente: leadActivo?.telefonoAcudiente || lead.telefonoAcudiente || ""
     console.error("Error actualizando estado:", error);
   }
 };
+
+
 
 const solicitarAutorizacionCambio = (lead, cambios) => {
   const solicitudes = leerJSON(SOLICITUDES_KEY);
@@ -939,19 +972,6 @@ const aplicarDescuentoLead = async () => {
     console.log("leadActivo completo:", leadActivo);
 console.log("ID usado para update:", leadActivo?.id);
 
-    const leadRef = doc(db, "leads", leadActivo.id);
-
-    await updateDoc(leadRef, {
-      cursoId: cursoModal,
-      cursoNombre: obtenerNombreCurso(cursoModal),
-      tipoPrograma: tipoModal,
-      valorBase: precioBaseModal,
-      descuento: descuentoNum,
-      valor: precioFinalModal,
-      duracion: duracionModal,
-      aprobadoPorAdmin: false,
-      bloqueado: leadActivo.estado === "pagado",
-    });
 
    setLeadActivo({
   ...leadActivo,
@@ -978,28 +998,6 @@ console.log("ID usado para update:", leadActivo?.id);
   }
 };
 
-const guardarCambiosBasicos = async () => {
-  try {
-    const leadRef = doc(db, "leads", leadActivo.id);
-
-    await updateDoc(leadRef, {
-      cursoId: leadActivo.cursoId,
-      tipoPrograma: leadActivo.tipoPrograma,
-      duracion: leadActivo.duracion,
-      descuento: leadActivo.descuento,
-      valor: leadActivo.valor,
-      valorBase: leadActivo.valorBase,
-    });
-
-    setAlerta({
-      visible: true,
-      mensaje: "Cambios guardados",
-    });
-
-  } catch (error) {
-    console.error(error);
-  }
-};
 
   const logout = () => {
   localStorage.removeItem("asesorAuth");
@@ -1050,7 +1048,7 @@ return (
             </span>
             <div>
               <strong>{auth?.nombre}</strong>
-            <p>ID asesor: {auth?.asesorId || auth?.id}</p>      
+            <p>ID asesor: {auth?.asesor_id || auth?.asesorId || auth?.id}</p>    
             </div>
           </div>
 
@@ -1761,7 +1759,7 @@ onChange={(e) =>
 
   <button
   className="primary-btn-pro"
-  onClick={aplicarDescuentoLead}
+  onClick={guardarCambiosLead}
 >
   {puedeEditar ? "Guardar cambios" : "Solicitar edición"}
 </button>
@@ -1788,7 +1786,7 @@ onChange={(e) =>
                 />
                 <button
                   className="primary-btn-pro"
-                  onClick={() => agregarNotaLead(leadActivo.id)}
+                  onClick={() => console.log("Nota guardada temporal")}
                 >
                   Guardar nota
                 </button>

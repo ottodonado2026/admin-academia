@@ -5,7 +5,8 @@ import "./PagosPage.css";
 import { METODOS_PAGO } from "../constants/metodosPago";
 import { addDoc, collection, getDocs, updateDoc, doc, serverTimestamp } from "firebase/firestore";
 import { db } from "../firebase";
-
+import { supabase } from "../services/supabaseClient";
+import { generarIdCurso } from "../utils/idGenerator";
 
 
 const HISTORIAL_COLLECTION = "historial_pagos";
@@ -84,25 +85,43 @@ const [planes, setPlanes] = useState([]);
   );
 });
   
-useEffect(() => {
-  const fetchPagos = async () => {
-    try {
-      const snapshot = await getDocs(collection(db, "pagos"));
+const fetchPagos = async () => {
+  try {
+    const { data, error } = await supabase
+      .from("pagos")
+      .select("*")
+      .order("created_at", { ascending: false });
 
-      const data = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-
-      setPlanes(data);
-
-    } catch (error) {
-      console.error("Error cargando pagos:", error);
+    if (error) {
+      console.error("Error Supabase pagos:", error);
+      return;
     }
-  };
 
+    const dataNormalizada = (data || []).map((p) => ({
+      ...p,
+      id: p.id,
+      alumnoId: p.alumno_id,
+      alumnoDbId: p.alumno_db_id,
+      valorTotal: Number(p.valor_total),
+      montoPagado: Number(p.monto_pagado),
+      saldoPendiente: Number(p.saldo_pendiente),
+      tipoCuota: p.tipo_cuota,
+      fechaInicio: p.fecha_inicio,
+      pagos: p.pagos || [],
+      createdAt: p.created_at,
+    }));
+
+    setPlanes(dataNormalizada);
+  } catch (error) {
+    console.error("Error cargando pagos (catch):", error);
+  }
+};
+
+useEffect(() => {
   fetchPagos();
 }, []);
+ 
+
 
   useEffect(() => {
   const fetchAlumnos = async () => {
@@ -253,19 +272,61 @@ useEffect(() => {
       estado: "Pendiente",
     };
 
-
 try {
-  const docRef = await addDoc(collection(db, "pagos"), {
+  // 🔹 1. Guardar en Firebase (si lo quieres mantener)
+  await addDoc(collection(db, "pagos"), {
     ...nuevo,
     createdAt: new Date().toISOString()
   });
 
-  // 🔥 AGREGAR ESTO
+  // 🔹 2. Guardar en Supabase
+  const { data: supabaseData, error } = await supabase
+    .from("pagos")
+    .insert([
+      {
+        alumno_id: nuevo.alumnoId,
+        alumno_db_id: nuevo.alumnoDbId,
+        alumno: nuevo.alumno,
+
+        curso: nuevo.curso,
+        curso_id: nuevo.cursoId,
+
+        valor_total: nuevo.valorTotal,
+        monto_pagado: nuevo.montoPagado,
+        saldo_pendiente: nuevo.saldoPendiente,
+
+        plazo: nuevo.plazo,
+        cuota: nuevo.cuota,
+        tipo_cuota: nuevo.tipoCuota,
+        fecha_inicio: nuevo.fechaInicio,
+        modalidad: nuevo.modalidad,
+
+        pagos: [],
+        estado: nuevo.estado,
+        created_at: new Date().toISOString()
+      }
+    ])
+    .select();
+
+  if (error) {
+    console.error("Error Supabase:", error);
+    alert("Error guardando en Supabase");
+    return;
+  }
+
+  const supabaseId = supabaseData?.[0]?.id;
+
+  if (!supabaseId) {
+    alert("No se obtuvo ID de Supabase");
+    return;
+  }
+
+  // 🔹 3. Actualizar UI
   setPlanes((prev) => [
     ...prev,
     {
       ...nuevo,
-      id: docRef.id,
+      id: supabaseId,
     },
   ]);
 
@@ -274,12 +335,15 @@ try {
   alert("Error al guardar pago");
 }
 
-    setAlumnoId("");
-    setAlumno("");
-    setCurso("");
-    setValorCurso("");
-    setModalidad("mensual");
-  };
+setAlumnoId("");
+setAlumno("");
+setCurso("");
+setValorCurso("");
+setModalidad("mensual");
+};
+
+
+
 
   const eliminarPago = (id) => {
     if (!window.confirm("¿Eliminar este registro?")) return;
@@ -299,12 +363,13 @@ try {
     };
   };
 
-  const cambiarModalidad = (id, nuevaModalidad) => {
+  const cambiarModalidad = async (id, nuevaModalidad) => {
     const actualizados = planes.map((p) =>
       p.id === id ? recalcularPago(p, nuevaModalidad) : p
     );
 
-    setPlanes(actualizados);
+   setPlanes(actualizados);
+await fetchPagos();
   };
   
 const agregarAbonoModal = async () => {
@@ -324,6 +389,10 @@ const agregarAbonoModal = async () => {
     metodoPago,
     referenciaPago: referenciaPago.trim(),
   };
+  const cursoIdSeguro =
+  pagoSeleccionado.cursoId ||
+  pagoSeleccionado.curso_id ||
+  generarIdCurso(pagoSeleccionado.curso || "");
 
   const actualizados = planes.map((p) => {
     if (p.id === pagoSeleccionado.id) {
@@ -362,23 +431,53 @@ const agregarAbonoModal = async () => {
     return;
   }
 
-  try {
-    await updateDoc(doc(db, "pagos", pagoActualizado.id), {
+try {
+  const { error: errorUpdate } = await supabase
+    .from("pagos")
+    .update({
       pagos: pagoActualizado.pagos,
-      montoPagado: pagoActualizado.montoPagado,
-      saldoPendiente: pagoActualizado.saldoPendiente,
+      monto_pagado: pagoActualizado.montoPagado,
+      saldo_pendiente: pagoActualizado.saldoPendiente,
       estado: pagoActualizado.estado,
-    });
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", pagoActualizado.id);
 
-    await addDoc(
-      collection(db, HISTORIAL_COLLECTION),
-      crearRegistroHistorialPago({
-        pagoPlan: pagoActualizado,
-        abono: abonoNuevo,
-      })
-    );
+  if (errorUpdate) {
+    console.error("Error actualizando pago en Supabase:", errorUpdate);
+    alert("No se pudo actualizar el pago en Supabase");
+    return;
+  }
 
-    setPlanes(actualizados);
+  const { error: errorHistorial } = await supabase
+    .from("historial_pagos")
+    .insert([
+      {
+        pago_id: pagoActualizado.id,
+        alumno_id: pagoActualizado.alumnoId,
+        alumno_db_id: pagoActualizado.alumnoDbId,
+        alumno: pagoActualizado.alumno,
+        curso: pagoActualizado.curso,
+        curso_id:
+        pagoActualizado.cursoId ||
+        pagoActualizado.curso_id ||
+        (pagoActualizado.curso || "").toUpperCase().replace(/\s+/g, "-"),
+        monto: abonoNuevo.monto,
+        metodo_pago: abonoNuevo.metodoPago,
+        referencia_pago: abonoNuevo.referenciaPago,
+        fecha_pago: new Date().toISOString(),
+        created_at: new Date().toISOString(),
+      },
+    ]);
+
+  if (errorHistorial) {
+    console.error("Error guardando historial en Supabase:", errorHistorial);
+    alert("El abono se actualizó, pero no se guardó el historial");
+    return;
+  }
+
+  setPlanes(actualizados);
+  await fetchPagos(); // recargar desde Supabase
 
     const actualizado = actualizados.find(
       (p) => p.id === pagoSeleccionado.id

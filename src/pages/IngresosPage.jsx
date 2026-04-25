@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import Sidebar from "../components/Sidebar";
 import { useNavigate } from "react-router-dom";
 import "./IngresosPage.css";
+import { supabase } from "../services/supabaseClient";
 
 const STORAGE_KEY = "ingresos";
 
@@ -13,10 +14,7 @@ function IngresosPage() {
     navigate("/");
   };
 
-  const [ingresos, setIngresos] = useState(() => {
-    const data = localStorage.getItem(STORAGE_KEY);
-    return data ? JSON.parse(data) : [];
-  });
+ const [ingresos, setIngresos] = useState([]);
 
   const [tipo, setTipo] = useState("");
   const [categoria, setCategoria] = useState("");
@@ -29,9 +27,22 @@ function IngresosPage() {
   const [mesSeleccionado, setMesSeleccionado] = useState("");
   const [anioSeleccionado, setAnioSeleccionado] = useState("");
   const [editData, setEditData] = useState({});
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(ingresos));
-  }, [ingresos]);
+
+
+ useEffect(() => {
+  const fetchIngresos = async () => {
+    const { data, error } = await supabase
+      .from("ingresos")
+      .select("*")
+      .order("fecha", { ascending: false });
+
+    if (!error) setIngresos(data);
+  };
+
+  fetchIngresos();
+}, []);
+
+
 
   const editarIngreso = (ingreso) => {
   setEditandoId(ingreso.id);
@@ -74,33 +85,51 @@ const filtrarIngresos = () => {
     return true;
   });
 };
-  const agregarIngreso = (e) => {
-    e.preventDefault();
-if (!monto) {
-  alert("El monto es obligatorio");
-  return;
+
+
+const agregarIngreso = async (e) => {
+  e.preventDefault();
+
+  if (!monto) {
+    alert("El monto es obligatorio");
+    return;
+  }
+
+  const nuevo = {
+    tipo,
+    categoria,
+    descripcion,
+    monto: Number(monto),
+    metodo,
+    referencia,
+    fecha: new Date().toISOString(),
+  };
+
+  // 🔥 GUARDAR EN SUPABASE
+  const { data, error } = await supabase
+  .from("ingresos")
+  .insert([nuevo])
+  .select(); // 🔥 IMPORTANTE
+
+  if (error) {
+    console.error("ERROR COMPLETO:", error);
+alert(error.message);
+    alert("Error al guardar ingreso");
+    return;
+  }
+
+  // 🔥 ACTUALIZAR UI
+  if (data && data.length > 0) {
+  setIngresos([data[0], ...ingresos]);
 }
 
-    const nuevo = {
-      id: Date.now(),
-      tipo,
-      categoria,
-      descripcion,
-      monto: Number(monto),
-      metodo,
-      referencia,
-      fecha: new Date().toISOString(),
-    };
-
-    setIngresos([nuevo, ...ingresos]);
-
-    setTipo("");
-    setCategoria("");
-    setDescripcion("");
-    setMonto("");
-    setMetodo("");
-    setReferencia("");
-  };
+  setTipo("");
+  setCategoria("");
+  setDescripcion("");
+  setMonto("");
+  setMetodo("");
+  setReferencia("");
+};
 
   const eliminarIngreso = (id) => {
     if (!window.confirm("¿Eliminar ingreso?")) return;

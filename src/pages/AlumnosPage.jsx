@@ -7,7 +7,7 @@ import { useState, useEffect, useMemo } from "react";
 import CustomSelect from "../components/CustomSelect";
 
 import { generarIdAlumnoBonito, generarIdCurso } from "../utils/idGenerator";
-
+import { supabase } from "../services/supabaseClient";
 
 
 
@@ -48,6 +48,7 @@ useEffect(() => {
 
   const [editandoId, setEditandoId] = useState(null);
   const [telefono, setTelefono] = useState("");
+  const [email, setEmail] = useState("");
   const [tipoDocumento, setTipoDocumento] = useState("");
   const [numeroDocumento, setNumeroDocumento] = useState("");
   const [alumnoSeleccionado, setAlumnoSeleccionado] = useState(null);
@@ -283,6 +284,7 @@ const cursoIdBonito = generarIdCurso(
     alumnoId: await generarIdAlumnoBonito(nombre),
     nombre,
     telefono,
+    email,
     tipoDocumento,
     numeroDocumento,
     edad,
@@ -306,6 +308,40 @@ cursoNombre: cursoSeleccionado?.nombre || "",
     await updateDoc(docRef, {
       id: docRef.id,
     });
+   const { error: errorSupabaseAlumno } = await supabase
+  .from("alumnos")
+  .insert([
+    {
+      alumno_id: nuevo.alumnoId,
+      nombre: nuevo.nombre,
+      telefono: nuevo.telefono || "",
+
+      email: email && email.trim() !== ""
+        ? email
+        : "sin-email@temp.com",
+        asesor_id: null,
+      tipo_documento: nuevo.tipoDocumento || "",
+      numero_documento: nuevo.numeroDocumento || "",
+      edad: nuevo.edad || "",
+      nombre_acudiente: nuevo.nombreAcudiente || "",
+      telefono_acudiente: nuevo.telefonoAcudiente || "",
+      curso_id: nuevo.cursoId || "",
+      curso_nombre: nuevo.cursoNombre || "",
+      valor: Number(nuevo.valor || 0),
+      valor_base: Number(nuevo.valorBase || 0),
+      descuento: Number(nuevo.descuento || 0),
+      modalidad: nuevo.modalidad || "",
+      tipo_programa: nuevo.tipoPrograma || "",
+      duracion: nuevo.duracion || "",
+      estado: nuevo.estado || "activo",
+      created_at: new Date().toISOString(),
+    },
+  ]);
+
+if (errorSupabaseAlumno) {
+ console.error("Error guardando alumno en Supabase:", errorSupabaseAlumno);
+alert("Error Supabase: " + errorSupabaseAlumno.message);
+}
 
     // 🔥 refrescar desde Firebase
     const snapshot = await getDocs(collection(db, "alumnos"));
@@ -403,6 +439,12 @@ const eliminarAlumno = async (id) => {
             value={telefono}
             onChange={(e) => setTelefono(e.target.value)}
           />
+
+<input
+  placeholder="Email"
+  value={email}
+  onChange={(e) => setEmail(e.target.value)}
+/>
 <CustomSelect
   value={curso}
   onChange={(e) => setCurso(e.target.value)}

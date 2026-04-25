@@ -1,6 +1,7 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
+import { supabase } from "./services/supabaseClient";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDmfy_57U-T8BUZ7KBA3yUpeFkRTD7t4ic",

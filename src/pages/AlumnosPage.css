@@ -104,15 +104,18 @@
   transform: translateY(-1px);
 }
 
-.alumnos-page .alumnos-form > *:nth-child(1) { grid-column: span 3; }
-.alumnos-page .alumnos-form > *:nth-child(2) { grid-column: span 2; }
-.alumnos-page .alumnos-form > *:nth-child(3) { grid-column: span 2; }
-.alumnos-page .alumnos-form > *:nth-child(4) { grid-column: span 2; }
-.alumnos-page .alumnos-form > *:nth-child(5) { grid-column: span 3; }
-.alumnos-page .alumnos-form > *:nth-child(6) { grid-column: span 2; }
-.alumnos-page .alumnos-form > *:nth-child(7) { grid-column: span 2; }
-.alumnos-page .alumnos-form > *:nth-child(8) { grid-column: span 6; }
-.alumnos-page .alumnos-form > *:nth-child(9) { grid-column: span 2; }
+.alumnos-page .alumnos-form > *:nth-child(1) { grid-column: span 3; } /* Nombre */
+.alumnos-page .alumnos-form > *:nth-child(2) { grid-column: span 2; } /* Tipo doc */
+.alumnos-page .alumnos-form > *:nth-child(3) { grid-column: span 2; } /* Documento */
+.alumnos-page .alumnos-form > *:nth-child(4) { grid-column: span 2; } /* Teléfono */
+.alumnos-page .alumnos-form > *:nth-child(5) { grid-column: span 3; } /* Email */
+
+.alumnos-page .alumnos-form > *:nth-child(6) { grid-column: span 3; } /* Curso */
+.alumnos-page .alumnos-form > *:nth-child(7) { grid-column: span 2; } /* Duración */
+.alumnos-page .alumnos-form > *:nth-child(8) { grid-column: span 4; } /* Modalidad */
+
+.alumnos-page .alumnos-form > *:nth-child(9) { grid-column: span 3; } /* Tipo + precio */
+.alumnos-page .alumnos-form > *:nth-child(10) { grid-column: span 3; } /* Botón */
 .alumnos-page .tipo-row {
   display: grid;
   grid-template-columns: minmax(0, 1.3fr) minmax(110px, 1fr) minmax(90px, 0.8fr);

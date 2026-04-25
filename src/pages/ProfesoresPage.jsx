@@ -2,6 +2,7 @@ import Sidebar from "../components/Sidebar";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import "./ProfesoresPage.css";
+import { supabase } from "../services/supabaseClient";
 
 function ProfesoresPage() {
   const navigate = useNavigate();
@@ -14,16 +15,13 @@ function ProfesoresPage() {
   "canto"
 ];
 
-  const [profesores, setProfesores] = useState(() => {
-    const data = localStorage.getItem(STORAGE_KEY);
-    return data ? JSON.parse(data) : [];
-  });
+  const [profesores, setProfesores] = useState([]);
 
   const [nombre, setNombre] = useState("");
   const [tipoDocumento, setTipoDocumento] = useState("");
   const [numeroDocumento, setNumeroDocumento] = useState("");
   const [telefono, setTelefono] = useState("");
-const [especialidades, setEspecialidades] = useState([]);  const [modalidad, setModalidad] = useState("");
+  const [especialidades, setEspecialidades] = useState([]);  const [modalidad, setModalidad] = useState("");
   const [tipoContrato, setTipoContrato] = useState("");
   const [comision, setComision] = useState("");
   const [estado, setEstado] = useState("activo");
@@ -46,14 +44,27 @@ const [especialidades, setEspecialidades] = useState([]);  const [modalidad, set
 
 
   useEffect(() => {
-  if (tipoContrato === "comision") {
-    setSalario("");
-  }
+  const cargarProfesores = async () => {
+    const { data, error } = await supabase
+      .from("profesores")
+      .select("*")
+      .order("created_at", { ascending: false });
 
-  if (tipoContrato === "fijo" || tipoContrato === "prestacion") {
-    setComision("");
-  }
-}, [tipoContrato]);
+    if (error) {
+      console.error("Error cargando profesores:", error);
+      return;
+    }
+
+    const formateados = data.map(p => ({
+      id: p.id,
+      ...p.data
+    }));
+
+    setProfesores(formateados);
+  };
+
+  cargarProfesores();
+}, []);
   const limpiarFormulario = () => {
     setNombre("");
     setTipoDocumento("");
@@ -135,7 +146,7 @@ const [especialidades, setEspecialidades] = useState([]);  const [modalidad, set
     return true;
   };
 
-  const agregarProfesor = () => {
+ const agregarProfesor = async () => {
     if (!validarFormulario()) return;
 
     const payload = {
@@ -173,9 +184,28 @@ const [especialidades, setEspecialidades] = useState([]);  const [modalidad, set
       ...payload,
     };
 
+    // 🔥 guardar en Supabase
+const { error } = await supabase
+  .from("profesores")
+  .insert([
+    {
+      id: String(nuevoProfesor.id),
+      data: nuevoProfesor
+    }
+  ]);
+
+if (error) {
+  console.error("Error Supabase (profesor):", error);
+} else {
+  console.log("Profesor guardado en Supabase ✅");
+}
+
+
     setProfesores([nuevoProfesor, ...profesores]);
     limpiarFormulario();
   };
+
+
 
   const editarProfesor = (profesor) => {
     setNombre(profesor.nombre || "");

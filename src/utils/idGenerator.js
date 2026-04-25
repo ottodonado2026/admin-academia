@@ -3,6 +3,8 @@ import { db } from "../firebase";
 
 // 🔵 GENERADOR DE ID DE ALUMNO (GLOBAL Y ÚNICO)
 export const generarIdAlumnoBonito = async (nombre) => {
+  if (!nombre) return "ID-XXX";
+
   const limpio = nombre
     .toUpperCase()
     .normalize("NFD")
@@ -12,20 +14,49 @@ export const generarIdAlumnoBonito = async (nombre) => {
 
   const palabras = limpio.split(" ").filter(Boolean);
 
-  let base = palabras.length ? palabras[0].slice(0, 3) : "GEN";
+  // 🔥 tomar máximo 3 palabras
+  const partes = palabras.slice(0, 3);
 
-  // 🔥 leer alumnos reales desde Firebase
+  // 🔹 generar combinaciones posibles
+  const combinaciones = [];
+
+  if (partes.length === 1) {
+    combinaciones.push(partes[0][0]);
+  }
+
+  if (partes.length === 2) {
+    combinaciones.push(
+      partes[0][0] + partes[1][0],
+      partes[1][0] + partes[0][0]
+    );
+  }
+
+  if (partes.length === 3) {
+    combinaciones.push(
+      partes[0][0] + partes[1][0] + partes[2][0], // JDR
+      partes[0][0] + partes[2][0] + partes[1][0], // JRD
+      partes[1][0] + partes[0][0] + partes[2][0], // DJR
+      partes[1][0] + partes[2][0] + partes[0][0], // DRJ
+      partes[2][0] + partes[0][0] + partes[1][0], // RJD
+      partes[2][0] + partes[1][0] + partes[0][0]  // RDJ
+    );
+  }
+
+  // 🔥 leer alumnos existentes
   const snapshot = await getDocs(collection(db, "alumnos"));
 
-  const usados = snapshot.docs
-    .map((doc) => doc.data().alumnoId || "")
-    .filter((id) => id.startsWith(`ID-${base}`))
-    .map((id) => Number(id.replace(`ID-${base}`, "")))
-    .filter((n) => !Number.isNaN(n));
+  const usados = snapshot.docs.map(doc => doc.data().alumnoId || "");
 
-  const siguiente = usados.length ? Math.max(...usados) + 1 : 1;
+  // 🔥 buscar primera combinación libre
+  for (let combo of combinaciones) {
+    const id = `ID-${combo}`;
+    if (!usados.includes(id)) {
+      return id;
+    }
+  }
 
-  return `ID-${base}${siguiente}`;
+  // ⚠️ fallback extremo (muy raro)
+  return `ID-${combinaciones[0]}-${Date.now().toString().slice(-2)}`;
 };
 
 // 🟢 GENERADOR DE ID DE CURSO (ÚNICO Y CONSISTENTE)

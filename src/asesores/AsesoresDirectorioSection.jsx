@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import "./AsesoresPanel.css";
 import "./AsesoresDirectorio.css";
+import { supabase } from "../services/supabaseClient";
 
 import { useEffect, useState, useMemo } from "react";
 import { db } from "../firebase";
@@ -40,12 +41,32 @@ const [refresh, setRefresh] = useState(0);
   // 🔹 Cargar asesores
   useEffect(() => {
   const fetchAsesores = async () => {
-    const snapshot = await getDocs(collection(db, "asesores"));
-    const data = snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
-    setAsesores(data);
+
+   const { data, error } = await supabase
+  .from("asesores")
+  .select("*")
+  .order("created_at", { ascending: false });
+
+if (error) {
+  console.error(error);
+  setAsesores([]);
+  return;
+}
+
+const adaptados = data.map(a => ({
+  ...a,
+  asesorId: a.asesor_id, // 🔥 MAPEO CLAVE
+  salarioBase: a.salario_base,
+  metaMensual: a.meta_mensual,
+  comisionNuevo: a.comision_nuevo,
+  comisionActivo: a.comision_activo,
+  comisionReactivado: a.comision_reactivado
+}));
+
+setAsesores(adaptados);
+
+
+  
   };
   fetchAsesores();
 }, [refresh]);
@@ -70,8 +91,10 @@ const [refresh, setRefresh] = useState(0);
 const asesoresConMetricas = useMemo(() => {
   return asesores.map((asesor) => {
     const leadsAsesor = leads.filter(
-      (l) => l.asesorId === asesor.id
-    );
+  (l) =>
+    l.asesorId === asesor.id || 
+    l.asesorId === asesor.asesorId
+);
 const totalLeads = leadsAsesor.length;
 
 const seguimiento = leadsAsesor.filter(
@@ -137,7 +160,10 @@ return {
 
   // 🔹 eliminar
   const eliminarAsesor = async (id) => {
-    await deleteDoc(doc(db, "asesores", id));
+    await supabase
+  .from("asesores")
+  .delete()
+  .eq("id", id);
     setAsesores((prev) => prev.filter((a) => a.id !== id));
   };
 
@@ -172,9 +198,10 @@ return {
               <div key={asesor.id} className="asesor-item">
 
                 <div className="asesor-left">
-                  <div className="asesor-nombre">{asesor.nombre}</div>
-                  <div className="asesor-email">{asesor.email}</div>
-                </div>
+                <div className="asesor-nombre">{asesor.nombre}</div>
+                <div className="asesor-id">{asesor.asesorId}</div> {/* 👈 AQUÍ */}
+                <div className="asesor-email">{asesor.email}</div>
+              </div>
 
               <div className="asesor-metricas">
 

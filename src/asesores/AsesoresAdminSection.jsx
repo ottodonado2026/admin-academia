@@ -9,7 +9,8 @@ import { signInWithEmailAndPassword } from "firebase/auth";
 import { sendPasswordResetEmail } from "firebase/auth";
 import { getFunctions, httpsCallable } from "firebase/functions";
 import { CURSOS_BASE } from "../data/cursosBase";
-
+import { supabase } from "../services/supabaseClient";
+import { generarIdCurso } from "../utils/idGenerator";
 import {
   collection,
   addDoc,
@@ -155,47 +156,6 @@ const [confirmacion, setConfirmacion] = useState({
  
 
  // 🔥 SINCRONIZAR CURSOS EN FIREBASE (ADMIN REAL)
-useEffect(() => {
-  
-  const sincronizarCursos = async () => {
-     
-      
-
-    try {
-  const snapshot = await getDocs(collection(db, "cursos"));
-
-  const cursosFirestore = snapshot.docs.map(doc => ({
-    id: doc.id,
-    ...doc.data()
-  }));
-
-  for (const curso of CURSOS_BASE) {
-
-    const cursoId = generarIdCursoBonito(curso.nombre);
-
-    const ref = doc(db, "cursos", cursoId);
-
-    await setDoc(
-      ref,
-      {
-        ...curso,
-        id: cursoId,
-        cursoIdBonito: cursoId,
-      },
-      { merge: true }
-    );
-  } // 👈 ESTE ES EL QUE TE FALTABA
-
-} catch (error) {
-  if (import.meta.env.DEV) {
-    console.error("Error sincronizando cursos:", error);
-  }
-}
-  };
-
-  sincronizarCursos();
-}, []);
-
 
 
 // 🔹 cargar leads
@@ -212,14 +172,24 @@ useEffect(() => {
 useEffect(() => {
   const fetchAsesores = async () => {
     try {
-      const snapshot = await getDocs(collection(db, "asesores"));
+      const { data, error } = await supabase
+        .from("asesores")
+        .select("*")
+        .order("created_at", { ascending: false });
 
-      const data = snapshot.docs.map((docItem) => ({
-        id: docItem.id,
-        ...docItem.data(),
+      if (error) {
+        console.error("Error cargando asesores:", error);
+        setAsesores([]);
+        return;
+      }
+
+      // 🔥 adaptar a tu UI (igual que hiciste con leads)
+      const adaptados = data.map((a) => ({
+        ...a,
+        createdAt: a.created_at
       }));
 
-      setAsesores(data);
+      setAsesores(adaptados);
     } catch (error) {
       console.error("Error cargando asesores:", error);
       setAsesores([]);
@@ -372,6 +342,20 @@ const activos = leadsAsesor.filter(
     });
   };
 
+const generarIdAsesor = (nombreCompleto) => {
+  if (!nombreCompleto) return "ID-XXX";
+
+  const partes = nombreCompleto.trim().split(" ");
+
+  const iniciales = partes
+    .slice(0, 3) // nombre + 2 apellidos
+    .map((p) => p[0]?.toUpperCase() || "")
+    .join("");
+
+  return `ID-${iniciales}`;
+};
+
+
 const handleSubmit = async (e) => {
   e.preventDefault();
 
@@ -421,42 +405,62 @@ if (cedulaExiste) {
   };
 
   try {
-    
-    // 🔐 Crear usuario en Firebase Auth
+    const asesorIdReal = crypto.randomUUID();
 
-try {
-  const passwordTemporal = Math.random().toString(36).slice(-10);
+const asesorIdBonito = generarIdAsesor(nuevo.nombre);
+
+const linkAsesor = `${window.location.origin}/registro-asesor/${asesorIdReal}`;
 
 const userCredential = await createUserWithEmailAndPassword(
   auth,
-  form.email,
-  passwordTemporal
+  nuevo.email,
+  "12345678" // o password generado
 );
 
-  // Guardamos el UID del usuario Auth
-  nuevo.authUid = userCredential.user.uid;
+const authUid = userCredential.user.uid;
+    // 🔐 Crear usuario en Firebase Auth
 
-} catch (error) {
-  console.error("Error creando usuario en Auth:", error);
-  setAlerta({
-  visible: true,
-  tipo: "error",
-  mensaje: "Error creando usuario en sistema seguro (Auth)",
-});
-  return;
+// 🔥 Guardar en Supabase
+const { data, error } = await supabase
+  .from("asesores")
+  .insert([
+    {
+      id: asesorIdReal,
+      nombre: nuevo.nombre,
+      email: nuevo.email,
+      telefono: nuevo.telefono,
+      cedula: nuevo.cedula,
+      salario_base: nuevo.salarioBase,
+      meta_mensual: nuevo.metaMensual,
+      comision_nuevo: nuevo.comisionNuevo,
+      comision_activo: nuevo.comisionActivo,
+      comision_reactivado: nuevo.comisionReactivado,
+      estado: nuevo.estado,
+      notas: nuevo.notas,
+      asesor_id: asesorIdBonito,
+      link_asesor: linkAsesor,
+
+      // 🔥 CLAVE
+      auth_uid: authUid,
+
+      created_at: new Date().toISOString()
+    }
+  ])
+  .select()
+  .single();
+
+if (error) {
+  console.error("Error creando asesor:", error);
+  throw error;
 }
 
+// 🔥 generar link con ID real de Supabase
 
-    const docRef = await addDoc(collection(db, "asesores"), nuevo);
-
-    await updateDoc(doc(db, "asesores", docRef.id), {
-      id: docRef.id, // ID real del documento Firebase
-      linkAsesor: `${window.location.origin}/registro-asesor/${docRef.id}`,
-    });
-
-    // 🔐 Enviar email para que el asesor cree su contraseña
-
-    await sendPasswordResetEmail(auth, form.email);
+setAlerta({
+  visible: true,
+  tipo: "success",
+  mensaje: "Asesor creado correctamente",
+});
 
     resetForm();
     setRefresh((v) => v + 1);

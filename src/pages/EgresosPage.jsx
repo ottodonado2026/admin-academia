@@ -1,22 +1,39 @@
 import { useEffect, useState } from "react";
 import Sidebar from "../components/Sidebar";
 import "./EgresosPage.css";
+import { supabase } from "../services/supabaseClient";
 
 function EgresosPage() {
-  const STORAGE_KEY = "egresos";
-
-  const [egresos, setEgresos] = useState(() => {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-  });
+  const [egresos, setEgresos] = useState([]);
 
   const [categoria, setCategoria] = useState("");
   const [descripcion, setDescripcion] = useState("");
   const [monto, setMonto] = useState("");
   const [metodo, setMetodo] = useState("");
   const [tipo, setTipo] = useState("gasto");
+
   useEffect(() => {
   setCategoria("");
 }, [tipo]);
+
+
+useEffect(() => {
+  const fetchEgresos = async () => {
+    const { data, error } = await supabase
+      .from("egresos")
+      .select("*")
+      .order("fecha", { ascending: false });
+
+    if (error) {
+      console.error("Error cargando egresos:", error);
+      return;
+    }
+
+    setEgresos(data || []);
+  };
+
+  fetchEgresos();
+}, []);
   
 
   const [openCat, setOpenCat] = useState(false);
@@ -34,58 +51,102 @@ const categoriasPorTipo = {
   gasto: ["marketing", "nomina", "servicios", "arriendo", "otros"]
 };
 
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(egresos));
-  }, [egresos]);
-
-  const agregarEgreso = (e) => {
+const agregarEgreso = async (e) => {
   if (e) e.preventDefault();
 
-    // 🔥 VALIDACIÓN PRO
-if (!categoria) {
-  alert("Selecciona una categoría");
-  return;
-}
+  // VALIDACIONES
+  if (!categoria) {
+    alert("Selecciona una categoría");
+    return;
+  }
 
-if (!metodo) {
-  alert("Selecciona un método de pago");
-  return;
-}
+  if (!metodo) {
+    alert("Selecciona un método de pago");
+    return;
+  }
 
-if (!tipo) {
-  alert("Selecciona el tipo (costo o gasto)");
-  return;
-}
+  if (!tipo) {
+    alert("Selecciona el tipo (costo o gasto)");
+    return;
+  }
 
-if (!monto || Number(monto) <= 0) {
-  alert("El monto debe ser mayor a 0");
-  return;
-}
-const descripcionLimpia = descripcion.trim();
+  if (!monto || Number(monto) <= 0) {
+    alert("El monto debe ser mayor a 0");
+    return;
+  }
 
-    const nuevo = {
-    id: Date.now(),
+  const descripcionLimpia = descripcion.trim();
+
+  const nuevo = {
     tipo,
-     categoria,
-   descripcion: descripcionLimpia,
+    categoria,
+    descripcion: descripcionLimpia,
     monto: Number(monto),
     metodo,
     fecha: new Date().toISOString(),
-    };
-
-    setEgresos([nuevo, ...egresos]);
-
-    setCategoria("");
-    setDescripcion("");
-    setMonto("");
-    setMetodo("");
-    setTipo("gasto");
   };
 
-  const eliminarEgreso = (id) => {
-    setEgresos(egresos.filter((e) => e.id !== id));
-  };
-  const guardarEdicion = () => {
+  // 🔥 GUARDAR EN SUPABASE
+  const { data, error } = await supabase
+    .from("egresos")
+    .insert([nuevo])
+    .select(); // 🔥 IMPORTANTE
+
+  if (error) {
+    console.error("Error guardando egreso:", error);
+    alert(error.message);
+    return;
+  }
+
+  // 🔥 ACTUALIZAR UI CON EL ID REAL
+  if (data && data.length > 0) {
+    setEgresos([data[0], ...egresos]);
+  }
+
+  // LIMPIAR FORM
+  setCategoria("");
+  setDescripcion("");
+  setMonto("");
+  setMetodo("");
+  setTipo("gasto");
+};
+
+ 
+ const eliminarEgreso = async (id) => {
+  if (!window.confirm("¿Eliminar egreso?")) return;
+
+  const { error } = await supabase
+    .from("egresos")
+    .delete()
+    .eq("id", id);
+
+  if (error) {
+    console.error("Error eliminando egreso:", error);
+    alert("Error al eliminar");
+    return;
+  }
+
+  setEgresos(egresos.filter((e) => e.id !== id));
+};
+
+  const guardarEdicion = async () => {
+  const { error } = await supabase
+    .from("egresos")
+    .update({
+      tipo: editData.tipo,
+      categoria: editData.categoria,
+      descripcion: editData.descripcion,
+      monto: Number(editData.monto),
+      metodo: editData.metodo,
+    })
+    .eq("id", editandoId);
+
+  if (error) {
+    console.error("Error actualizando egreso:", error);
+    alert("Error al actualizar");
+    return;
+  }
+
   setEgresos(
     egresos.map((e) =>
       e.id === editandoId ? { ...e, ...editData } : e

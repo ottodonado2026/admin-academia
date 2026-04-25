@@ -4,6 +4,9 @@ import "./AsesoresPanel.css";
 import { db } from "../firebase";
 import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
 import { collection, getDocs } from "firebase/firestore";
+
+import { supabase } from "../services/supabaseClient";
+
 const auth = getAuth();
 
 function AsesoresLogin() {
@@ -36,17 +39,13 @@ try {
   );
   const user = auth.currentUser;
 
-  const snapshot = await getDocs(collection(db, "asesores"));
+const { data: asesor, error } = await supabase
+  .from("asesores")
+  .select("*")
+  .eq("auth_uid", user.uid)
+  .single();
 
 
-      const asesores = snapshot.docs.map((docItem) => ({
-        id: docItem.id,
-        ...docItem.data(),
-      }));
-
-  const asesor = asesores.find(
-  (a) => a.authUid === user.uid
-);
       if (!asesor) {
         setError("Credenciales incorrectas o usuario inactivo");
         return;
@@ -57,7 +56,13 @@ try {
         return;
       }
 
-      localStorage.setItem("asesorAuth", JSON.stringify(asesor));
+     localStorage.setItem(
+  "asesorAuth",
+  JSON.stringify({
+    ...asesor,
+    asesorId: asesor.asesor_id,
+  })
+);
       navigate("/panel-asesor");
     
       } catch (error) {

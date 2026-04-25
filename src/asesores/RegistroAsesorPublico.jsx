@@ -1,9 +1,9 @@
 import { useMemo, useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import "./AsesoresPanelPro.css";
-import { db } from "../firebase";
-import { collection, addDoc, getDocs } from "firebase/firestore";
+
 import { generarIdAlumnoBonito, generarIdCurso } from "../utils/idGenerator";
+import { supabase } from "../services/supabaseClient";
 
 
 const LEADS_KEY = "leads";
@@ -160,36 +160,21 @@ const [loadingAsesor, setLoadingAsesor] = useState(true);
 
   const [cursos, setCursos] = useState([]);
 
-useEffect(() => {
-  const fetchAsesor = async () => {
-    try {
-      const snapshot = await getDocs(collection(db, "asesores"));
-
-      const lista = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-
-     const encontrado = lista.find(
-  (a) =>
-    a.id === asesorId ||
-    a.asesorId === asesorId
-);
-
-      setAsesor(encontrado || null);
-
-      // 🔥 ESTA LÍNEA ES LA CLAVE
-      setLoadingAsesor(false);
-
-   } catch (error) {
-  if (import.meta.env.DEV) {
-    console.error("Error cargando asesor:", error);
+  useEffect(() => {
+  if (!asesorId) {
+    setAsesor(null);
+    setLoadingAsesor(false);
+    return;
   }
-  setLoadingAsesor(false);
-}
-  };
 
-  fetchAsesor();
+  // 🔥 Simulación temporal del asesor
+  setAsesor({
+    id: asesorId,
+    asesorId: asesorId,
+    nombre: "Asesor",
+  });
+
+  setLoadingAsesor(false);
 }, [asesorId]);
 
 
@@ -207,7 +192,6 @@ useEffect(() => {
     cursoId: "",
     modalidad: "",
     tipoPrograma: "",
- 
     notas: "",
     claseGratis: false,
   
@@ -301,6 +285,7 @@ setCursos(cursosUnicos);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+  console.log("FORM ACTUAL:", form); // 👈 AQUI
 
     if (!asesor) {
       alert("No se encontró el asesor.");
@@ -339,7 +324,7 @@ telefonoAcudiente: form.telefonoAcudiente || "",
       modalidad: form.modalidad,
       tipoPrograma: form.tipoPrograma,
       tipoCliente: "nuevo",
-     estado: "pendiente",
+     estado: "lead",
      claseGratis: Boolean(form.claseGratis),
       valor: Number(form.valor || valorCalculado || 0),
       valorBase: Number(precioBaseCurso || 0),
@@ -364,11 +349,41 @@ telefonoAcudiente: form.telefonoAcudiente || "",
     }
 
    try {
-  await addDoc(collection(db, "leads"), payload);
- setAlerta({
-  visible: true,
-  mensaje: "Registro enviado correctamente 🎉",
-});
+// 1️⃣ Guardar en Supabase primero
+const { data, error } = await supabase
+  .from("leads")
+  .insert([
+    {
+      id: crypto.randomUUID(),
+      nombre: payload.nombre,
+      telefono: payload.telefono,
+      email: payload.email || "sin-email@temp.com",
+
+      curso_id: payload.cursoId,
+      estado: payload.estado,
+      valor: payload.valor,
+      descuento: payload.descuento || 0,
+      asesor_id: payload.asesorId,
+
+      // 🔥 AGREGA ESTO
+      tipo_cliente: payload.tipoCliente,
+      modalidad: payload.modalidad,
+      tipo_programa: payload.tipoPrograma,
+     
+
+      created_at: new Date().toISOString()
+    }
+  ])
+  .select();
+
+if (error) {
+  console.error("Error Supabase:", error);
+  throw error; // 🔥 importante
+}
+
+
+
+
   navigate("/gracias");
 } catch (error) {
   
@@ -396,6 +411,8 @@ if (loadingAsesor) {
       </div>
     );
   }
+
+
 
   return (
     <div className="asesor-auth-page">
@@ -527,6 +544,7 @@ if (loadingAsesor) {
                 </option>
               ))}
             </select>
+
           </div>
           <div className="field-group field-group-full">
   <label className="checkbox-row">

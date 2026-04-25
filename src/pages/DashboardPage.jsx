@@ -8,6 +8,22 @@ import { db } from "../firebase";
 import { onSnapshot } from "firebase/firestore";
 import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
+import { supabase } from "../services/supabaseClient";
+
+const meses = [
+  "Enero",
+  "Febrero",
+  "Marzo",
+  "Abril",
+  "Mayo",
+  "Junio",
+  "Julio",
+  "Agosto",
+  "Septiembre",
+  "Octubre",
+  "Noviembre",
+  "Diciembre",
+];
 
 function DashboardPage() {
   const navigate = useNavigate();
@@ -38,52 +54,69 @@ const [fechaFinCustom, setFechaFinCustom] = useState("");
 const [fechaExacta, setFechaExacta] = useState("");
 
 
-  useEffect(() => {
-  const unsubscribePagos = onSnapshot(
-    collection(db, "pagos"),
-    (snapshot) => {
-      const data = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      setPagos(data);
-    }
-  );
+const fetchDashboard = async () => {
+  try {
+    // 🔹 PAGOS (planes)
+    const { data: pagosData } = await supabase
+      .from("pagos")
+      .select("*");
 
-  const unsubscribeHistorial = onSnapshot(
-    collection(db, "historial_pagos"),
-    (snapshot) => {
-      const data = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      setHistorialPagos(data);
-    }
-  );
+    // 🔹 HISTORIAL (abonos)
+    const { data: historialData } = await supabase
+      .from("historial_pagos")
+      .select("*");
 
-  const unsubscribeAlumnos = onSnapshot(
-    collection(db, "alumnos"),
-    (snapshot) => {
-      const data = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      setAlumnos(data);
-    }
-  );
+    // 🔹 ALUMNOS
+    const { data: alumnosData } = await supabase
+      .from("alumnos")
+      .select("*");
+
+    // 🔹 INGRESOS
+    const { data: ingresosData } = await supabase
+      .from("ingresos")
+      .select("*");
+
+    // 🔹 EGRESOS
+    const { data: egresosData } = await supabase
+      .from("egresos")
+      .select("*");
+
+    setPagos(pagosData || []);
+    setHistorialPagos(historialData || []);
+    setAlumnos(alumnosData || []);
+    setIngresos(ingresosData || []);
+    setEgresos(egresosData || []);
+
+  } catch (error) {
+    console.error("Error cargando dashboard:", error);
+  }
+};
+
+useEffect(() => {
+  fetchDashboard();
+
+  const channel = supabase
+    .channel("realtime-dashboard")
+    .on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "historial_pagos" },
+      () => {
+        fetchDashboard();
+      }
+    )
+    .on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "pagos" },
+      () => {
+        fetchDashboard();
+      }
+    )
+    .subscribe();
 
   return () => {
-    unsubscribePagos();
-    unsubscribeHistorial();
-    unsubscribeAlumnos();
+    supabase.removeChannel(channel);
   };
 }, []);
-
-
-  const meses = [
-    "Enero","Febrero","Marzo","Abril","Mayo","Junio",
-    "Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"
-  ];
 
   const formatearPesos = (valor) =>
     new Intl.NumberFormat("es-CO", {
@@ -120,20 +153,30 @@ const [fechaExacta, setFechaExacta] = useState("");
 
 const historialBase = useMemo(() => {
   return historialPagos.map((item) => {
-    const fecha =
-      item.fechaPago?.toDate?.() ||
-      (item.fechaPago ? new Date(item.fechaPago) : null);
+
+    const fecha = item.fecha_pago
+      ? new Date(item.fecha_pago)
+      : item.created_at
+      ? new Date(item.created_at)
+      : null;
 
     return {
       id: item.id,
       alumno: item.alumno || "Sin nombre",
-      alumnoId: item.alumnoId || "-",
-      curso: item.cursoId || item.curso || "Sin curso",
+
+      alumnoId: item.alumno_id || item.alumno_db_id || "-",
+
+      curso: item.curso_id || item.curso || "Sin curso",
+
       monto: Number(item.monto || 0),
+
       fecha,
-      metodo: item.metodoPago?.trim() || "Sin método",
-      referencia: item.referenciaPago?.trim() || "-",
+
+      metodo: item.metodo_pago?.trim() || "Sin método",
+
+      referencia: item.referencia_pago?.trim() || "-",
     };
+
   }).filter(item => item.fecha && !Number.isNaN(item.fecha.getTime()));
 }, [historialPagos]);
 
@@ -202,6 +245,23 @@ const totalIngresosManual = ingresosFiltrados.reduce(
   0
 );
 
+// 🔥 NORMALIZACIÓN DE MÉTRICAS (CLARO Y PROFESIONAL)
+
+// dinero real de alumnos
+const pagosAlumnos = totalPagosMes;
+
+// ingresos manuales (admin)
+const ingresosManuales = totalIngresosManual;
+
+// total ingresos real del negocio
+const totalIngresos = pagosAlumnos + ingresosManuales;
+
+
+// utilidad
+
+
+
+
 // 🔥 NUEVO: separar métricas financieras
 const revenueMes = totalIngresosManual;
 const cashflowMes = totalPagosMes;
@@ -211,6 +271,18 @@ const totalIngresosMes = revenueMes + cashflowMes;
     (acc, item) => acc + Number(item.monto || 0),
     0
   );
+
+  // 🔥 AHORA SÍ CORRECTO (orden correcto)
+
+const totalEgresos = totalEgresosMes;
+
+const utilidad = totalIngresos - totalEgresos;
+
+const margenReal =
+  totalIngresos > 0
+    ? (utilidad / totalIngresos) * 100
+    : 0;
+
   // 🔥 NUEVO: separar costos y gastos
 const costosMes = egresosFiltrados.filter(e => e.tipo === "costo");
 const gastosMes = egresosFiltrados.filter(e => e.tipo === "gasto");
@@ -240,16 +312,20 @@ console.log(totalCostosMes, totalGastosMes);
   // 🔥 MÉTRICAS REALES DESDE HISTORIAL
 
 // 🔥 HISTÓRICO (todos los pagos, no solo mes)
+
+
 const pagosHistoricos = historialPagos
   .map((item) => {
-    const fecha = item.fechaPago?.toDate?.();
+    const fecha = item.fecha_pago
+      ? new Date(item.fecha_pago)
+      : null;
 
     if (!fecha || Number.isNaN(fecha.getTime())) return null;
 
     return {
       monto: Number(item.monto || 0),
       fecha,
-      alumnoId: item.alumnoId || item.alumnoDbId,
+      alumnoId: item.alumno_id || item.alumno_db_id,
     };
   })
   .filter(Boolean);
@@ -806,7 +882,7 @@ saveAs(
 
           <div className="stat-card">
             <h3>Total ingresos</h3>
-            <p>{formatearPesos(totalIngresosMes)}</p>
+            <p>{formatearPesos(totalIngresos)}</p>
           </div>
 
           <div className="stat-card">
@@ -825,15 +901,15 @@ saveAs(
 
           <div className="stat-card">
   <h3>Utilidad real</h3>
-  <p style={{ color: utilidadReal >= 0 ? "#39ff14" : "#ff3c3c" }}>
-    {formatearPesos(utilidadReal)}
-  </p>
+ <p style={{ color: utilidad >= 0 ? "#39ff14" : "#ff3c3c" }}>
+  {formatearPesos(utilidad)}
+</p>
 </div>
 
 <div className="stat-card">
   <h3>Margen</h3>
   <p style={{ color: margen >= 0 ? "#39ff14" : "#ff3c3c" }}>
-    {margen.toFixed(1)}%
+    {margenReal.toFixed(1)}%
   </p>
 </div>
 

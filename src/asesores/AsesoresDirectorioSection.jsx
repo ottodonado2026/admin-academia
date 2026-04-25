@@ -5,7 +5,7 @@ import "./AsesoresDirectorio.css";
 import { supabase } from "../services/supabaseClient";
 
 import { useEffect, useState, useMemo } from "react";
-import { db } from "../firebase";
+
 import { collection, getDocs, deleteDoc, doc, updateDoc } from "firebase/firestore";
 import { getLeads } from "../services/leadsService";import { getAuth, sendPasswordResetEmail } from "firebase/auth";
 import { getFunctions, httpsCallable } from "firebase/functions";

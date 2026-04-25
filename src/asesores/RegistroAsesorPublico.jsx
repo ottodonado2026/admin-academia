@@ -200,7 +200,7 @@ const [loadingAsesor, setLoadingAsesor] = useState(true);
   useEffect(() => {
   const fetchCursos = async () => {
     try {
-      const snapshot = await getDocs(collection(db, "cursos"));
+      setCursos(obtenerCursosBase());
 
       let data = snapshot.docs.map((doc) => ({
         ...doc.data(),

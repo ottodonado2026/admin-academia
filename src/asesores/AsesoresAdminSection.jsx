@@ -3,11 +3,11 @@ import { getLeads } from "../services/leadsService";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import "./AsesoresPanel.css";
-import { db } from "../firebase";
-import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
+
+
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { sendPasswordResetEmail } from "firebase/auth";
-import { getFunctions, httpsCallable } from "firebase/functions";
+
 import { CURSOS_BASE } from "../data/cursosBase";
 import { supabase } from "../services/supabaseClient";
 import { generarIdCurso } from "../utils/idGenerator";

@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../services/supabaseClient";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "../firebase";
 
 function LoginPage() {
   const navigate = useNavigate();
@@ -18,17 +20,30 @@ const handleLogin = async (e) => {
     return;
   }
 
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
+  try {
+    const cred = await signInWithEmailAndPassword(auth, email, password);
 
-  if (error) {
+    const { data: usuario, error } = await supabase
+      .from("usuarios")
+      .select("email, role")
+      .eq("email", cred.user.email)
+      .single();
+
+    if (error || !usuario) {
+      alert("Este usuario no tiene rol asignado");
+      return;
+    }
+
+    if (usuario.role !== "admin") {
+      alert("No tienes permiso de administrador");
+      return;
+    }
+
+    navigate("/dashboard");
+  } catch (error) {
+    console.error("Error login:", error);
     alert("Credenciales incorrectas");
-    return;
   }
-
-  navigate("/dashboard");
 };
 
 

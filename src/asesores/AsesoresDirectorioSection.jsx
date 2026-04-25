@@ -6,10 +6,9 @@ import { supabase } from "../services/supabaseClient";
 
 import { useEffect, useState, useMemo } from "react";
 
-import { collection, getDocs, deleteDoc, doc, updateDoc } from "firebase/firestore";
-import { getLeads } from "../services/leadsService";import { getAuth, sendPasswordResetEmail } from "firebase/auth";
-import { getFunctions, httpsCallable } from "firebase/functions";
-const auth = getAuth();
+import { getLeads } from "../services/leadsService";
+
+
 
 const formatearPesos = (valor) =>
   new Intl.NumberFormat("es-CO", {
@@ -18,8 +17,6 @@ const formatearPesos = (valor) =>
     minimumFractionDigits: 0,
   }).format(Number(valor || 0));
 
-const functions = getFunctions();
-const actualizarEmailAsesorFn = httpsCallable(functions, "actualizarEmailAsesor");
 
 
 function AsesoresDirectorioSection() {
@@ -168,11 +165,16 @@ return {
   };
 
   // 🔹 reset password
-  const resetPassword = async (email) => {
-    await sendPasswordResetEmail(auth, email);
-    alert("Correo enviado");
-  };
+ const resetPassword = async (email) => {
+  const { error } = await supabase.auth.resetPasswordForEmail(email);
 
+  if (error) {
+    console.error(error);
+    alert("Error enviando correo");
+  } else {
+    alert("Correo de recuperación enviado");
+  }
+};
   const selected = useMemo(() => {
     return asesoresConMetricas.find(a => a.id === selectedAsesor);
   }, [selectedAsesor, asesoresConMetricas]);
@@ -390,11 +392,9 @@ return {
       }
 
       try {
-        await actualizarEmailAsesorFn({
-          uid: selected.authUid,
-          nuevoEmail: nuevoEmail,
-          asesorId: selected.id,
-        });
+        
+        alert("Actualizar email pendiente de migrar a Supabase");
+     
 
         alert("Correo actualizado correctamente");
 

@@ -2,12 +2,18 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../services/supabaseClient";
 
-const cleanEmail = email.trim().toLowerCase();
+
+
 function LoginPage() {
   const navigate = useNavigate();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
+  const [nombre, setNombre] = useState("");
+const [roleLabel, setRoleLabel] = useState("");
+
+
 
   const [fade, setFade] = useState(false);
 
@@ -30,18 +36,41 @@ const handleLogin = async (e) => {
   }
 
   // validar rol en Supabase
-  const { data: usuario } = await supabase
-    .from("usuarios")
-    .select("role")
-    .eq("email", email.toLowerCase())
-    .single();
+  // 🔥 obtener usuario autenticado
+const user = data.user;
 
-  if (!usuario || usuario.role !== "admin") {
-    alert("No tienes permisos");
-    return;
-  }
+// 🔥 buscar por auth_uid (forma correcta)
+const { data: usuario, error: userError } = await supabase
+  .from("usuarios")
+  .select("role, nombre")
+  .eq("auth_uid", user.id)
+  .maybeSingle();
 
-  navigate("/dashboard");
+  if (!usuario || !usuario.nombre) {
+  alert("El usuario no tiene nombre asignado en el sistema");
+  return;
+}
+
+
+if (!usuario) {
+  alert("Usuario no registrado en el sistema");
+  return;
+}
+
+if (!["owner", "contador", "coordinador"].includes(usuario.role)) {
+  alert("No tienes permisos");
+  return;
+}
+
+const roleLabels = {
+  owner: "Gerente",
+  contador: "Contador",
+  coordinador: "Coordinador",
+};
+
+
+
+navigate("/dashboard");
 };
 
 

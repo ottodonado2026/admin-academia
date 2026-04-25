@@ -2,11 +2,10 @@ import { useEffect, useMemo, useState } from "react";
 import Sidebar from "../components/Sidebar";
 import "./HistorialPagosPage.css";
 import { METODOS_PAGO } from "../constants/metodosPago";
-import { collection, getDocs, query, orderBy, addDoc, serverTimestamp } from "firebase/firestore";
-import { getAuth } from "firebase/auth";
+
 import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
-import { db } from "../firebase";
+
 import { supabase } from "../services/supabaseClient";
 
 
@@ -22,7 +21,8 @@ function HistorialDePagos() {
   const [fechaInicioCustom, setFechaInicioCustom] = useState("");
 const [fechaFinCustom, setFechaFinCustom] = useState("");
 const [fechaExacta, setFechaExacta] = useState("");
-const auth = getAuth();
+
+const user = JSON.parse(localStorage.getItem("asesorAuth") || "null");
 
 useEffect(() => {
   const fetchData = async () => {

@@ -3,10 +3,10 @@ import Sidebar from "../components/Sidebar";
 import { useNavigate } from "react-router-dom";
 import "./PagosPage.css";
 import { METODOS_PAGO } from "../constants/metodosPago";
-import { addDoc, collection, getDocs, updateDoc, doc, serverTimestamp } from "firebase/firestore";
-import { db } from "../firebase";
+
 import { supabase } from "../services/supabaseClient";
 import { generarIdCurso } from "../utils/idGenerator";
+
 
 
 const HISTORIAL_COLLECTION = "historial_pagos";
@@ -122,26 +122,37 @@ useEffect(() => {
 }, []);
  
 
-
-  useEffect(() => {
+useEffect(() => {
   const fetchAlumnos = async () => {
     try {
-      const snapshot = await getDocs(collection(db, "alumnos"));
+      const { data, error } = await supabase
+        .from("alumnos")
+        .select("*");
 
-      const data = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
+      if (error) {
+        console.error("Error cargando alumnos:", error);
+        setListaAlumnos([]);
+        return;
+      }
+
+      const adaptados = (data || []).map((a) => ({
+        ...a,
+        alumnoId: a.alumno_id,
+        cursoId: a.curso_id,
+        cursoNombre: a.curso_nombre,
       }));
 
-      setListaAlumnos(data);
+      setListaAlumnos(adaptados);
+
     } catch (error) {
-      console.error("Error cargando alumnos en pagos:", error);
+      console.error("Error cargando alumnos:", error);
       setListaAlumnos([]);
     }
   };
 
   fetchAlumnos();
 }, []);
+
 
   useEffect(() => {
     if (!alumnoId) return;
@@ -273,13 +284,6 @@ useEffect(() => {
     };
 
 try {
-  // 🔹 1. Guardar en Firebase (si lo quieres mantener)
-  await addDoc(collection(db, "pagos"), {
-    ...nuevo,
-    createdAt: new Date().toISOString()
-  });
-
-  // 🔹 2. Guardar en Supabase
   const { data: supabaseData, error } = await supabase
     .from("pagos")
     .insert([
@@ -316,12 +320,6 @@ try {
 
   const supabaseId = supabaseData?.[0]?.id;
 
-  if (!supabaseId) {
-    alert("No se obtuvo ID de Supabase");
-    return;
-  }
-
-  // 🔹 3. Actualizar UI
   setPlanes((prev) => [
     ...prev,
     {

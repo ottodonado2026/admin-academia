@@ -1,13 +1,13 @@
 import Sidebar from "../components/Sidebar";
 import { useNavigate } from "react-router-dom";
 import "./AlumnosPage.css";
-import { db } from "../firebase";
-import { getDocs, collection, addDoc, updateDoc, doc, deleteDoc } from "firebase/firestore";
+
 import { useState, useEffect, useMemo } from "react";
 import CustomSelect from "../components/CustomSelect";
 
 import { generarIdAlumnoBonito, generarIdCurso } from "../utils/idGenerator";
 import { supabase } from "../services/supabaseClient";
+import { CURSOS_BASE } from "../data/cursosBase";
 
 
 
@@ -23,14 +23,31 @@ const [alumnos, setAlumnos] = useState([]);
 
 useEffect(() => {
   const fetchAlumnos = async () => {
-    const snapshot = await getDocs(collection(db, "alumnos"));
+    const { data, error } = await supabase
+  .from("alumnos")
+  .select("*");
 
-    const data = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
+if (error) {
+  console.error(error);
+  return;
+}
+const alumnosAdaptados = (data || []).map((a) => ({
+  ...a,
 
-    setAlumnos(data);
+  // 🔥 compatibilidad total
+  alumnoId: a.alumno_id || a.alumnoId,
+  cursoId: a.curso_id || a.cursoId,
+  cursoNombre: a.curso_nombre || a.cursoNombre,
+  valorBase: a.valor_base || a.valorBase,
+  tipoPrograma: a.tipo_programa || a.tipoPrograma,
+  tipoDocumento: a.tipo_documento || a.tipoDocumento,
+  numeroDocumento: a.numero_documento || a.numeroDocumento,
+  nombreAcudiente: a.nombre_acudiente || a.nombreAcudiente,
+  telefonoAcudiente: a.telefono_acudiente || a.telefonoAcudiente,
+}));
+
+setAlumnos(alumnosAdaptados);
+
   };
 
   fetchAlumnos();
@@ -52,11 +69,23 @@ useEffect(() => {
   const [tipoDocumento, setTipoDocumento] = useState("");
   const [numeroDocumento, setNumeroDocumento] = useState("");
   const [alumnoSeleccionado, setAlumnoSeleccionado] = useState(null);
-  const [planesCursos, setPlanesCursos] = useState([]);
+ 
   const [planesPagos, setPlanesPagos] = useState([]);
   const [edad, setEdad] = useState("");
-const [nombreAcudiente, setNombreAcudiente] = useState("");
-const [telefonoAcudiente, setTelefonoAcudiente] = useState("");
+  const [nombreAcudiente, setNombreAcudiente] = useState("");
+  const [telefonoAcudiente, setTelefonoAcudiente] = useState("");
+  const [planesCursos, setPlanesCursos] = useState([]);
+
+  useEffect(() => {
+  const cursosConId = CURSOS_BASE.map((curso, index) => ({
+    ...curso,
+    id: generarIdCurso(curso.nombre, index),
+  }));
+
+  setPlanesCursos(cursosConId);
+}, []);
+
+
 
   const tipoLabels = {
   personalizado: "Personalizado",
@@ -68,48 +97,35 @@ const [telefonoAcudiente, setTelefonoAcudiente] = useState("");
    
   }, [alumnos]);
 
- useEffect(() => {
+
+useEffect(() => {
   const fetchPagos = async () => {
-    try {
-      const snapshot = await getDocs(collection(db, "pagos"));
+    const { data, error } = await supabase
+      .from("pagos")
+      .select("*");
 
-      const data = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-
-      setPlanesPagos(data);
-
-    } catch (error) {
+    if (error) {
       console.error("Error cargando pagos en alumnos:", error);
+      setPlanesPagos([]);
+      return;
     }
+
+    const adaptados = (data || []).map((p) => ({
+      ...p,
+      alumnoId: p.alumno_id,
+      alumnoDbId: p.alumno_db_id,
+      fechaInicio: p.fecha_inicio,
+      cuotaMensual: p.cuota,
+      valorTotal: p.valor_total,
+      saldoPendiente: p.saldo_pendiente,
+      montoPagado: p.monto_pagado,
+    }));
+
+    setPlanesPagos(adaptados);
   };
 
   fetchPagos();
 }, []);
-
-useEffect(() => {
-  const fetchCursos = async () => {
-    try {
-      const snapshot = await getDocs(collection(db, "cursos"));
-
-      const data = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-
-      setPlanesCursos(data);
-
-    } catch (error) {
-      console.error("Error cargando cursos:", error);
-      setPlanesCursos([]);
-    }
-  };
-
-  fetchCursos();
-}, []);
-
-
 
 
   const cursoSeleccionado = useMemo(() => {
@@ -231,43 +247,41 @@ useEffect(() => {
   }
 
 
-if (editandoId !== null) {
-  try {
-    const alumnoRef = doc(db, "alumnos", editandoId);
-
-
-    const cursoIdBonito = generarIdCurso(
+  const cursoIdBonito = generarIdCurso(
   cursoSeleccionado?.nombre || ""
 );
-   await updateDoc(alumnoRef, {
-  nombre,
-  curso,
-  cursoId: cursoIdBonito,
-cursoNombre: cursoSeleccionado?.nombre || "",
-      valor: Number(valor),
-      valorBase: Number(precioBaseCurso || 0),
-      descuento: Number(descuento) || 0,
-      valorEditadoManual,
-      modalidad,
-      tipo,
-      duracion,
-      estado,
-      telefono,
-      tipoDocumento,
-      numeroDocumento,
-    });
 
-    // 🔥 refrescar desde Firebase
-    const snapshot = await getDocs(collection(db, "alumnos"));
-    const data = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
+if (editandoId !== null) {
+  try {
+    const { error } = await supabase
+      .from("alumnos")
+      .update({
+        nombre,
+        curso_id: cursoIdBonito,
+        curso_nombre: cursoSeleccionado?.nombre || "",
+        valor: Number(valor),
+        valor_base: Number(precioBaseCurso || 0),
+        descuento: Number(descuento) || 0,
+        modalidad,
+        tipo_programa: tipo,
+        duracion,
+        estado,
+        telefono,
+        tipo_documento: tipoDocumento,
+        numero_documento: numeroDocumento,
+      })
+      .eq("id", editandoId);
 
-    setAlumnos(data);
+    if (error) {
+      console.error("Error editando alumno:", error);
+      return;
+    }
+
+    // refrescar desde Supabase
+    const { data } = await supabase.from("alumnos").select("*");
+    setAlumnos(data || []);
 
     limpiarFormulario();
-
   } catch (error) {
     console.error("Error editando alumno:", error);
   }
@@ -276,9 +290,7 @@ cursoNombre: cursoSeleccionado?.nombre || "",
 }
 
 
-const cursoIdBonito = generarIdCurso(
-  cursoSeleccionado?.nombre || ""
-);
+
   // 🟢 CREAR EN FIREBASE
   const nuevo = {
     alumnoId: await generarIdAlumnoBonito(nombre),
@@ -303,11 +315,7 @@ cursoNombre: cursoSeleccionado?.nombre || "",
   };
 
   try {
-    const docRef = await addDoc(collection(db, "alumnos"), nuevo);
-
-    await updateDoc(docRef, {
-      id: docRef.id,
-    });
+   
    const { error: errorSupabaseAlumno } = await supabase
   .from("alumnos")
   .insert([
@@ -343,18 +351,28 @@ if (errorSupabaseAlumno) {
 alert("Error Supabase: " + errorSupabaseAlumno.message);
 }
 
-    // 🔥 refrescar desde Firebase
-    const snapshot = await getDocs(collection(db, "alumnos"));
-    const data = snapshot.docs.map((doc) => {
-  const curso = doc.data();
 
-  return {
-    ...curso,
-    id: curso.id || generarIdCurso(curso.nombre),
-  };
-});
+    // 🔥 refrescar desde Supabase
+const { data, error } = await supabase
+  .from("alumnos")
+  .select("*");
 
-    setAlumnos(data);
+if (!error) {
+  const alumnosAdaptados = (data || []).map((a) => ({
+    ...a,
+    alumnoId: a.alumno_id,
+    cursoId: a.curso_id,
+    cursoNombre: a.curso_nombre,
+    valorBase: a.valor_base,
+    tipoPrograma: a.tipo_programa,
+    tipoDocumento: a.tipo_documento,
+    numeroDocumento: a.numero_documento,
+    nombreAcudiente: a.nombre_acudiente,
+    telefonoAcudiente: a.telefono_acudiente,
+  }));
+
+  setAlumnos(alumnosAdaptados);
+}
 
     limpiarFormulario();
 
@@ -368,21 +386,39 @@ const eliminarAlumno = async (id) => {
   if (!window.confirm("¿Eliminar este alumno?")) return;
 
   try {
-    await deleteDoc(doc(db, "alumnos", id));
+    const { error } = await supabase
+      .from("alumnos")
+      .delete()
+      .eq("id", id);
 
-    const snapshot = await getDocs(collection(db, "alumnos"));
-    const data = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
+    if (error) {
+      console.error("Error eliminando:", error);
+      alert("Error al eliminar");
+      return;
+    }
+
+    // 🔥 refrescar correctamente
+    const { data } = await supabase.from("alumnos").select("*");
+
+    const alumnosAdaptados = (data || []).map((a) => ({
+      ...a,
+      alumnoId: a.alumno_id,
+      cursoId: a.curso_id,
+      cursoNombre: a.curso_nombre,
+      valorBase: a.valor_base,
+      tipoPrograma: a.tipo_programa,
+      tipoDocumento: a.tipo_documento,
+      numeroDocumento: a.numero_documento,
+      nombreAcudiente: a.nombre_acudiente,
+      telefonoAcudiente: a.telefono_acudiente,
     }));
 
-    setAlumnos(data);
+    setAlumnos(alumnosAdaptados);
 
   } catch (error) {
     console.error("Error eliminando alumno:", error);
   }
 };
-
 
 
   const editarAlumno = (alumno) => {

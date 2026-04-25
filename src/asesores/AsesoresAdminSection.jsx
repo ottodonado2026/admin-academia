@@ -5,25 +5,11 @@ import Sidebar from "../components/Sidebar";
 import "./AsesoresPanel.css";
 
 
-import { signInWithEmailAndPassword } from "firebase/auth";
-import { sendPasswordResetEmail } from "firebase/auth";
 
 import { CURSOS_BASE } from "../data/cursosBase";
 import { supabase } from "../services/supabaseClient";
 import { generarIdCurso } from "../utils/idGenerator";
-import {
-  collection,
-  addDoc,
-  getDocs,
-  updateDoc,
-  setDoc,
-  doc,
-  deleteDoc
-} from "firebase/firestore";
 
-const auth = getAuth();
-const functions = getFunctions();
-const actualizarEmailAsesorFn = httpsCallable(functions, "actualizarEmailAsesor");
 
 
 const formatearPesos = (valor) =>
@@ -96,7 +82,7 @@ function AsesoresAdminSection() {
   }
 
   try {
-    await sendPasswordResetEmail(auth, selectedAsesor.email);
+    await supabase.auth.resetPasswordForEmail(selectedAsesor.email);
    setAlerta({
   visible: true,
   tipo: "success",
@@ -479,10 +465,12 @@ setAlerta({
 
 const updateEstado = async (id, estado) => {
   try {
-    const asesorRef = doc(db, "asesores", id);
 
-    await updateDoc(asesorRef, { estado });
-
+    await supabase
+  .from("asesores")
+  .update({ estado })
+  .eq("id", id);
+  
     setRefresh((v) => v + 1);
 
     if (selectedAsesor?.id === id) {
@@ -1000,11 +988,7 @@ const updateEstado = async (id, estado) => {
     }
 
     try {
-      await actualizarEmailAsesorFn({
-        uid: selectedAsesor.authUid,
-        nuevoEmail: nuevoEmail,
-        asesorId: selectedAsesor.id,
-      });
+     
 
     setAlerta({
   visible: true,

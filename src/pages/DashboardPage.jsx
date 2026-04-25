@@ -3,9 +3,6 @@ import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import "./DashboardPage.css";
 
-import { collection } from "firebase/firestore";
-import { db } from "../firebase";
-import { onSnapshot } from "firebase/firestore";
 import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
 import { supabase } from "../services/supabaseClient";
@@ -297,7 +294,9 @@ const totalGastosMes = gastosMes.reduce(
   (acc, e) => acc + Number(e.monto || 0),
   0
 );
-console.log(totalCostosMes, totalGastosMes);
+if (import.meta.env.DEV) {
+  console.log(totalCostosMes, totalGastosMes);
+}
 
 
 

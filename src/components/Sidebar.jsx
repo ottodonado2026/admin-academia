@@ -1,8 +1,9 @@
 import "./Sidebar.css";
+import logo from "../assets/logo.png"; 
 import { NavLink } from "react-router-dom";
 import { useState } from "react";
 import { useEffect } from "react";
-
+import { supabase } from "../services/supabaseClient";
 
 function Sidebar({ onLogout }) {
   const [open, setOpen] = useState(false);
@@ -12,7 +13,43 @@ function Sidebar({ onLogout }) {
   const data = JSON.parse(localStorage.getItem("solicitudesCambios") || "[]");
   const count = data.filter(s => s.estado === "pendiente").length;
   setPendientes(count);
+
+
 }, []);
+
+
+useEffect(() => {
+  const getUserData = async () => {
+    const { data } = await supabase.auth.getUser();
+
+    const user = data.user;
+
+    if (!user) return;
+
+    const { data: usuario } = await supabase
+      .from("usuarios")
+      .select("nombre, role")
+      .eq("auth_uid", user.id)
+      .single();
+
+    if (!usuario) return;
+
+    const roleLabels = {
+      owner: "Gerente",
+      contador: "Contador",
+      coordinador: "Coordinador",
+    };
+
+    setNombre(usuario.nombre);
+    setRoleLabel(roleLabels[usuario.role] || "Usuario");
+  };
+
+  getUserData();
+}, []);
+
+const [nombre, setNombre] = useState("");
+const [roleLabel, setRoleLabel] = useState("");
+
 
   return (
     <>
@@ -20,29 +57,32 @@ function Sidebar({ onLogout }) {
       {/* 🔥 TOP BAR MOBILE */}
       <div className="topbar-mobile">
         <button onClick={() => setOpen(!open)}>☰</button>
-        <h2>CSA Admin</h2>
+       <h4>{roleLabel}</h4>
       </div>
 
       <aside className={`sidebar ${open ? "open" : ""}`}>
         {/* TOP */}
+
+
       <div className="sidebar-content">
           <div className="sidebar-brand">
-            <div className="brand-badge">CSA</div>
+          <img src={logo} alt="logo" className="sidebar-logo" />
 
-            <div>
-              <h2>CSA Admin</h2>
-              <p>Academia electrónica</p>
+        </div>
+
+
+            <div className="sidebar-user-card">
+
+              <div className="user-info">
+               <strong>{nombre}</strong>
+
+                <span className="user-status">
+                  <span className="status-dot"></span>
+                  {roleLabel}
+                </span>
+              </div>
+
             </div>
-          </div>
-
-<div className="sidebar-user-card">
-  <div className="user-avatar">A</div>
-
-<span className="user-status">
-  <span className="status-dot"></span>
-  Activo
-</span>
-</div>
 
           {/* MENÚ */}
           <nav className="sidebar-nav">

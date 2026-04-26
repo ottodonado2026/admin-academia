@@ -332,6 +332,7 @@ alert(error.message);
       <option value="bancolombia">Bancolombia</option>
       <option value="davivienda">Davivienda</option>
       <option value="transferencia">Transferencia</option>
+      <option value="transferencia">Bold</option>
     </select>
   ) : i.metodo}
 </td>

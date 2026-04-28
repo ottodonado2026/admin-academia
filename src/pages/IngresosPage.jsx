@@ -17,6 +17,7 @@ function IngresosPage() {
  const [ingresos, setIngresos] = useState([]);
 
   const [tipo, setTipo] = useState("");
+  const [nombre, setNombre] = useState("");
   const [categoria, setCategoria] = useState("");
   const [descripcion, setDescripcion] = useState("");
   const [monto, setMonto] = useState("");
@@ -49,12 +50,43 @@ function IngresosPage() {
   setEditData({ ...ingreso });
 };
 
-  const guardarEdicion = () => {
-  const actualizados = ingresos.map((i) =>
-    i.id === editandoId ? { ...editData } : i
-  );
+const guardarEdicion = async () => {
+  // 🔴 VALIDACIÓN
+  if (!editData.referencia) {
+    alert("La referencia es obligatoria");
+    return;
+  }
 
-  setIngresos(actualizados);
+  // 🔥 UPDATE EN SUPABASE
+  const { data, error } = await supabase
+    .from("ingresos")
+    .update({
+      nombre: editData.nombre,
+      tipo: editData.tipo,
+      categoria: editData.categoria,
+      descripcion: editData.descripcion,
+      monto: editData.monto,
+      metodo: editData.metodo,
+      referencia: editData.referencia,
+    })
+    .eq("id", editandoId)
+    .select();
+
+  if (error) {
+    console.error(error);
+    alert(error.message);
+    return;
+  }
+
+  // 🔥 ACTUALIZAR UI CON DATOS REALES
+  if (data && data.length > 0) {
+    const actualizados = ingresos.map((i) =>
+      i.id === editandoId ? data[0] : i
+    );
+
+    setIngresos(actualizados);
+  }
+
   setEditandoId(null);
 };
 
@@ -90,12 +122,13 @@ const filtrarIngresos = () => {
 const agregarIngreso = async (e) => {
   e.preventDefault();
 
-  if (!monto) {
-    alert("El monto es obligatorio");
-    return;
-  }
+  if (!monto || !referencia) {
+  alert("Monto y referencia son obligatorios");
+  return;
+}
 
   const nuevo = {
+    nombre,
     tipo,
     categoria,
     descripcion,
@@ -124,6 +157,7 @@ alert(error.message);
 }
 
   setTipo("");
+  setNombre("");
   setCategoria("");
   setDescripcion("");
   setMonto("");
@@ -131,11 +165,22 @@ alert(error.message);
   setReferencia("");
 };
 
-  const eliminarIngreso = (id) => {
-    if (!window.confirm("¿Eliminar ingreso?")) return;
-    setIngresos(ingresos.filter((i) => i.id !== id));
-  };
+ const eliminarIngreso = async (id) => {
+  if (!window.confirm("¿Eliminar ingreso?")) return;
 
+  const { error } = await supabase
+    .from("ingresos")
+    .delete()
+    .eq("id", id);
+
+  if (error) {
+    console.error(error);
+    alert("Error al eliminar");
+    return;
+  }
+
+  setIngresos(ingresos.filter((i) => i.id !== id));
+};
   return (
     <div className="dashboard-layout">
       <Sidebar onLogout={handleLogout} />
@@ -201,6 +246,12 @@ alert(error.message);
   </div>
 </div>
 <form className="form-ingresos" onSubmit={agregarIngreso}>
+
+  <input
+    placeholder="Nombre"
+    value={nombre}
+    onChange={(e) => setNombre(e.target.value)}
+  />
   
   <select value={tipo} onChange={(e) => setTipo(e.target.value)}>
     <option value="">Tipo</option>
@@ -240,25 +291,29 @@ alert(error.message);
   </select>
 
   <input
-    placeholder="Referencia (opcional)"
-    value={referencia}
-    onChange={(e) => setReferencia(e.target.value)}
-  />
+  placeholder="Referencia"
+  value={referencia}
+  onChange={(e) => setReferencia(e.target.value)}
+  required
+/>
 
  
 
 </form>
 
      {/* 🔥 LISTA */}
-<table className="tabla-ingresos">
+<div className="tabla-wrapper">
+  <table className="tabla-ingresos">
   <thead>
     <tr>
+        <th>Nombre</th>
          <th>Tipo</th>
           <th>Categoría</th>
         <th>Descripción</th>
       <th>Monto</th>
       <th>Fecha</th>
       <th>Método</th>
+      <th>Referencia</th>
        <th>Acciones</th>
     </tr>
   </thead>
@@ -266,6 +321,17 @@ alert(error.message);
  <tbody>
  {filtrarIngresos().map((i) => (
     <tr key={i.id}>
+
+      <td>
+    {editandoId === i.id ? (
+      <input
+        value={editData.nombre || ""}
+        onChange={(e) =>
+          setEditData({ ...editData, nombre: e.target.value })
+        }
+      />
+    ) : i.nombre}
+  </td>
 
      <td>
   {editandoId === i.id ? (
@@ -337,12 +403,27 @@ alert(error.message);
   ) : i.metodo}
 </td>
 
+<td>
+  {editandoId === i.id ? (
+    <input
+      value={editData.referencia || ""}
+      onChange={(e) =>
+        setEditData({ ...editData, referencia: e.target.value })
+      }
+    />
+  ) : i.referencia}
+</td>
+
       <td>
         {editandoId === i.id ? (
           <>
-            <button className="btn-guardar" onClick={guardarEdicion}>
-              ✔
-            </button>
+            <button
+  type="button"
+  className="btn-guardar"
+  onClick={guardarEdicion}
+>
+  ✔
+</button>
             <button className="btn-cancelar" onClick={() => setEditandoId(null)}>
               ✖
             </button>
@@ -362,7 +443,8 @@ alert(error.message);
     </tr>
   ))}
 </tbody>
-</table>
+  </table>
+</div>
     
        
       </main>

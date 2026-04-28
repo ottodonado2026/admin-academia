@@ -6,6 +6,7 @@ import "./DashboardPage.css";
 import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
 import { supabase } from "../services/supabaseClient";
+import { METODOS_PAGO } from "../constants/metodosPago";
 
 const meses = [
   "Enero",
@@ -40,15 +41,32 @@ function DashboardPage() {
   const [pagos, setPagos] = useState([]);
   const [historialPagos, setHistorialPagos] = useState([]);
 
+ 
   const [busqueda, setBusqueda] = useState("");
-const [filtroFecha, setFiltroFecha] = useState("mes");
-const [filtroMetodo, setFiltroMetodo] = useState("todos");
-const [filtroCurso, setFiltroCurso] = useState("todos");
-const [orden, setOrden] = useState("recientes");
+  const [filtroFecha, setFiltroFecha] = useState("mes");
+  const [filtroMetodo, setFiltroMetodo] = useState("todos");
+  const [filtroCurso, setFiltroCurso] = useState("todos");
+  const [orden, setOrden] = useState("recientes");
 
-const [fechaInicioCustom, setFechaInicioCustom] = useState("");
-const [fechaFinCustom, setFechaFinCustom] = useState("");
-const [fechaExacta, setFechaExacta] = useState("");
+  const [fechaInicioCustom, setFechaInicioCustom] = useState("");
+  const [fechaFinCustom, setFechaFinCustom] = useState("");
+  const [fechaExacta, setFechaExacta] = useState("");
+  const [usuarioActual, setUsuarioActual] = useState(null);
+
+  const filtrosActivos = {
+    busqueda,
+    filtroFecha,
+    filtroMetodo,
+    filtroCurso,
+    orden,
+    fechaInicioCustom,
+    fechaFinCustom,
+    fechaExacta,
+    mesSeleccionado,
+    anioSeleccionado,
+  };
+
+
 
 
 const fetchDashboard = async () => {
@@ -92,6 +110,43 @@ const fetchDashboard = async () => {
 useEffect(() => {
   fetchDashboard();
 
+  const obtenerUsuario = async () => {
+    const { data } = await supabase.auth.getSession();
+    const user = data?.session?.user;
+
+    if (!user) {
+      console.warn("No hay sesión activa");
+      return;
+    }
+
+    const { data: usuarioDB, error } = await supabase
+      .from("usuarios")
+      .select("*")
+      .eq("auth_uid", user.id)
+      .single();
+
+    if (error) {
+      console.error("Error obteniendo usuario DB:", error);
+    }
+
+    const roleMap = {
+      owner: "Gerente",
+      contador: "Contador",
+      coordinador: "Coordinador",
+      gerente: "Gerente",
+    };
+
+    const rolNormalizado = usuarioDB?.role?.toLowerCase();
+
+    setUsuarioActual({
+      ...user,
+      nombre: usuarioDB?.nombre || user.email,
+      rol: roleMap[rolNormalizado] || usuarioDB?.role || "Usuario",
+    });
+  };
+
+  obtenerUsuario();
+
   const channel = supabase
     .channel("realtime-dashboard")
     .on(
@@ -115,6 +170,7 @@ useEffect(() => {
   };
 }, []);
 
+
   const formatearPesos = (valor) =>
     new Intl.NumberFormat("es-CO", {
       style: "currency",
@@ -124,20 +180,66 @@ useEffect(() => {
 
   // 🔥 FILTROS
   const ingresosFiltrados = useMemo(() => {
-    return ingresos.filter((item) => {
-      if (!item.fecha) return false;
-      const f = new Date(item.fecha);
-      return f.getMonth() === mesSeleccionado && f.getFullYear() === anioSeleccionado;
-    });
-  }, [ingresos, mesSeleccionado, anioSeleccionado]);
+  return ingresos.filter((item) => {
+    if (!item.fecha) return false;
 
-  const egresosFiltrados = useMemo(() => {
-    return egresos.filter((item) => {
-      if (!item.fecha) return false;
-      const f = new Date(item.fecha);
-      return f.getMonth() === mesSeleccionado && f.getFullYear() === anioSeleccionado;
-    });
-  }, [egresos, mesSeleccionado, anioSeleccionado]);
+    const fecha = new Date(item.fecha);
+
+    // 🔹 FILTRO POR MES/AÑO
+    const fechaMatch =
+      fecha.getMonth() === mesSeleccionado &&
+      fecha.getFullYear() === anioSeleccionado;
+
+    // 🔹 FILTRO POR MÉTODO
+    const metodoItem = (item.metodo || "").trim().toLowerCase();
+    const metodoFiltro = (filtroMetodo || "").trim().toLowerCase();
+
+    const metodoMatch =
+      metodoFiltro === "todos" || metodoItem === metodoFiltro;
+
+    // 🔹 FILTRO POR BÚSQUEDA
+    const textoBusqueda = busqueda.trim().toLowerCase();
+
+    const busquedaMatch =
+      !textoBusqueda ||
+      (item.descripcion || "").toLowerCase().includes(textoBusqueda) ||
+      (item.referencia || "").toLowerCase().includes(textoBusqueda);
+
+    return fechaMatch && metodoMatch && busquedaMatch;
+  });
+}, [ingresos, mesSeleccionado, anioSeleccionado, filtroMetodo, busqueda]);
+
+
+
+const egresosFiltrados = useMemo(() => {
+  return egresos.filter((item) => {
+    if (!item.fecha) return false;
+
+    const fecha = new Date(item.fecha);
+
+    // 🔹 FILTRO FECHA
+    const fechaMatch =
+      fecha.getMonth() === mesSeleccionado &&
+      fecha.getFullYear() === anioSeleccionado;
+
+    // 🔹 FILTRO MÉTODO (NORMALIZADO)
+    const metodoItem = (item.metodo || "").trim().toLowerCase();
+    const metodoFiltro = (filtroMetodo || "").trim().toLowerCase();
+
+    const metodoMatch =
+      metodoFiltro === "todos" || metodoItem === metodoFiltro;
+
+    // 🔹 FILTRO BÚSQUEDA
+    const textoBusqueda = busqueda.trim().toLowerCase();
+
+    const busquedaMatch =
+      !textoBusqueda ||
+      (item.descripcion || "").toLowerCase().includes(textoBusqueda) ||
+      (item.categoria || "").toLowerCase().includes(textoBusqueda);
+
+    return fechaMatch && metodoMatch && busquedaMatch;
+  });
+}, [egresos, mesSeleccionado, anioSeleccionado, filtroMetodo, busqueda]);
 
 
   const normalizarFecha = (fecha) => {
@@ -177,6 +279,9 @@ const historialBase = useMemo(() => {
   }).filter(item => item.fecha && !Number.isNaN(item.fecha.getTime()));
 }, [historialPagos]);
 
+
+
+
 const historialFiltrado = useMemo(() => {
   let lista = historialBase.filter((item) => {
     const textoBusqueda = busqueda.trim().toLowerCase();
@@ -188,27 +293,53 @@ const historialFiltrado = useMemo(() => {
       item.referencia.toLowerCase().includes(textoBusqueda) ||
       item.alumnoId.toLowerCase().includes(textoBusqueda);
 
-    const metodoMatch =
-      filtroMetodo === "todos" || item.metodo === filtroMetodo;
+    const metodoItem = (item.metodo || "").trim().toLowerCase();
+const metodoFiltro = (filtroMetodo || "").trim().toLowerCase();
 
-    const cursoMatch =
-      filtroCurso === "todos" || item.curso === filtroCurso;
+const cursoItem = (item.curso || "").toString().trim().toLowerCase();
+const cursoFiltro = (filtroCurso || "").toString().trim().toLowerCase();
 
-    let fechaMatch = true;
+const metodoMatch =
+  metodoFiltro === "todos" || metodoItem === metodoFiltro;
 
-    const itemFecha = normalizarFecha(item.fecha);
-    const hoyFecha = normalizarFecha(new Date());
+const cursoMatch =
+  cursoFiltro === "todos" || cursoItem === cursoFiltro;
 
-    if (filtroFecha === "hoy") {
-      fechaMatch = itemFecha === hoyFecha;
-    }
+   
+          let fechaMatch = true;
 
-    if (filtroFecha === "mes") {
-      const hoy = new Date();
-      fechaMatch =
-        item.fecha.getMonth() === hoy.getMonth() &&
-        item.fecha.getFullYear() === hoy.getFullYear();
-    }
+const itemFecha = normalizarFecha(item.fecha);
+const hoyFecha = normalizarFecha(new Date());
+
+// 🔹 HOY
+if (filtroFecha === "hoy") {
+  fechaMatch = itemFecha === hoyFecha;
+}
+
+// 🔹 MES (basado en selector, no en hoy)
+if (filtroFecha === "mes") {
+  fechaMatch =
+    item.fecha.getMonth() === mesSeleccionado &&
+    item.fecha.getFullYear() === anioSeleccionado;
+}
+
+// 🔹 FECHA EXACTA
+if (filtroFecha === "fecha" && fechaExacta) {
+  fechaMatch = itemFecha === fechaExacta;
+}
+
+// 🔹 RANGO PERSONALIZADO
+if (
+  filtroFecha === "rango" &&
+  fechaInicioCustom &&
+  fechaFinCustom
+) {
+  fechaMatch =
+    itemFecha >= fechaInicioCustom &&
+    itemFecha <= fechaFinCustom;
+}
+
+
 
     return nombreMatch && metodoMatch && cursoMatch && fechaMatch;
   });
@@ -216,23 +347,53 @@ const historialFiltrado = useMemo(() => {
   return lista;
 }, [historialBase, busqueda, filtroFecha, filtroMetodo, filtroCurso]);
 
+
+const ingresosCombinados = useMemo(() => {
+  const pagos = historialFiltrado.map((item) => ({
+    id: `pago-${item.id}`,
+    tipo: "Pago",
+    categoria: item.curso,
+    descripcion: item.referencia,
+    monto: item.monto,
+    metodo: item.metodo,
+    fecha: item.fecha,
+  }));
+
+  const manuales = ingresosFiltrados.map((item) => ({
+    id: `manual-${item.id}`,
+    tipo: "Manual",
+    categoria: item.categoria || "Ingreso",
+    descripcion: item.descripcion || item.referencia || "-",
+    monto: Number(item.monto || 0),
+    metodo: item.metodo,
+    fecha: new Date(item.fecha),
+  }));
+
+  return [...pagos, ...manuales];
+}, [historialFiltrado, ingresosFiltrados]);
+
+
+const top5Ingresos = useMemo(() => {
+  return [...ingresosCombinados]
+    .sort((a, b) => b.monto - a.monto)
+    .slice(0, 5);
+}, [ingresosCombinados]);
+
+
 // 🔥 FUENTE HÍBRIDA (historial + fallback a planes)
 // 🔥 PAGOS REALES DESDE HISTORIAL (FUENTE ÚNICA)
 
-const pagosRealesDelMes = historialBase
-  .filter((item) => {
-    return (
-      item.fecha.getMonth() === mesSeleccionado &&
-      item.fecha.getFullYear() === anioSeleccionado
-    );
-  })
-  .map((item) => ({
-    monto: Number(item.monto || 0),
-    fecha: item.fecha,
-    alumnoId: item.alumnoId,
-  }));
+const pagosFiltradosDashboard = historialFiltrado.map((item) => ({
+  monto: Number(item.monto || 0),
+  fecha: item.fecha,
+  alumnoId: item.alumnoId,
+  alumno: item.alumno,
+  curso: item.curso,
+  metodo: item.metodo,
+  referencia: item.referencia,
+}));
 
-const totalPagosMes = pagosRealesDelMes.reduce(
+const totalPagosMes = pagosFiltradosDashboard.reduce(
   (acc, p) => acc + p.monto,
   0
 );
@@ -312,42 +473,22 @@ if (import.meta.env.DEV) {
 
 // 🔥 HISTÓRICO (todos los pagos, no solo mes)
 
-
-const pagosHistoricos = historialPagos
-  .map((item) => {
-    const fecha = item.fecha_pago
-      ? new Date(item.fecha_pago)
-      : null;
-
-    if (!fecha || Number.isNaN(fecha.getTime())) return null;
-
-    return {
-      monto: Number(item.monto || 0),
-      fecha,
-      alumnoId: item.alumno_id || item.alumno_db_id,
-    };
-  })
-  .filter(Boolean);
-
-// 🔹 Total histórico real
-const totalRecaudado = pagosHistoricos.reduce(
+const totalRecaudado = pagosFiltradosDashboard.reduce(
   (acc, item) => acc + item.monto,
   0
 );
 
-// 🔹 Movimientos históricos
-const totalMovimientos = pagosHistoricos.length;
+const totalMovimientos = pagosFiltradosDashboard.length;
 
-// 🔹 Último pago real del sistema
 const ultimoMovimiento =
-  pagosHistoricos.length > 0
-    ? [...pagosHistoricos].sort((a, b) => b.fecha - a.fecha)[0]
+  pagosFiltradosDashboard.length > 0
+    ? [...pagosFiltradosDashboard].sort((a, b) => b.fecha - a.fecha)[0]
     : null;
 
-// 🔹 Alumnos únicos que han pagado (histórico)
 const alumnosConPagos = new Set(
-  pagosHistoricos.map((item) => item.alumnoId)
+  pagosFiltradosDashboard.map((item) => item.alumnoId)
 ).size;
+
 
   const alumnosActivos = alumnos.filter((a) => a.estado === "activo").length;
 
@@ -357,27 +498,29 @@ const alumnosConPagos = new Set(
 
   // 🔥 HISTÓRICO INGRESOS
   const ventasPorMes = useMemo(() => {
-    const data = Array(12).fill(0);
+  const data = Array(12).fill(0);
 
-    ingresos.forEach((i) => {
-      if (!i.fecha) return;
-      const f = new Date(i.fecha);
-      if (f.getFullYear() === anioSeleccionado) {
-        data[f.getMonth()] += Number(i.monto || 0);
-      }
-    });
+  // 🔹 INGRESOS MANUALES
+  ingresos.forEach((i) => {
+    if (!i.fecha) return;
+    const f = new Date(i.fecha);
 
-    pagos.forEach((p) => {
-      (p.pagos || []).forEach((pago) => {
-        const f = new Date(pago.fecha);
-        if (f.getFullYear() === anioSeleccionado) {
-          data[f.getMonth()] += Number(pago.monto || 0);
-        }
-      });
-    });
+    if (f.getFullYear() === anioSeleccionado) {
+      data[f.getMonth()] += Number(i.monto || 0);
+    }
+  });
 
-    return data;
-  }, [ingresos, pagos, anioSeleccionado]);
+  // 🔹 PAGOS REALES (historial)
+  historialBase.forEach((item) => {
+    const f = item.fecha;
+
+    if (f.getFullYear() === anioSeleccionado) {
+      data[f.getMonth()] += Number(item.monto || 0);
+    }
+  });
+
+  return data;
+}, [ingresos, historialBase, anioSeleccionado]);
 
   // 🔥 NUEVO: EGRESOS POR MES (BIEN UBICADO)
   const egresosPorMes = useMemo(() => {
@@ -396,9 +539,88 @@ const alumnosConPagos = new Set(
   }, [egresos, anioSeleccionado]);
   const maxEgreso = Math.max(...egresosPorMes, 1);
 
+
+
+const aniosDisponibles = useMemo(() => {
+  const anioActual = new Date().getFullYear();
+  const rango = [];
+
+  for (let i = anioActual - 5; i <= anioActual + 1; i++) {
+    rango.push(i);
+  }
+
+  return rango;
+}, []);
+
+
+const detectarDispositivo = () => {
+  const ua = navigator.userAgent;
+
+  let sistema = "Desconocido";
+  let navegador = "Desconocido";
+
+  if (/Windows/i.test(ua)) sistema = "Windows";
+  else if (/Mac/i.test(ua)) sistema = "MacOS";
+  else if (/Android/i.test(ua)) sistema = "Android";
+  else if (/iPhone|iPad|iPod/i.test(ua)) sistema = "iOS";
+
+  if (/Chrome/i.test(ua)) navegador = "Chrome";
+  else if (/Safari/i.test(ua)) navegador = "Safari";
+  else if (/Firefox/i.test(ua)) navegador = "Firefox";
+  else if (/Edge/i.test(ua)) navegador = "Edge";
+
+  return { sistema, navegador };
+};
+
+
+
+const registrarDescarga = async () => {
+  try {
+    const { sistema, navegador } = detectarDispositivo();
+
+    await supabase.from("dashboard_descargas").insert([
+      {
+        usuario_id: usuarioActual?.id || "anon",
+       
+
+usuario_nombre: usuarioActual?.nombre || usuarioActual?.email,
+ usuario_email: usuarioActual?.email || "sin-email",
+rol: usuarioActual?.rol || "sin-rol",
+
+
+        archivo_nombre: "dashboard_financiero.xlsx",
+        tipo: "excel_dashboard",
+
+        mes: mesSeleccionado,
+        anio: anioSeleccionado,
+
+        filtros: {
+          busqueda,
+          metodo: filtroMetodo,
+          curso: filtroCurso,
+        },
+
+        total_ingresos: totalIngresos,
+        total_egresos: totalEgresosMes,
+        utilidad: utilidad,
+        total_movimientos: totalMovimientos,
+
+        dispositivo: sistema,
+        sistema_operativo: sistema,
+        navegador: navegador,
+      },
+    ]);
+  } catch (error) {
+    console.error("Error guardando descarga:", error);
+  }
+};
+
+
+
   const generarExcel = async () => {
   try {
 
+    await registrarDescarga();
 
    // 👇 AQUÍ VA TU CÓDIGO NUEVO
 const workbook = new ExcelJS.Workbook();
@@ -456,7 +678,10 @@ fechaCell.alignment = {
 resumenSheet.mergeCells("A4:G4");
 const usuarioCell = resumenSheet.getCell("A4");
 
-usuarioCell.value = "Generado por: Administrador"; // 🔥 luego lo puedes hacer dinámico
+usuarioCell.value = `Generado por: ${
+  usuarioActual?.nombre || usuarioActual?.email
+} (${usuarioActual?.rol || "Usuario"})`;
+
 
 usuarioCell.font = {
   size: 11,
@@ -517,10 +742,54 @@ const valores = resumenSheet.addRow([
   utilidadReal,
   `${margen.toFixed(1)}%`,
 ]);
+const startRow = header.number;
+const endRow = valores.number;
+const startCol = 1;
+const endCol = 7;
+
+for (let row = startRow; row <= endRow; row++) {
+  for (let col = startCol; col <= endCol; col++) {
+    const cell = resumenSheet.getRow(row).getCell(col);
+
+    cell.border = {
+      top: { style: "thin", color: { argb: "FF999999" } },
+      left: { style: "thin", color: { argb: "FF999999" } },
+      bottom: { style: "thin", color: { argb: "FF999999" } },
+      right: { style: "thin", color: { argb: "FF999999" } },
+    };
+  }
+}
+
+// 🔥 BORDES COMPLETOS TIPO TABLA PROFESIONAL
+[header, valores].forEach((row) => {
+  row.eachCell((cell) => {
+    cell.border = {
+      top: { style: "thin", color: { argb: "FFCCCCCC" } },
+      left: { style: "thin", color: { argb: "FFCCCCCC" } },
+      bottom: { style: "thin", color: { argb: "FFCCCCCC" } },
+      right: { style: "thin", color: { argb: "FFCCCCCC" } },
+    };
+
+    cell.alignment = {
+      vertical: "middle",
+      horizontal: "center",
+    };
+  });
+});
+
+resumenSheet.autoFilter = {
+  from: "A8",
+  to: "G8",
+};
+resumenSheet.addRow([]);
+resumenSheet.addRow([]);
 
 // 🔹 formato moneda
 [1,2,3,6].forEach((col) => {
-  valores.getCell(col).numFmt = '"$"#,##0';
+  const cell = valores.getCell(col);
+
+  cell.numFmt = '"$"#,##0';
+  cell.alignment = { horizontal: "right" }; // 🔥 clave
 });
 
 // 🔹 colores KPI
@@ -554,46 +823,43 @@ const maxValor = Math.max(
 chartData.forEach(([label, val]) => {
   const porcentaje = Math.abs(val) / maxValor;
 
+  const barraLength = Math.max(1, Math.floor(porcentaje * 30));
+
+  const barra = "▇".repeat(barraLength);
+
   const row = resumenSheet.addRow([
     label,
     val,
-    "", // columna visual
+    barra,
   ]);
 
   // formato moneda
   row.getCell(2).numFmt = '"$"#,##0';
+  row.getCell(2).alignment = { horizontal: "right" };
 
-  // 🔥 barra visual (tipo gráfico)
-  row.getCell(3).fill = {
-    type: "pattern",
-    pattern: "solid",
-    fgColor: {
+  // estilo visual más limpio
+  row.getCell(3).font = {
+    color: {
       argb:
         label === "Egresos"
           ? "FFFF4D4D"
           : label === "Utilidad"
           ? val >= 0
-            ? "FF39FF14"
+            ? "FF00FF00"
             : "FFFF0000"
-          : "FF00C8FF",
+          : "FF0099FF",
     },
-  };
-
-  row.getCell(3).border = {
-    left: { style: "thin", color: { argb: "FF999999" } },
+    bold: true,
   };
 
   row.getCell(3).alignment = { horizontal: "left" };
-
-  // ancho proporcional
-  row.getCell(3).value = "█".repeat(Math.floor(porcentaje * 20));
 });
 
 // ancho automático
 resumenSheet.columns = [
-  { width: 20 },
-  { width: 20 },
-  { width: 40 },
+  { width: 30 },
+  { width: 30 },
+  { width: 50 },
 ];
 
 /* ======================================================
@@ -793,12 +1059,17 @@ detalleSheet.autoFilter = {
 ====================================================== */
 const buffer = await workbook.xlsx.writeBuffer();
 
-saveAs(
-  new Blob([buffer], {
-    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-  }),
-  "dashboard_financiero.xlsx"
-);
+const blob = new Blob([buffer], {
+  type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+});
+
+// 🔥 iOS / Safari fix
+if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+  const url = window.URL.createObjectURL(blob);
+  window.open(url);
+} else {
+  saveAs(blob, "dashboard_financiero.xlsx");
+}
   } catch (error) {
     console.error("Error exportando:", error);
   }
@@ -840,11 +1111,13 @@ saveAs(
 
 <select value={filtroMetodo} onChange={(e) => setFiltroMetodo(e.target.value)}>
   <option value="todos">Todos los métodos</option>
-  <option value="Efectivo">Efectivo</option>
-  <option value="Transferencia">Transferencia</option>
-  <option value="Tarjeta">Tarjeta</option>
-</select>
 
+  {METODOS_PAGO.map((metodo) => (
+    <option key={metodo} value={metodo}>
+      {metodo}
+    </option>
+  ))}
+</select>
 <select value={filtroCurso} onChange={(e) => setFiltroCurso(e.target.value)}>
   <option value="todos">Todos los cursos</option>
 
@@ -860,9 +1133,13 @@ saveAs(
             ))}
           </select>
 
-          <select value={anioSeleccionado} onChange={(e) => setAnioSeleccionado(Number(e.target.value))}>
-            <option>{anioSeleccionado}</option>
-          </select>
+        <select value={anioSeleccionado} onChange={(e) => setAnioSeleccionado(Number(e.target.value))}>
+  {aniosDisponibles.map((anio) => (
+    <option key={anio} value={anio}>
+      {anio}
+    </option>
+  ))}
+</select>
 
         </section>
 
@@ -901,7 +1178,7 @@ saveAs(
           <div className="stat-card">
   <h3>Utilidad real</h3>
  <p style={{ color: utilidad >= 0 ? "#39ff14" : "#ff3c3c" }}>
-  {formatearPesos(utilidad)}
+  {formatearPesos(utilidadReal)}
 </p>
 </div>
 
@@ -953,17 +1230,18 @@ saveAs(
               </tr>
             </thead>
 
-            <tbody>
-              {ingresosFiltrados.map((i) => (
-                <tr key={i.id}>
-                  <td>{i.tipo}</td>
-                  <td>{i.categoria}</td>
-                  <td>{i.descripcion}</td>
-                  <td>{formatearPesos(i.monto)}</td>
-                  <td>{i.metodo}</td>
-                  <td>{new Date(i.fecha).toLocaleDateString()}</td>
+          
+             <tbody>
+               {top5Ingresos.map((item) => (
+                <tr key={item.id}>
+                 <td>{item.tipo}</td>
+                <td>{item.categoria}</td>
+                <td>{item.descripcion}</td>
+                 <td>{formatearPesos(item.monto)}</td>
+                  <td>{item.metodo}</td>
+                 <td>{new Date(item.fecha).toLocaleDateString()}</td>
                 </tr>
-              ))}
+             ))}
             </tbody>
           </table>
         </section>

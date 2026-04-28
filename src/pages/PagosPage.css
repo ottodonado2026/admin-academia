@@ -59,6 +59,32 @@
   border-color: var(--primary);
 }
 
+
+.pagos-page .form-actions-row {
+  align-items: center;
+  flex-wrap: nowrap;
+}
+
+.pagos-page .form-actions-row select,
+.pagos-page .form-actions-row input,
+.pagos-page .form-actions-row button {
+  height: 56px;
+}
+
+.pagos-page .input-restaurar {
+  min-width: 220px;
+}
+
+.pagos-page .btn-restaurar {
+  border-color: rgba(0, 200, 255, 0.4) !important;
+  background: rgba(0, 200, 255, 0.15) !important;
+  color: #00c8ff !important;
+}
+
+.pagos-page .btn-restaurar:hover {
+  background: rgba(0, 200, 255, 0.3) !important;
+}
+
 /* =========================
    TABLA CONTABLE PRO
 ========================= */
@@ -175,7 +201,7 @@
 .pagos-page .tabla-pagos td:nth-child(2) { width: 10%; }
 
 .pagos-page .tabla-pagos th:nth-child(3),
-.pagos-page .tabla-pagos td:nth-child(3) { width: 11%; }
+.pagos-page .tabla-pagos td:nth-child(3) { width: 2%; }
 
 .pagos-page .tabla-pagos th:nth-child(4),
 .pagos-page .tabla-pagos td:nth-child(4) { width: 11%; }
@@ -184,7 +210,7 @@
 .pagos-page .tabla-pagos td:nth-child(5) { width: 11%; }
 
 .pagos-page .tabla-pagos th:nth-child(6),
-.pagos-page .tabla-pagos td:nth-child(6) { width: 11%; }
+.pagos-page .tabla-pagos td:nth-child(6) { width: 8%; }
 
 .pagos-page .tabla-pagos th:nth-child(7),
 .pagos-page .tabla-pagos td:nth-child(7) { width: 8%; }
@@ -538,4 +564,123 @@
     max-width: 380px;
     padding: 20px;
   }
+}
+
+/* 🔥 FILA SUPERIOR ORDENADA */
+.pagos-page .form-top-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+/* 🔥 FILA BOTONES */
+.pagos-page .form-bottom-row {
+  display: flex;
+  gap: 12px;
+  margin-top: 5px;
+}
+
+/* 🔥 INPUT RESTAURAR MÁS CLARO */
+.pagos-page .input-restaurar {
+  min-width: 180px;
+}
+
+/* 🔥 BOTÓN RESTAURAR MÁS PROFESIONAL */
+.pagos-page .btn-restaurar {
+  background: rgba(0, 200, 255, 0.15);
+  border: 1px solid rgba(0, 200, 255, 0.4);
+  color: #00c8ff;
+}
+
+.pagos-page .btn-restaurar:hover {
+  background: rgba(0, 200, 255, 0.3);
+}
+
+.pagos-page .modal-papelera {
+  max-width: 1100px;
+  width: 95%;
+  min-width: 900px;
+}
+.pagos-page .modal-papelera .tabla-wrapper {
+  max-height: 400px;
+  overflow-y: auto;
+  overflow-x: auto;
+}
+
+.btn-ver-eliminados {
+  background: #374151;
+  color: #fff;
+}
+.pagos-page .modal-papelera .btn-guardar {
+  width: auto;
+  min-width: 90px;
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 8px;
+}
+
+.btn-ver-eliminados:hover {
+  background: #1f2937;
+}
+.pagos-page .modal-papelera table {
+  min-width: 800px;
+}
+.pagos-page .modal-papelera th,
+.pagos-page .modal-papelera td {
+  padding: 14px 12px;
+  font-size: 14px;
+}
+
+/* =========================
+   PAPELERA DE PAGOS
+========================= */
+
+.pagos-page .modal-papelera {
+  max-width: 900px;
+  width: 95%;
+  min-width: unset;
+}
+
+.pagos-page .modal-papelera .tabla-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  max-height: 400px;
+}
+
+.pagos-page .tabla-papelera {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--bg-card);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.pagos-page .tabla-papelera th,
+.pagos-page .tabla-papelera td {
+  padding: 14px 12px;
+  font-size: 14px;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.pagos-page .tabla-papelera th {
+  color: var(--text-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+.pagos-page .tabla-papelera td:nth-child(4) {
+  color: #39ff14;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.pagos-page .btn-restaurar-papelera {
+  width: auto;
+  min-width: 100px;
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 8px;
 }

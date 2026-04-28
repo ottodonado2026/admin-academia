@@ -56,8 +56,9 @@ if (!usuario) {
   alert("Usuario no registrado en el sistema");
   return;
 }
+const rolNormalizado = usuario.role?.toLowerCase();
 
-if (!["owner", "contador", "coordinador"].includes(usuario.role)) {
+if (!["owner", "contador", "coordinador", "gerente"].includes(rolNormalizado)) {
   alert("No tienes permisos");
   return;
 }

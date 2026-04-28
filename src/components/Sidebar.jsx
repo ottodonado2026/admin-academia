@@ -40,8 +40,10 @@ useEffect(() => {
       coordinador: "Coordinador",
     };
 
-    setNombre(usuario.nombre);
-    setRoleLabel(roleLabels[usuario.role] || "Usuario");
+    setNombre(usuario.nombre || user.email);
+    const rolNormalizado = usuario.role?.toLowerCase();
+
+setRoleLabel(roleLabels[rolNormalizado] || usuario.role || "Usuario");
   };
 
   getUserData();

@@ -23,78 +23,60 @@ function AsesoresLogin() {
     });
   };
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
+const handleLogin = async (e) => {
+  e.preventDefault();
+
+  try {
     setError("");
 
-try {
-  // 🔐 LOGIN CON FIREBASE AUTH
- 
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: form.email.trim().toLowerCase(),
+      password: form.password,
+    });
 
-// 🔐 LOGIN CON SUPABASE
-const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
-  email: form.email,
-  password: form.password,
-});
+    if (error) {
+      console.error("ERROR LOGIN SUPABASE:", error);
+      setError(error.message);
+      return;
+    }
 
-if (loginError) {
-  setError("Credenciales incorrectas");
-  return;
-}
+    const user = data?.user;
 
-const user = loginData.user;
+    if (!user) {
+      setError("No se encontró usuario");
+      return;
+    }
 
-      if (!asesor) {
-        setError("Credenciales incorrectas o usuario inactivo");
-        return;
-      }
+    const { data: asesorDB, error: asesorError } = await supabase
+      .from("asesores")
+      .select("*")
+      .eq("auth_uid", user.id)
+      .single();
 
-      if (asesor.estado !== "activo") {
-        setError("Credenciales incorrectas o usuario inactivo");
-        return;
-      }
+    if (asesorError || !asesorDB) {
+      console.error("ERROR BUSCANDO ASESOR:", asesorError);
+      setError("Este usuario no está registrado como asesor");
+      return;
+    }
 
-     localStorage.setItem(
-  "asesorAuth",
-  JSON.stringify({
-    ...asesor,
-    asesorId: asesor.asesor_id,
-  })
-);
-      navigate("/panel-asesor");
-    
-      } catch (error) {
-  if (import.meta.env.DEV) {
-    console.error("Error login:", error);
+    localStorage.setItem(
+      "asesorAuth",
+      JSON.stringify({
+        id: asesorDB.id,
+        nombre: asesorDB.nombre,
+        email: asesorDB.email,
+        asesorId: asesorDB.asesor_id,
+        estado: asesorDB.estado,
+      })
+    );
+
+   navigate("/panel-asesor"); 
+
+  } catch (err) {
+    console.error("ERROR INESPERADO LOGIN:", err);
+    setError(err.message || "Error inesperado");
   }
-
-  switch (error.code) {
-    case "auth/user-not-found":
-      setError("El usuario no existe.");
-      break;
-
-    case "auth/wrong-password":
-      setError("Contraseña incorrecta.");
-      break;
-
-    case "auth/invalid-email":
-      setError("Correo inválido.");
-      break;
-
-    case "auth/too-many-requests":
-      setError("Demasiados intentos. Intenta más tarde.");
-      break;
-
-    case "auth/network-request-failed":
-      setError("Error de conexión. Verifica tu internet.");
-      break;
-
-    default:
-      setError("Error al iniciar sesión.");
-      break;
-  }
-}
-  };
+};
 
   return (
     <div className="asesor-auth-page">

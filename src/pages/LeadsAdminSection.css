@@ -1,0 +1,698 @@
+/* =========================================================
+   LEADS ADMIN SECTION
+   Complementa AsesoresPanel.css sin romper estilos globales
+========================================================= */
+
+.leads-admin-page {
+  width: 100%;
+  min-width: 0;
+}
+
+.leads-admin-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.leads-admin-topbar .primary-neon-btn {
+  flex: 0 0 auto;
+}
+
+/* =========================================================
+   ALERTAS
+========================================================= */
+
+.leads-alert {
+  margin-bottom: 18px;
+  padding: 14px 18px;
+  border-radius: 16px;
+  font-size: 14px;
+  font-weight: 700;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.leads-alert-success {
+  color: #39ff14;
+  background: rgba(57, 255, 20, 0.1);
+  border-color: rgba(57, 255, 20, 0.25);
+}
+
+.leads-alert-error {
+  color: #ff9a9b;
+  background: rgba(255, 77, 79, 0.12);
+  border-color: rgba(255, 77, 79, 0.28);
+}
+
+.leads-alert-warning {
+  color: #ffe184;
+  background: rgba(250, 204, 21, 0.12);
+  border-color: rgba(250, 204, 21, 0.3);
+}
+
+/* =========================================================
+   KPIS
+========================================================= */
+
+.leads-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.leads-kpi-grid .asesor-kpi-card {
+  min-width: 0;
+}
+
+.asesor-kpi-card strong {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.kpi-highlight strong {
+  font-size: 22px;
+  letter-spacing: 0.5px;
+}
+
+/* =========================================================
+   FORMULARIO CREAR LEAD
+========================================================= */
+
+.leads-form-card {
+  margin-bottom: 24px;
+}
+
+.leads-form-card .asesor-admin-form {
+  align-items: end;
+}
+
+.leads-form-card input[readonly] {
+  color: #39ff14;
+  font-weight: 900;
+  cursor: not-allowed;
+  background: rgba(57, 255, 20, 0.06);
+  border-color: rgba(57, 255, 20, 0.24);
+}
+
+.leads-form-card .form-actions {
+  margin-top: 4px;
+}
+
+.leads-form-card button:disabled,
+.leads-table-panel button:disabled,
+.leads-table-panel select:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* =========================================================
+   GRID PRINCIPAL
+========================================================= */
+
+.leads-main-grid {
+  display: block;
+  width: 100%;
+}
+
+.leads-advisors-panel {
+  position: sticky;
+  top: 24px;
+}
+
+.advisor-filter-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.advisor-filter-card {
+  width: 100%;
+  min-height: 72px;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+
+  border-radius: 18px;
+  border: 1px solid var(--asesor-border, rgba(255, 255, 255, 0.08));
+  background: rgba(255, 255, 255, 0.035);
+  color: var(--asesor-text, #f5f7ff);
+
+  cursor: pointer;
+  text-align: left;
+  transition: 0.2s ease;
+}
+
+.advisor-filter-card:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(57, 255, 20, 0.24);
+}
+
+.advisor-filter-card.active {
+  background:
+    linear-gradient(135deg, rgba(57, 255, 20, 0.12), rgba(0, 200, 255, 0.08)),
+    rgba(255, 255, 255, 0.035);
+  border-color: rgba(57, 255, 20, 0.36);
+  box-shadow: 0 14px 32px rgba(57, 255, 20, 0.08);
+}
+
+.advisor-filter-card strong {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 14px;
+  color: var(--asesor-text, #f5f7ff);
+}
+
+.advisor-filter-card span {
+  display: block;
+  color: var(--asesor-soft, #9da6b8);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.advisor-filter-card em {
+  min-width: 42px;
+  height: 42px;
+  padding: 0 10px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 14px;
+  color: #061208;
+  background: linear-gradient(135deg, var(--asesor-green, #39ff14), var(--asesor-cyan, #00c8ff));
+
+  font-style: normal;
+  font-weight: 900;
+}
+
+/* =========================================================
+   TOOLBAR TABLA
+========================================================= */
+
+.leads-table-panel {
+  min-width: 0;
+}
+
+.leads-toolbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+.leads-toolbar h2 {
+  margin: 0 0 6px;
+  font-size: var(--text-h2-size, 24px);
+  line-height: var(--text-h2-line, 1.2);
+}
+
+.leads-toolbar p {
+  margin: 0;
+  color: var(--asesor-soft, #9da6b8);
+}
+
+.leads-toolbar-filters {
+  width: 100%;
+  max-width: 720px;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+}
+
+.leads-toolbar-filters input,
+.leads-toolbar-filters select {
+  width: 100%;
+  min-height: 46px;
+  border-radius: 14px;
+  border: 1px solid var(--asesor-border, rgba(255, 255, 255, 0.08));
+  background: rgba(255, 255, 255, 0.035);
+  color: var(--asesor-text, #f5f7ff);
+  padding: 11px 14px;
+  outline: none;
+  transition: 0.2s ease;
+}
+
+.leads-toolbar-filters input:focus,
+.leads-toolbar-filters select:focus {
+  border-color: rgba(57, 255, 20, 0.45);
+  box-shadow: 0 0 0 3px rgba(57, 255, 20, 0.12);
+}
+
+.leads-toolbar-filters select option {
+  background: #0b0f19;
+  color: #ffffff;
+}
+
+/* =========================================================
+   TABLA
+========================================================= */
+
+.leads-table-wrap {
+  width: 100%;
+  overflow-x: visible;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.leads-admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: auto;
+}
+.leads-admin-table thead th {
+  padding: 14px 16px;
+  text-align: left;
+  color: var(--asesor-soft, #9da6b8);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: rgba(255, 255, 255, 0.045);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.leads-admin-table tbody td {
+  padding: 16px;
+  vertical-align: middle;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.045);
+}
+
+.leads-admin-table tbody tr {
+  transition: 0.18s ease;
+}
+
+.leads-admin-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.leads-admin-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.lead-main-cell,
+.lead-advisor-cell,
+.lead-course-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.lead-main-cell strong,
+.lead-advisor-cell strong,
+.lead-course-cell strong {
+  color: var(--asesor-text, #f5f7ff);
+  font-size: 14px;
+}
+
+.lead-main-cell span,
+.lead-advisor-cell span,
+.lead-course-cell span {
+  color: var(--asesor-soft, #9da6b8);
+  font-size: 12px;
+}
+
+.lead-main-cell small {
+  color: rgba(157, 166, 184, 0.82);
+  font-size: 12px;
+}
+
+.lead-money-cell {
+  color: #39ff14;
+  white-space: nowrap;
+}
+
+.lead-date-cell {
+  display: inline-block;
+  max-width: 130px;
+  color: var(--asesor-soft, #9da6b8);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.lead-actions-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lead-actions-cell .table-btn {
+  white-space: nowrap;
+}
+
+/* =========================================================
+   SELECT ESTADO DEL LEAD
+========================================================= */
+
+.lead-status-select {
+  width: 170px;
+  min-height: 42px;
+  padding: 8px 12px;
+
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  outline: none;
+
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.04);
+
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.lead-status-select:focus {
+  box-shadow: 0 0 0 3px rgba(0, 200, 255, 0.12);
+}
+
+.lead-status-select option {
+  background: #0b0f19;
+  color: #ffffff;
+}
+
+.lead-status-select.estado-lead {
+  color: #93c5fd;
+  background: rgba(96, 165, 250, 0.12);
+  border-color: rgba(96, 165, 250, 0.28);
+}
+
+.lead-status-select.estado-seguimiento {
+  color: #67e8f9;
+  background: rgba(0, 200, 255, 0.12);
+  border-color: rgba(0, 200, 255, 0.3);
+}
+
+.lead-status-select.estado-visita_programada {
+  color: #fde68a;
+  background: rgba(250, 204, 21, 0.12);
+  border-color: rgba(250, 204, 21, 0.3);
+}
+
+.lead-status-select.estado-inscrito {
+  color: #c4b5fd;
+  background: rgba(124, 58, 237, 0.13);
+  border-color: rgba(124, 58, 237, 0.3);
+}
+
+.lead-status-select.estado-activo,
+.lead-status-select.estado-pagado {
+  color: #39ff14;
+  background: rgba(57, 255, 20, 0.12);
+  border-color: rgba(57, 255, 20, 0.34);
+}
+
+.lead-status-select.estado-curso_pausado {
+  color: #fdba74;
+  background: rgba(251, 146, 60, 0.12);
+  border-color: rgba(251, 146, 60, 0.3);
+}
+
+.lead-status-select.estado-falta_pago {
+  color: #ffb1b2;
+  background: rgba(255, 77, 79, 0.12);
+  border-color: rgba(255, 77, 79, 0.32);
+}
+
+
+.lead-status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  min-width: 150px;
+  min-height: 42px;
+  padding: 8px 14px;
+
+  border-radius: 999px;
+
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.lead-status-badge.estado-lead {
+  background: rgba(0, 200, 255, 0.12);
+  border-color: rgba(0, 200, 255, 0.28);
+  color: #8de7ff;
+}
+
+.lead-status-badge.estado-seguimiento {
+  background: rgba(96, 165, 250, 0.13);
+  border-color: rgba(96, 165, 250, 0.3);
+  color: #bfdbfe;
+}
+
+.lead-status-badge.estado-visita_programada {
+  background: rgba(250, 204, 21, 0.13);
+  border-color: rgba(250, 204, 21, 0.3);
+  color: #fde68a;
+}
+
+.lead-status-badge.estado-inscrito {
+  background: rgba(124, 58, 237, 0.18);
+  border-color: rgba(124, 58, 237, 0.38);
+  color: #ddd6fe;
+}
+
+.lead-status-badge.estado-activo {
+  background: rgba(57, 255, 20, 0.12);
+  border-color: rgba(57, 255, 20, 0.28);
+  color: #9dff8a;
+}
+
+.lead-status-badge.estado-curso_pausado {
+  background: rgba(251, 146, 60, 0.14);
+  border-color: rgba(251, 146, 60, 0.32);
+  color: #fed7aa;
+}
+
+.lead-status-badge.estado-falta_pago {
+  background: rgba(255, 77, 79, 0.14);
+  border-color: rgba(255, 77, 79, 0.32);
+  color: #ffb1b2;
+}
+
+.lead-status-badge.estado-pagado {
+  background: rgba(34, 197, 94, 0.16);
+  border-color: rgba(34, 197, 94, 0.36);
+  color: #86efac;
+}
+
+/* =========================================================
+   ESTADO VACÍO
+========================================================= */
+
+.leads-admin-table .empty-cell {
+  padding: 34px 16px !important;
+  text-align: center;
+  color: var(--asesor-soft, #9da6b8);
+}
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media (max-width: 1280px) {
+  .leads-kpi-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+
+}
+
+@media (max-width: 1080px) {
+  .leads-admin-topbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .leads-admin-topbar .primary-neon-btn {
+    width: 100%;
+  }
+
+  .leads-main-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .leads-advisors-panel {
+    position: static;
+  }
+
+  .advisor-filter-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .leads-toolbar {
+    flex-direction: column;
+  }
+
+  .leads-toolbar-filters {
+    width: 100%;
+  }
+}
+
+@media (max-width: 760px) {
+  .leads-kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .leads-form-card .asesor-admin-form {
+    grid-template-columns: 1fr;
+  }
+
+  .advisor-filter-list {
+    grid-template-columns: 1fr;
+  }
+
+  .leads-toolbar-filters {
+    grid-template-columns: 1fr;
+  }
+
+  .leads-table-wrap {
+    border-radius: 16px;
+  }
+}
+
+@media (max-width: 520px) {
+  .leads-kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .advisor-filter-card {
+    min-height: 66px;
+    padding: 12px 14px;
+  }
+
+  .advisor-filter-card em {
+    min-width: 38px;
+    height: 38px;
+    border-radius: 12px;
+  }
+
+ 
+}
+
+
+/* =========================================
+   MOBILE TABLE → PROFESSIONAL CARD VIEW
+========================================= */
+
+@media (max-width: 768px) {
+
+  .leads-admin-table {
+    border: 0;
+  }
+
+  .leads-admin-table thead {
+    display: none;
+  }
+
+  .leads-admin-table tbody {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* CARD BASE */
+  .leads-admin-table tr {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 16px;
+    border-radius: 18px;
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.04),
+      rgba(255, 255, 255, 0.02)
+    );
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  /* ROW ITEM */
+  .leads-admin-table td {
+    display: grid;
+    grid-template-columns: 110px 1fr;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    border: none;
+  }
+
+  /* LABEL (IZQUIERDA) */
+  .leads-admin-table td::before {
+    content: attr(data-label);
+    font-size: 11px;
+    font-weight: 700;
+    color: #7f8aa3;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  /* CONTENIDO (DERECHA) */
+  .lead-main-cell,
+  .lead-advisor-cell,
+  .lead-course-cell {
+    align-items: flex-start;
+    text-align: left;
+  }
+
+  .lead-main-cell strong {
+    font-size: 15px;
+  }
+
+  .lead-main-cell span,
+  .lead-main-cell small {
+    font-size: 12px;
+  }
+
+  /* ESTADO */
+  .lead-status-select {
+    width: 100%;
+    justify-self: end;
+  }
+
+  /* VALOR (DESTACADO) */
+  .lead-money-cell {
+    font-size: 16px;
+    font-weight: 900;
+    color: #39ff14;
+  }
+
+  /* FECHA */
+  .lead-date-cell {
+    text-align: right;
+    font-size: 12px;
+  }
+
+  /* ACCIONES */
+  .lead-actions-cell {
+    justify-content: flex-end;
+    width: 100%;
+  }
+
+  .lead-actions-cell .table-btn {
+    width: 100%;
+    text-align: center;
+  }
+
+  /* DIVIDER VISUAL ENTRE BLOQUES */
+  .leads-admin-table td:not(:last-child) {
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    padding-bottom: 10px;
+  }
+}

@@ -2,20 +2,11 @@ import { useEffect, useMemo, useState } from "react";
 
 export default function ProfesorSidebar({ activeView, setActiveView }) {
   const [user, setUser] = useState(null);
-  const [profesor, setProfesor] = useState(null);
-
+ 
   useEffect(() => {
     const userData = JSON.parse(localStorage.getItem("user"));
-    const profesores = JSON.parse(localStorage.getItem("profesores")) || [];
 
-    setUser(userData);
 
-    if (userData?.id) {
-      const prof = profesores.find(
-        (p) => String(p.id) === String(userData.id)
-      );
-      setProfesor(prof || null);
-    }
   }, []);
 
   const menu = useMemo(
@@ -35,8 +26,13 @@ export default function ProfesorSidebar({ activeView, setActiveView }) {
     window.location.href = "/";
   };
 
-  const nombreProfesor = profesor?.nombre || user?.nombre || "Profesor";
-  const profesorId = profesor?.id || user?.id || "N/A";
+ const nombreProfesor = user?.nombre || "Profesor";
+const profesorId =
+  user?.id ||
+  user?.profesorId ||
+  user?.numeroDocumento ||
+  user?.email?.split("@")[0] ||
+  "N/A";
 
   return (
     <aside className="profesor-sidebar">

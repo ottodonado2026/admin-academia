@@ -50,9 +50,8 @@
 
 .clases-grid {
   display: grid;
-  grid-template-columns: 420px 1fr;
-  gap: 20px;
-  align-items: start;
+  grid-template-columns: 1fr;
+  gap: 24px;
 }
 
 .clases-form-card,

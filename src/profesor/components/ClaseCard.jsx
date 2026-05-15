@@ -60,31 +60,12 @@ export default function ClaseCard({
         </div>
       </div>
 
-      <div className="clase-card-actions">
-        <button type="button" onClick={() => onOpen(clase)}>
-          Ver
-        </button>
-
-        <button type="button" onClick={() => onEdit(clase)}>
-          Editar
-        </button>
-
-        {clase.estado !== "completada" && (
-          <button type="button" onClick={() => onComplete(clase.id)}>
-            Completar
-          </button>
-        )}
-
-        {clase.estado !== "cancelada" && (
-          <button type="button" className="btn-warn" onClick={() => onCancel(clase.id)}>
-            Cancelar
-          </button>
-        )}
-
-        <button type="button" className="btn-danger" onClick={() => onDelete(clase.id)}>
-          Eliminar
-        </button>
-      </div>
+<div className="clase-card-actions">
+  <button type="button" onClick={() => onOpen(clase)}>
+    Ver clase
+  </button>
+</div>
+      
     </article>
   );
 }

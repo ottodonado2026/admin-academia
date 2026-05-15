@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 
-export default function ModalClase({ clase, onClose, onSave, pagos = [] }) {
+export default function ModalClase({ clase, onClose, onGuardar, pagos = [] }) {
   const [localClase, setLocalClase] = useState(clase);
 
   useEffect(() => {
@@ -21,9 +21,11 @@ export default function ModalClase({ clase, onClose, onSave, pagos = [] }) {
     }));
   };
 
-  const handleSave = () => {
-    onSave(localClase);
-  };
+ const handleSave = () => {
+  if (!onGuardar || !localClase?.id) return;
+
+  onGuardar(localClase);
+};
 
   const resumen = useMemo(() => {
     const total = alumnos.length;
@@ -40,8 +42,13 @@ export default function ModalClase({ clase, onClose, onSave, pagos = [] }) {
           <div>
             <h2>{localClase.curso}</h2>
             <p>
-              {localClase.fecha} · {localClase.horaInicio}
-              {localClase.horaFin ? ` - ${localClase.horaFin}` : ""} ·{" "}
+             {localClase.fecha} ·{" "}
+              {localClase.horaInicio || localClase.hora_inicio}
+
+              {(localClase.horaFin || localClase.hora_fin)
+                ? ` - ${localClase.horaFin || localClase.hora_fin}`
+                : ""} ·{" "}
+
               {localClase.modalidad}
             </p>
           </div>
@@ -64,7 +71,7 @@ export default function ModalClase({ clase, onClose, onSave, pagos = [] }) {
 
           <div className="modal-info-box">
             <span>Duración</span>
-            <strong>{localClase.duracionHoras || 0}h</strong>
+           <strong>{localClase.duracionHoras || localClase.duracion_horas || 0}h</strong>
           </div>
 
           <div className="modal-info-box">
@@ -152,6 +159,18 @@ export default function ModalClase({ clase, onClose, onSave, pagos = [] }) {
                             e.target.value === "" ? null : Number(e.target.value),
                         })
                       }
+                    />
+
+                    <input
+                      type="number"
+                      min="0"
+                      placeholder="Fallas"
+                     value={alumno.fallas ?? ""}
+                      onChange={(e) =>
+                        handleAlumnoChange(alumno.id, {
+                          fallas: e.target.value === "" ? 0 : Number(e.target.value),
+                        })
+                     }
                     />
                   </div>
 

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "../services/supabaseClient";
 import "./LoginProfesor.css";
 
 function LoginProfesor() {
@@ -9,7 +10,7 @@ function LoginProfesor() {
   const [password, setPassword] = useState("");
 const [fade, setFade] = useState(false);
 
-  const handleLogin = (e) => {
+ const handleLogin = async (e) => {
     e.preventDefault();
 
     if (!email || !password) {
@@ -17,24 +18,43 @@ const [fade, setFade] = useState(false);
       return;
     }
 
-    const profesores = JSON.parse(localStorage.getItem("profesores") || "[]");
+    const { data, error } = await supabase
+  .from("profesores")
+  .select("*");
 
-    const profesor = profesores.find(
-      (p) => p.email === email && String(p.password) === password
-    );
+if (error) {
+  console.error("Error cargando profesores:", error);
+  alert("Error validando profesor");
+  return;
+}
 
-    if (profesor) {
-      localStorage.setItem("user", JSON.stringify({
-        id: profesor.id,
-        role: "profesor",
-        email: profesor.email
-      }));
+const profesor = (data || [])
+  .map((p) => ({
+    id: p.id,
+    ...p.data,
+  }))
+  .find(
+  (p) =>
+    String(p.email).trim().toLowerCase() === email.trim().toLowerCase() &&
+    String(p.password).trim() === password.trim()
+);
 
-      navigate("/panel-profesor");
-      return;
-    }
+if (profesor) {
+  localStorage.setItem(
+    "user",
+    JSON.stringify({
+      id: profesor.id,
+      role: "profesor",
+      nombre: profesor.nombre,
+      email: profesor.email,
+    })
+  );
 
-    alert("Credenciales incorrectas");
+  navigate("/panel-profesor");
+  return;
+}
+
+alert("Credenciales incorrectas");
   };
 
   return (

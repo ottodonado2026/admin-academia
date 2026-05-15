@@ -44,6 +44,7 @@ const alumnosAdaptados = (data || []).map((a) => ({
   numeroDocumento: a.numero_documento || a.numeroDocumento,
   nombreAcudiente: a.nombre_acudiente || a.nombreAcudiente,
   telefonoAcudiente: a.telefono_acudiente || a.telefonoAcudiente,
+  formatoClase: a.formato_clase || a.formatoClase || "",
 }));
 
 setAlumnos(alumnosAdaptados);
@@ -59,6 +60,7 @@ setAlumnos(alumnosAdaptados);
   const [descuento, setDescuento] = useState("");
   const [valorEditadoManual, setValorEditadoManual] = useState(false);
   const [modalidad, setModalidad] = useState("");
+  const [formatoClase, setFormatoClase] = useState("");
   const [tipo, setTipo] = useState("");
   const [duracion, setDuracion] = useState("");
   const [estado, setEstado] = useState("activo");
@@ -91,6 +93,17 @@ setAlumnos(alumnosAdaptados);
   personalizado: "Personalizado",
   semi: "Semi-personalizado",
   grupal: "Grupal",
+};
+
+const modalidadLabels = {
+  regular: "Regular",
+  intensiva: "Intensiva",
+  superintensiva: "Super-intensiva",
+};
+
+const formatoClaseLabels = {
+  presencial: "Presencial",
+  virtual: "Virtual",
 };
 
   useEffect(() => {
@@ -184,6 +197,14 @@ useEffect(() => {
     return nuevaFecha;
   };
 
+const formatearMonedaCOP = (valor) => {
+  if (!valor) return "";
+
+  const soloNumeros = valor.toString().replace(/\D/g, "");
+
+  return Number(soloNumeros).toLocaleString("es-CO");
+};
+
   const formatearFechaPago = (fecha) => {
     return fecha.toLocaleDateString("es-CO", {
       weekday: "long",
@@ -224,160 +245,141 @@ useEffect(() => {
     return formatearFechaPago(proximaFecha);
   };
 
-  const limpiarFormulario = () => {
-    setNombre("");
-    setCurso("");
-    setValor("");
-    setDescuento("");
-    setValorEditadoManual(false);
-    setModalidad("");
-    setTipo("");
-    setDuracion("");
-    setTelefono("");
-    setTipoDocumento("");
-    setEstado("activo");
-    setEditandoId(null);
-    setNumeroDocumento("");
-  };
+ const limpiarFormulario = () => {
+  setNombre("");
+  setCurso("");
+  setValor("");
+  setDescuento("");
+  setValorEditadoManual(false);
+  setModalidad("");
+  setFormatoClase("");
+  setTipo("");
+  setDuracion("");
+  setTelefono("");
+  setEmail("");
+  setTipoDocumento("");
+  setNumeroDocumento("");
+  setEdad("");
+  setNombreAcudiente("");
+  setTelefonoAcudiente("");
+  setEstado("activo");
+  setEditandoId(null);
+};
 
-  const agregarAlumno = async () => {
+  
+const agregarAlumno = async () => {
   if (!nombre || !curso || !valor || !tipo) {
     alert("Completa los campos obligatorios");
     return;
   }
 
+  const cursoIdBonito = generarIdCurso(cursoSeleccionado?.nombre || "");
 
-  const cursoIdBonito = generarIdCurso(
-  cursoSeleccionado?.nombre || ""
-);
-
-if (editandoId !== null) {
-  try {
-    const { error } = await supabase
-      .from("alumnos")
-      .update({
-        nombre,
-        curso_id: cursoIdBonito,
-        curso_nombre: cursoSeleccionado?.nombre || "",
-        valor: Number(valor),
-        valor_base: Number(precioBaseCurso || 0),
-        descuento: Number(descuento) || 0,
-        modalidad,
-        tipo_programa: tipo,
-        duracion,
-        estado,
-        telefono,
-        tipo_documento: tipoDocumento,
-        numero_documento: numeroDocumento,
-      })
-      .eq("id", editandoId);
-
-    if (error) {
-      console.error("Error editando alumno:", error);
-      return;
-    }
-
-    // refrescar desde Supabase
-    const { data } = await supabase.from("alumnos").select("*");
-    setAlumnos(data || []);
-
-    limpiarFormulario();
-  } catch (error) {
-    console.error("Error editando alumno:", error);
-  }
-
-  return;
-}
-
-
-
-  // 🟢 CREAR EN FIREBASE
-  const nuevo = {
-    alumnoId: await generarIdAlumnoBonito(nombre),
+  const alumnoData = {
     nombre,
-    telefono,
-    email,
-    tipoDocumento,
-    numeroDocumento,
-    edad,
-  nombreAcudiente,
-  telefonoAcudiente,
-   cursoId: cursoIdBonito,
-cursoNombre: cursoSeleccionado?.nombre || "",
-    valor: Number(valor),
-    valorBase: Number(precioBaseCurso || 0),
-    descuento: Number(descuento) || 0,
-    valorEditadoManual,
-    modalidad,
-   tipoPrograma: tipo,
-    duracion,
-    estado,
+    telefono: telefono || "",
+    email: email && email.trim() !== "" ? email : "sin-email@temp.com",
+
+    tipo_documento: tipoDocumento || "",
+    numero_documento: numeroDocumento || "",
+    edad: edad || "",
+    nombre_acudiente: nombreAcudiente || "",
+    telefono_acudiente: telefonoAcudiente || "",
+
+    curso_id: cursoIdBonito || "",
+    curso_nombre: cursoSeleccionado?.nombre || "",
+
+    valor: Number(valor || 0),
+    valor_base: Number(precioBaseCurso || 0),
+    descuento: Number(descuento || 0),
+
+    modalidad: modalidad || "",
+    formato_clase: formatoClase || "",
+    tipo_programa: tipo || "",
+    duracion: duracion || "",
+
+    estado: estado || "activo",
   };
 
   try {
-   
-   const { error: errorSupabaseAlumno } = await supabase
-  .from("alumnos")
-  .insert([
-    {
-      alumno_id: nuevo.alumnoId,
-      nombre: nuevo.nombre,
-      telefono: nuevo.telefono || "",
+    if (editandoId !== null) {
+      const { error } = await supabase
+        .from("alumnos")
+        .update({
+          ...alumnoData,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", editandoId);
 
-      email: email && email.trim() !== ""
-        ? email
-        : "sin-email@temp.com",
-        asesor_id: null,
-      tipo_documento: nuevo.tipoDocumento || "",
-      numero_documento: nuevo.numeroDocumento || "",
-      edad: nuevo.edad || "",
-      nombre_acudiente: nuevo.nombreAcudiente || "",
-      telefono_acudiente: nuevo.telefonoAcudiente || "",
-      curso_id: nuevo.cursoId || "",
-      curso_nombre: nuevo.cursoNombre || "",
-      valor: Number(nuevo.valor || 0),
-      valor_base: Number(nuevo.valorBase || 0),
-      descuento: Number(nuevo.descuento || 0),
-      modalidad: nuevo.modalidad || "",
-      tipo_programa: nuevo.tipoPrograma || "",
-      duracion: nuevo.duracion || "",
-      estado: nuevo.estado || "activo",
-      created_at: new Date().toISOString(),
-    },
-  ]);
+      if (error) {
+        console.error("Error editando alumno:", error);
+        alert("Error editando alumno: " + error.message);
+        return;
+      }
+      // 🔥 ACTUALIZAR PLAN DE PAGOS DEL ALUMNO
+const { error: errorPago } = await supabase
+  .from("pagos")
+  .update({
+    valor_total: Number(valor || 0),
+    cuota: Number(valor || 0) / Number(duracion || 1),
+    plazo: Number(duracion || 1),
+    tipo_cuota: tipo || "mensual",
+    updated_at: new Date().toISOString(),
+  })
+  .eq("alumno_db_id", editandoId);
 
-if (errorSupabaseAlumno) {
- console.error("Error guardando alumno en Supabase:", errorSupabaseAlumno);
-alert("Error Supabase: " + errorSupabaseAlumno.message);
+if (errorPago) {
+  console.error("Error actualizando pagos:", errorPago);
 }
 
 
-    // 🔥 refrescar desde Supabase
-const { data, error } = await supabase
-  .from("alumnos")
-  .select("*");
+    } else {
+      const nuevoAlumnoId = await generarIdAlumnoBonito(nombre);
 
-if (!error) {
-  const alumnosAdaptados = (data || []).map((a) => ({
-    ...a,
-    alumnoId: a.alumno_id,
-    cursoId: a.curso_id,
-    cursoNombre: a.curso_nombre,
-    valorBase: a.valor_base,
-    tipoPrograma: a.tipo_programa,
-    tipoDocumento: a.tipo_documento,
-    numeroDocumento: a.numero_documento,
-    nombreAcudiente: a.nombre_acudiente,
-    telefonoAcudiente: a.telefono_acudiente,
-  }));
+      const { error } = await supabase.from("alumnos").insert([
+        {
+          alumno_id: nuevoAlumnoId,
+          ...alumnoData,
+          asesor_id: null,
+          created_at: new Date().toISOString(),
+        },
+      ]);
 
-  setAlumnos(alumnosAdaptados);
-}
+      if (error) {
+        console.error("Error guardando alumno:", error);
+        alert("Error Supabase: " + error.message);
+        return;
+      }
+    }
+
+    const { data, error } = await supabase.from("alumnos").select("*");
+
+    if (!error) {
+     const alumnosAdaptados = (data || []).map((a) => ({
+  ...a,
+
+  // 🔥 compatibilidad total
+  alumnoId: a.alumno_id || a.alumnoId,
+  cursoId: a.curso_id || a.cursoId,
+  cursoNombre: a.curso_nombre || a.cursoNombre,
+  valorBase: a.valor_base || a.valorBase,
+  tipoPrograma: a.tipo_programa || a.tipoPrograma,
+  tipoDocumento: a.tipo_documento || a.tipoDocumento,
+  numeroDocumento: a.numero_documento || a.numeroDocumento,
+  nombreAcudiente: a.nombre_acudiente || a.nombreAcudiente,
+  telefonoAcudiente: a.telefono_acudiente || a.telefonoAcudiente,
+
+  // ✅ Nuevo campo separado de modalidad
+  formatoClase: a.formato_clase || a.formatoClase || "",
+}));
+
+      setAlumnos(alumnosAdaptados);
+    }
 
     limpiarFormulario();
-
   } catch (error) {
-    console.error("Error creando alumno:", error);
+    console.error("Error guardando alumno:", error);
+    alert("Error guardando alumno");
   }
 };
 
@@ -428,6 +430,7 @@ const eliminarAlumno = async (id) => {
     setDescuento(String(alumno.descuento ?? ""));
     setValorEditadoManual(Boolean(alumno.valorEditadoManual));
     setModalidad(alumno.modalidad || "");
+    setFormatoClase(alumno.formatoClase || alumno.formato_clase || "");
     setTipo(alumno.tipoPrograma || "");
     setDuracion(alumno.duracion || "");
     setEstado(alumno.estado || "activo");
@@ -511,7 +514,46 @@ const eliminarAlumno = async (id) => {
   ]}
 />
 
+<CustomSelect
+  value={formatoClase}
+  onChange={(e) => setFormatoClase(e.target.value)}
+  placeholder="Formato clase"
+  options={[
+    { value: "regular", label: "Regular" },
+    { value: "intensiva", label: "Intensiva" },
+    { value: "superintensiva", label: "Super-intensiva" },
+  ]}
+/>
+
 <div className="tipo-row">
+  
+<input
+  type="text"
+  placeholder="Precio"
+  value={formatearMonedaCOP(valor)}
+  onChange={(e) => {
+    const valorLimpio = e.target.value.replace(/\D/g, "");
+
+    setValor(valorLimpio);
+    setValorEditadoManual(true);
+  }}
+  className="input-precio"
+/>
+
+  <input
+    type="number"
+    placeholder="% Desc"
+    value={descuento}
+    onChange={(e) => {
+      setDescuento(e.target.value);
+      setValorEditadoManual(false);
+    }}
+    className="input-descuento"
+  />
+
+ 
+</div>
+
   <CustomSelect
     value={tipo}
     onChange={(e) => {
@@ -526,34 +568,9 @@ const eliminarAlumno = async (id) => {
     ]}
   />
 
-  <input
-    type="number"
-    placeholder="Precio"
-    value={valor}
-    onChange={(e) => {
-      setValor(e.target.value);
-      setValorEditadoManual(true);
-    }}
-    className="input-precio"
-  />
-
-  <input
-    type="number"
-    placeholder="% Desc"
-    value={descuento}
-    onChange={(e) => {
-      setDescuento(e.target.value);
-      setValorEditadoManual(false);
-    }}
-    className="input-descuento"
-  />
-
-  {curso && tipo && inicioCurso && (
+   {curso && tipo && inicioCurso && (
     <div className="inicio-badge">🚀 {inicioCurso}</div>
   )}
-</div>
-
-
 
           <button type="button" onClick={agregarAlumno}>
             {editandoId ? "Guardar cambios" : "Agregar alumno"}
@@ -647,15 +664,34 @@ const eliminarAlumno = async (id) => {
   </div>
 
   {/* FILA 2 */}
-  <div className="card-item">
-    <span>Modalidad</span>
-    <strong>{a.modalidad || "-"}</strong>
-  </div>
+{/* FILA 2 */}
+<div className="card-item">
+  <span>Modalidad académica</span>
+  <strong>
+    {modalidadLabels[a.modalidad] || a.modalidad || "-"}
+  </strong>
+</div>
 
-  <div className="card-item">
-    <span>Tipo</span>
-    <strong>{tipoLabels[a.tipoPrograma] || "-"}</strong>
-  </div>
+<div className="card-item">
+  <span>Formato de clase</span>
+  <strong>
+    {formatoClaseLabels[a.formatoClase || a.formato_clase] ||
+      a.formatoClase ||
+      a.formato_clase ||
+      "-"}
+  </strong>
+</div>
+
+<div className="card-item">
+  <span>Tipo</span>
+  <strong>
+    {tipoLabels[a.tipoPrograma || a.tipo_programa || a.tipo] ||
+      a.tipoPrograma ||
+      a.tipo_programa ||
+      a.tipo ||
+      "-"}
+  </strong>
+</div>
 
   {/* FILA 3 */}
   <div className="card-item">
@@ -774,14 +810,41 @@ const eliminarAlumno = async (id) => {
                   <strong>{alumnoSeleccionado.estado || "-"}</strong>
                 </div>
 
-                <div className="modal-item">
-                  <span>Modalidad</span>
-                  <strong>{alumnoSeleccionado.modalidad || "-"}</strong>
-                </div>
+<div className="modal-item">
+  <span>Modalidad académica</span>
+  <strong>
+    {modalidadLabels[alumnoSeleccionado?.modalidad] ||
+      alumnoSeleccionado?.modalidad ||
+      "-"}
+  </strong>
+</div>
 
-                <div className="modal-item">
-                  <span>Tipo</span>
-<strong>{alumnoSeleccionado.tipoPrograma || "-"}</strong>                </div>
+<div className="modal-item">
+  <span>Formato de clase</span>
+  <strong>
+    {formatoClaseLabels[
+      alumnoSeleccionado?.formatoClase || alumnoSeleccionado?.formato_clase
+    ] ||
+      alumnoSeleccionado?.formatoClase ||
+      alumnoSeleccionado?.formato_clase ||
+      "-"}
+  </strong>
+</div>
+
+<div className="modal-item">
+  <span>Tipo</span>
+  <strong>
+    {tipoLabels[
+      alumnoSeleccionado?.tipoPrograma ||
+        alumnoSeleccionado?.tipo_programa ||
+        alumnoSeleccionado?.tipo
+    ] ||
+      alumnoSeleccionado?.tipoPrograma ||
+      alumnoSeleccionado?.tipo_programa ||
+      alumnoSeleccionado?.tipo ||
+      "-"}
+  </strong>
+</div>
 
                 <div className="modal-item">
                   <span>Duración</span>
@@ -796,7 +859,7 @@ const eliminarAlumno = async (id) => {
                   <span>Teléfono</span>
                   <strong>{alumnoSeleccionado.telefono || "-"}</strong>
                 </div>
-{alumnoSeleccionado.tipoDocumento === "tarjeta_identidad" && (
+{alumnoSeleccionado.tipoDocumento === "ti" && (
   <>
     <div className="modal-info-card">
       <small>Edad</small>

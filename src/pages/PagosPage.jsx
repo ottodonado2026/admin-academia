@@ -48,19 +48,15 @@ function PagosPage() {
     navigate("/");
   };
 
-  const calcularTotales = (plan) => {
-    const totalPagado = (plan.pagos || []).reduce(
-      (acc, item) => acc + Number(item.monto || 0),
-      0
-    );
+const calcularTotales = (plan) => {
+  const totalPagado = Number(plan.montoPagado || 0);
+  const saldo = Number(plan.saldoPendiente || 0);
 
-    const saldo = plan.valorTotal - totalPagado;
-
-    return {
-      totalPagado,
-      saldo,
-    };
+  return {
+    totalPagado,
+    saldo,
   };
+};
 
 const [planes, setPlanes] = useState([]);
 
@@ -86,7 +82,11 @@ const [cargandoPapelera, setCargandoPapelera] = useState(false);
   const puedeModificarPagos =
   usuarioActual?.rol === "gerente" ||
   usuarioActual?.rol === "contador";
-  const alumnosDisponibles = listaAlumnos.filter((a) => {
+
+const alumnosDisponibles = listaAlumnos.filter((a) => {
+  // 🔥 permitir el alumno que se está editando
+  if (String(a.alumnoId) === String(alumnoId)) return true;
+
   return !planes.some(
     (p) =>
       String(p.alumnoId) === String(a.alumnoId) ||
@@ -102,10 +102,10 @@ const fetchPagos = async () => {
 .eq("eliminado", false)
       .order("created_at", { ascending: false });
 
-    if (error) {
-      console.error("Error Supabase pagos:", error);
-      return;
-    }
+if (error) {
+  console.error("Error Supabase pagos:", error);
+  return [];
+}
 
     const pagosConHistorial = await Promise.all(
       (data || []).map(async (p) => {
@@ -129,30 +129,50 @@ const fetchPagos = async () => {
           referenciaPago: h.referencia_pago || "",
         }));
 
-        const totalPagado = abonos.reduce(
-          (acc, item) => acc + Number(item.monto || 0),
-          0
-        );
+const totalPagado = abonos.reduce(
+  (acc, item) => acc + Number(item.monto || 0),
+  0
+);
+
+const saldoPendiente = Number(p.valor_total || 0) - totalPagado;
+
+const planTemporal = {
+  ...p,
+  valorTotal: Number(p.valor_total || 0),
+  montoPagado: Number(totalPagado || 0),
+  saldoPendiente: Number(saldoPendiente || 0),
+  plazo: Number(p.plazo || 0),
+  cuota: Number(p.cuota || 0),
+  tipoCuota: p.tipo_cuota || "",
+  fechaInicio: p.fecha_inicio || null,
+};
+
+const estadoCalculado = calcularEstado(planTemporal, totalPagado);
 
         return {
           ...p,
           id: p.id,
           alumnoId: p.alumno_id,
           alumnoDbId: p.alumno_db_id,
-          valorTotal: Number(p.valor_total),
-          montoPagado: totalPagado,
-          saldoPendiente: Number(p.valor_total || 0) - totalPagado,
-          tipoCuota: p.tipo_cuota,
-          fechaInicio: p.fecha_inicio,
-          pagos: abonos,
-          createdAt: p.created_at,
+          valorTotal: Number(p.valor_total || 0),
+montoPagado: totalPagado,
+saldoPendiente,
+plazo: Number(p.plazo || 0),
+cuota: Number(p.cuota || 0),
+tipoCuota: p.tipo_cuota,
+fechaInicio: p.fecha_inicio,
+pagos: abonos,
+estado: estadoCalculado || "Pendiente",
+createdAt: p.created_at,
         };
       })
     );
 
     setPlanes(pagosConHistorial);
+return pagosConHistorial;
   } catch (error) {
-    console.error("Error cargando pagos (catch):", error);
+   console.error("Error cargando pagos (catch):", error);
+return [];
   }
 };
 
@@ -248,9 +268,14 @@ useEffect(() => {
     return Math.round(cuota);
   };
 
-  const calcularEstado = (p, totalPagado) => {
+const calcularEstado = (p, totalPagado) => {
+  totalPagado = Number(totalPagado || 0);
+
+  if (totalPagado <= 0) return "Pendiente";
+
   if (totalPagado >= Number(p.valorTotal || 0)) return "Pagado";
-  if (!p.fechaInicio || !p.cuota) return "Pendiente";
+
+  if (!p.fechaInicio || Number(p.cuota || 0) <= 0) return "Pendiente";
 
   const hoy = new Date();
   const inicio = new Date(p.fechaInicio);
@@ -284,12 +309,69 @@ useEffect(() => {
   const esperado = cuotasVencidas * Number(p.cuota || 0);
 
   if (totalPagado >= esperado) return "Al día";
+
   return "En mora";
 };
 
-  const buscarAlumnoSeleccionado = () => {
-    return listaAlumnos.find((a) => String(a.alumnoId) === String(alumnoId));
-  };
+const sincronizarEstadoPagadoAlumnoYLead = async (pago, estadoFinal) => {
+  if (estadoFinal !== "Pagado") return;
+
+  const alumnoDbId = pago.alumnoDbId || pago.alumno_db_id;
+  const alumnoId = pago.alumnoId || pago.alumno_id;
+  const cursoId = pago.cursoId || pago.curso_id;
+
+  if (!alumnoDbId && !alumnoId) return;
+
+  await supabase
+    .from("alumnos")
+    .update({
+      estado: "pagado",
+      updated_at: new Date().toISOString(),
+    })
+    .or(`id.eq.${alumnoDbId},alumno_id.eq.${alumnoId}`);
+
+  const { data: alumnoData } = await supabase
+    .from("alumnos")
+    .select("id, alumno_id, telefono, numero_documento, curso_id")
+    .or(`id.eq.${alumnoDbId},alumno_id.eq.${alumnoId}`)
+    .maybeSingle();
+
+  const alumnoTelefono = alumnoData?.telefono || "";
+  const alumnoDocumento = alumnoData?.numero_documento || "";
+  const alumnoCursoId = alumnoData?.curso_id || cursoId || "";
+
+  let queryLead = supabase
+    .from("leads")
+    .update({
+      estado: "pagado",
+      alumno_id: alumnoData?.alumno_id || alumnoId || null,
+      alumno_db_id: alumnoData?.id || alumnoDbId || null,
+      updated_at: new Date().toISOString(),
+    });
+
+  if (alumnoData?.id || alumnoId) {
+    queryLead = queryLead.or(
+      `alumno_db_id.eq.${alumnoData?.id || alumnoDbId},alumno_id.eq.${alumnoData?.alumno_id || alumnoId}`
+    );
+  } else if (alumnoDocumento && alumnoCursoId) {
+    queryLead = queryLead
+      .eq("numero_documento", alumnoDocumento)
+      .eq("curso_id", alumnoCursoId);
+  } else if (alumnoTelefono && alumnoCursoId) {
+    queryLead = queryLead
+      .eq("telefono", alumnoTelefono)
+      .eq("curso_id", alumnoCursoId);
+  }
+
+  await queryLead;
+};
+
+
+const buscarAlumnoSeleccionado = () => {
+  return listaAlumnos.find(
+    (a) => String(a.alumnoId) === String(alumnoId)
+  );
+};
 
   const existePlanAlumno = (alumnoSeleccionado) => {
     return planes.find(
@@ -374,12 +456,11 @@ try {
     ])
     .select();
 
-  if (error) {
-    console.error("Error Supabase:", error);
-    alert("Error guardando en Supabase");
-    return;
-  }
-
+if (error) {
+  console.error("Error Supabase completo:", error);
+  alert(error.message || "Error guardando en Supabase");
+  return;
+}
   const supabaseId = supabaseData?.[0]?.id;
 
   setPlanes((prev) => [
@@ -466,10 +547,13 @@ const eliminarPago = async (id) => {
   setPlanes((prev) => prev.filter((p) => p.id !== id));
 };
 
-  const editarPago = (pago) => {
-    setAlumnoId(pago.alumnoId || "");
-    setModalidad(pago.modalidad);
-  };
+const editarPago = (pago) => {
+  setAlumnoId(pago.alumnoId || "");
+  setAlumno(pago.alumno || "");
+  setCurso(pago.cursoId || pago.curso || "");
+  setValorCurso(pago.valorTotal || "");
+  setModalidad(pago.tipoCuota || pago.modalidad || "mensual");
+};
 
   const recalcularPago = (pago, nuevaModalidad) => {
     return {
@@ -479,14 +563,51 @@ const eliminarPago = async (id) => {
     };
   };
 
-  const cambiarModalidad = async (id, nuevaModalidad) => {
-    const actualizados = planes.map((p) =>
-      p.id === id ? recalcularPago(p, nuevaModalidad) : p
-    );
+const cambiarModalidad = async (id, nuevaModalidad) => {
+  // 🔒 permisos (extra seguridad)
+  if (!usuarioActual || !["gerente", "contador"].includes(usuarioActual.rol)) {
+    alert("No tienes permisos para modificar modalidad");
+    return;
+  }
 
-   setPlanes(actualizados);
-await fetchPagos();
-  };
+  const pago = planes.find((p) => p.id === id);
+  if (!pago) return;
+
+  // 🔥 recalcular cuota correctamente
+  const nuevaCuota = calcularCuota(
+    Number(pago.valorTotal || 0),
+    Number(pago.plazo || 1),
+    nuevaModalidad
+  );
+
+  try {
+    // 🔥 GUARDAR EN SUPABASE (CLAVE)
+    const { error } = await supabase
+      .from("pagos")
+      .update({
+        tipo_cuota: nuevaModalidad,
+        modalidad: nuevaModalidad,
+        cuota: nuevaCuota,
+      })
+      .eq("id", id);
+
+    if (error) {
+      console.error("Error actualizando modalidad:", error);
+      alert("No se pudo actualizar la modalidad");
+      return;
+    }
+    
+
+    // 🔥 RECARGAR TODO (fuente real)
+    const nuevosPagos = await fetchPagos();
+
+    const pagoActualizado = nuevosPagos.find((p) => p.id === id);
+
+
+  } catch (error) {
+    console.error("Error cambiando modalidad:", error);
+  }
+};
   
 
 
@@ -517,33 +638,49 @@ if (!["gerente", "contador"].includes(usuarioActual.rol)) {
     metodoPago,
     referenciaPago: referenciaPago.trim(),
   };
+
+const totalActual = Number(pagoSeleccionado.montoPagado || 0);
+const valorTotalSeguro = Number(pagoSeleccionado.valorTotal || 0);
+const nuevoTotal = totalActual + Number(nuevoAbono);
+
+if (nuevoTotal > valorTotalSeguro) {
+  alert("⚠️ El monto supera el total del pago. Verifica el valor.");
+  return;
+}
   const cursoIdSeguro =
   pagoSeleccionado.cursoId ||
   pagoSeleccionado.curso_id ||
   generarIdCurso(pagoSeleccionado.curso || "");
 
+
+
   const actualizados = planes.map((p) => {
     if (p.id === pagoSeleccionado.id) {
       const nuevosPagos = [...(p.pagos || []), abonoNuevo];
 
-      const totalPagado = nuevosPagos.reduce(
-        (acc, item) => acc + Number(item.monto || 0),
-        0
-      );
+    const totalPagado = Number(
+  nuevosPagos.reduce((acc, item) => acc + Number(item.monto || 0), 0)
+);
+     
 
-      if (totalPagado > Number(p.valorTotal || 0)) {
-        alert("El abono excede el saldo pendiente");
-        return p;
-      }
-
-      const saldo = Number(p.valorTotal || 0) - totalPagado;
+      const saldo = Number(
+  Number(p.valorTotal || 0) - Number(totalPagado || 0)
+);
 
       return {
         ...p,
         pagos: nuevosPagos,
         montoPagado: totalPagado,
         saldoPendiente: saldo,
-        estado: calcularEstado(p, totalPagado),
+        estado: calcularEstado(
+  {
+    ...p,
+    cuota: Number(p.cuota || 0),
+    plazo: Number(p.plazo || 0),
+    valorTotal: Number(p.valorTotal || 0),
+  },
+  totalPagado
+),
       };
     }
 
@@ -554,117 +691,144 @@ if (!["gerente", "contador"].includes(usuarioActual.rol)) {
     (p) => p.id === pagoSeleccionado.id
   );
 
-  if (!pagoActualizado?.id) {
-    alert("No se encontró el pago a actualizar");
-    return;
-  }
+
+// 🔥 RELEER TODO EL HISTORIAL DESDE SUPABASE (CLAVE)
+
 
 try {
- const { error: errorUpdate } = await supabase
-  .from("pagos")
-  .update({
-  monto_pagado: pagoActualizado.montoPagado,
-  saldo_pendiente: pagoActualizado.saldoPendiente,
-  estado: pagoActualizado.estado,
-  updated_at: new Date().toISOString(),
-})
-.eq("id", pagoActualizado.id);
-  if (errorUpdate) {
-    console.error("Error actualizando pago en Supabase:", errorUpdate);
-    alert("No se pudo actualizar el pago en Supabase");
-    return;
-  }
-
+  // 🔥 1. INSERTAR ABONO
   const { error: errorHistorial } = await supabase
     .from("historial_pagos")
     .insert([
       {
-        pago_id: pagoActualizado.id,
-        alumno_id: pagoActualizado.alumnoId,
-        alumno_db_id: pagoActualizado.alumnoDbId,
-        alumno: pagoActualizado.alumno,
-        curso: pagoActualizado.curso,
-       
-        monto: abonoNuevo.monto,
-        metodo_pago: abonoNuevo.metodoPago,
-        referencia_pago: abonoNuevo.referenciaPago,
+        pago_id: pagoSeleccionado.id,
+        alumno_id: pagoSeleccionado.alumnoId,
+        alumno_db_id: pagoSeleccionado.alumnoDbId,
+        alumno: pagoSeleccionado.alumno,
+        curso: pagoSeleccionado.curso,
+
+        monto: Number(nuevoAbono),
+        metodo_pago: metodoPago,
+        referencia_pago: referenciaPago,
         fecha_pago: new Date().toISOString(),
         created_at: new Date().toISOString(),
+
         usuario_id: usuarioActual?.id,
-      usuario_nombre: usuarioActual?.nombre,
-      rol: usuarioActual?.rol,
-     
+        usuario_nombre: usuarioActual?.nombre,
+        rol: usuarioActual?.rol,
+        eliminado: false,
       },
     ]);
 
-
-
-
- if (errorHistorial) {
-  console.error("ERROR HISTORIAL COMPLETO:", errorHistorial);
-  alert(errorHistorial.message);
-  return;
-}
-
- const { error } = await supabase
-  .from("auditoria_abonos")
-  .insert([
-    {
-      pago_id: pagoActualizado.id,
-      alumno: pagoActualizado.alumno,
-      alumno_id: pagoActualizado.alumnoId,
-      curso: pagoActualizado.curso,
-
-      monto: abonoNuevo.monto,
-      metodo_pago: abonoNuevo.metodoPago,
-      referencia_pago: abonoNuevo.referenciaPago,
-
-      accion: "CREATE",
-
-      usuario_id: usuarioActual?.id,
-      usuario_nombre: usuarioActual?.nombre,
-      rol: usuarioActual?.rol,
-    },
-  ]);
-
-if (error) {
-  console.error("ERROR AUDITORIA:", error);
-}
-
-  setPlanes(actualizados);
-  await fetchPagos(); // recargar desde Supabase
-
-    const actualizado = actualizados.find(
-      (p) => p.id === pagoSeleccionado.id
-    );
-    setPagoSeleccionado(actualizado);
-
-    setNuevoAbono("");
-    setMetodoPago("");
-    setReferenciaPago("");
-  } catch (error) {
-    console.error("Error guardando abono:", error);
-    alert("No se pudo guardar el abono en Firebase");
+  if (errorHistorial) {
+    console.error("ERROR HISTORIAL:", errorHistorial);
+    alert(errorHistorial.message);
+    return;
   }
+
+  // 🔥 2. AHORA SÍ → RELEER HISTORIAL
+  const { data: historialActualizado, error: errorReload } = await supabase
+    .from("historial_pagos")
+    .select("monto")
+    .eq("pago_id", pagoSeleccionado.id)
+    .eq("eliminado", false);
+
+  if (errorReload) {
+    console.error("Error recargando historial:", errorReload);
+    return;
+  }
+
+  // 🔥 3. SUMA REAL
+  const totalRealDB = (historialActualizado || []).reduce(
+    (acc, item) => acc + Number(item.monto || 0),
+    0
+  );
+
+  // 🔥 4. SALDO
+  const valorTotal = Number(pagoSeleccionado.valorTotal || 0);
+  const saldoFinal = Number(pagoSeleccionado.valorTotal || 0) - totalRealDB;
+
+const estadoFinal = calcularEstado(
+  {
+    ...pagoSeleccionado,
+    valorTotal: Number(pagoSeleccionado.valorTotal || 0),
+    cuota: Number(pagoSeleccionado.cuota || 0),
+    plazo: Number(pagoSeleccionado.plazo || 0),
+    tipoCuota: pagoSeleccionado.tipoCuota,
+    fechaInicio: pagoSeleccionado.fechaInicio,
+  },
+  totalRealDB
+);
+await sincronizarEstadoPagadoAlumnoYLead(pagoSeleccionado, estadoFinal);
+
+
+  // 🔥 5. UPDATE REAL
+  // 🔥 5. UPDATE REAL (CORREGIDO)
+const { data: updateData, error: errorUpdate } = await supabase
+  .from("pagos")
+  .update({
+  monto_pagado: totalRealDB,
+  saldo_pendiente: saldoFinal,
+  estado: estadoFinal, // 🔥 ESTA ES LA CLAVE
+  updated_at: new Date().toISOString(),
+})
+  .eq("id", pagoSeleccionado.id)
+  .select();
+
+// 🔍 DEBUG (IMPORTANTE)
+console.log("UPDATE RESULT:", updateData);
+
+  if (errorUpdate) {
+    console.error("Error update:", errorUpdate);
+    alert("No se pudo actualizar el pago");
+    return;
+  }
+
+  // 🔥 6. REFRESH UI
+ // 🔥 6. REFRESH UI (CORRECTO)
+const nuevosPagos = await fetchPagos();
+
+const pagoActualizadoUI = nuevosPagos.find(
+  (p) => p.id === pagoSeleccionado.id
+);
+
+if (pagoActualizadoUI) {
+  setPagoSeleccionado({
+    ...pagoActualizadoUI,
+    pagos: [...(pagoActualizadoUI.pagos || [])],
+  });
+}
+
+setNuevoAbono("");
+setMetodoPago("");
+setReferenciaPago("");
+
+} catch (error) {
+  console.error("Error guardando abono:", error);
+  alert("No se pudo guardar el abono en Supabase");
+}
 };
  
 
-  const actualizarCuota = () => {
-    if (!alumnoId) return alert("Selecciona un alumno");
+ const actualizarCuota = async () => {
+  if (!alumnoId) return alert("Selecciona un alumno");
 
-    const pago = planes.find((p) => String(p.alumnoId) === String(alumnoId));
+  const pago = planes.find((p) => String(p.alumnoId) === String(alumnoId));
 
-    if (!pago) return alert("Este alumno no tiene pago");
+  if (!pago) return alert("Este alumno no tiene pago");
 
-    cambiarModalidad(pago.id, modalidad);
+  // 🔥 CERRAR MODAL SI ESTÁ ABIERTO
+  setPagoSeleccionado(null);
 
-    setAlumnoId("");
-    setAlumno("");
-    setCurso("");
-    setValorCurso("");
-    setModalidad("mensual");
-  };
+  await cambiarModalidad(pago.id, modalidad);
 
+  // 🔥 LIMPIAR FORM
+  setAlumnoId("");
+  setAlumno("");
+  setCurso("");
+  setValorCurso("");
+  setModalidad("mensual");
+};
 
   const editarAbono = async (abonoId, nuevoValor) => {
       if (!usuarioActual) return;
@@ -715,15 +879,56 @@ if (!["gerente", "contador"].includes(usuarioActual.rol)) {
   );
 
   // 🔥 1. GUARDAR CAMBIO EN SUPABASE
- const { error: errorUpdate } = await supabase
+// 🔥 Obtener suma real desde historial en Supabase
+const { data: sumaData, error: errorSuma } = await supabase
+  .from("historial_pagos")
+  .select("monto")
+  .eq("pago_id", pagoActualizado.id)
+  .eq("eliminado", false);
+
+if (errorSuma) {
+  console.error("Error calculando suma real:", errorSuma);
+  alert("Error recalculando pagos");
+  return;
+}
+
+const totalRealDB = (sumaData || []).reduce(
+  (acc, item) => acc + Number(item.monto || 0),
+  0
+);
+
+// 🔥 Obtener valor_total real desde la tabla pagos
+const { data: pagoDB, error: errorPagoDB } = await supabase
+  .from("pagos")
+  .select("valor_total")
+  .eq("id", pagoActualizado.id)
+  .single();
+
+if (errorPagoDB) {
+  console.error("Error obteniendo valor_total:", errorPagoDB);
+  alert("Error obteniendo datos del pago");
+  return;
+}
+
+const valorTotalDB = Number(pagoDB?.valor_total || 0);
+const saldoFinal = valorTotalDB - totalRealDB;
+
+// 🔥 UPDATE correcto
+const { error: errorUpdate } = await supabase
   .from("pagos")
   .update({
-    monto_pagado: actualizado.montoPagado,
-    saldo_pendiente: actualizado.saldoPendiente,
-    estado: actualizado.estado,
+    monto_pagado: totalRealDB,
+    saldo_pendiente: saldoFinal,
+    estado: pagoActualizado.estado,
     updated_at: new Date().toISOString(),
   })
-  .eq("id", actualizado.id);
+  .eq("id", pagoActualizado.id);
+
+if (errorUpdate) {
+  console.error("Error actualizando pago en Supabase:", errorUpdate);
+  alert("No se pudo actualizar el pago en Supabase");
+  return;
+}
 
   if (errorUpdate) {
     console.error("Error actualizando abono:", errorUpdate);
@@ -1188,10 +1393,10 @@ onChange={(e) => setValorEditando(e.target.value)}
           </thead>
 
           <tbody className="tabla-desktop">
-            {planes.map((p) => {
-              const { totalPagado, saldo } = calcularTotales(p);
+           {planes.map((p) => {
+ const { totalPagado, saldo } = calcularTotales(p);
 
-              return (
+  return (
                 <tr key={p.id}>
                   <td>{p.alumno}</td>
                   <td>{p.alumnoId}</td>
@@ -1245,9 +1450,10 @@ onChange={(e) => setValorEditando(e.target.value)}
 
         <div className="pagos-mobile">
           {planes.map((p) => {
-            const { totalPagado, saldo } = calcularTotales(p);
+  const totalPagado = Number(p.montoPagado || 0);
+  const saldo = Number(p.saldoPendiente || 0);
 
-            return (
+  return (
               <div key={p.id} className="pago-card">
                 <div className="card-header">
                   <h3>{p.alumno}</h3>
@@ -1285,7 +1491,7 @@ onChange={(e) => setValorEditando(e.target.value)}
 
                   <div className="card-item">
                     <span>Cuota</span>
-                    <strong>{formatearPesos(p.cuotaMensual)}</strong>
+                    <strong>{formatearPesos(p.cuota)}</strong>
                   </div>
 
                   <div className="card-item">

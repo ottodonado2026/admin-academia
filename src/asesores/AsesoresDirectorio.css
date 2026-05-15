@@ -1,8 +1,8 @@
 .asesor-item {
   display: grid;
-  grid-template-columns: minmax(320px, 1fr) 420px auto;
+  grid-template-columns: minmax(320px, 1fr) 420px 220px;
   align-items: center;
-  column-gap: 110px;
+  column-gap: 50px;
 
   padding: 20px 22px;
   margin-bottom: 14px;
@@ -28,7 +28,36 @@
 .asesor-actions {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;          /* 👈 separa sin romper */
+  justify-content: flex-end;
+}
+.asesor-actions select {
+  flex: 0 0 auto;   /* 👈 NO crece */
+}
+
+.status-select {
+  width: 100px;
+  height: 32px;
+  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 999px; /* 👈 tipo badge como antes */
+  border: 1px solid rgba(0,255,136,0.4);
+  background: rgba(0,255,136,0.08);
+  color: #00ff88;
+}
+.status-activo {
+  background: rgba(57, 255, 20, 0.15);
+  color: #39ff14;
+}
+
+.status-inactivo {
+  background: rgba(255, 77, 79, 0.15);
+  color: #ff4d4f;
+}
+
+.status-vacaciones {
+  background: rgba(250, 204, 21, 0.15);
+  color: #facc15;
 }
 
 /* Botón VER */
@@ -73,6 +102,24 @@
   cursor: pointer;
 
   transition: all 0.2s ease;
+}
+
+.btn-ver {
+  padding: 8px 16px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.08);
+  color: #ffffff;
+  border: 1px solid rgba(255,255,255,0.15);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.btn-ver:hover {
+  background: rgba(0,255,136,0.15);
+  border: 1px solid rgba(0,255,136,0.4);
+  color: #00ff88;
 }
 
 .btn-delete:hover {

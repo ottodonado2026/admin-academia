@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Sidebar from "../components/Sidebar";
 import "./CuentasPorCobrar.css";
+import { supabase } from "../services/supabaseClient";
 
 const STORAGE_PAGOS = "pagos";
 const STORAGE_ALUMNOS = "alumnos";
@@ -20,40 +21,121 @@ function CuentasPorCobrar() {
   const [fechaRegistro, setFechaRegistro] = useState(hoyISO);
   const [modalidadManual, setModalidadManual] = useState("mensual");
 
-  useEffect(() => {
-    try {
-      const pagosGuardados = JSON.parse(
-        localStorage.getItem(STORAGE_PAGOS) || "[]"
-      );
-      const alumnosGuardados = JSON.parse(
-        localStorage.getItem(STORAGE_ALUMNOS) || "[]"
-      );
-      const manualesGuardadas = JSON.parse(
-        localStorage.getItem(STORAGE_CUENTAS_MANUALES) || "[]"
-      );
+  const [plazoManual, setPlazoManual] = useState(1);
+const [cuentaManualSeleccionada, setCuentaManualSeleccionada] = useState(null);
+const [montoAbono, setMontoAbono] = useState("");
 
-      setPagos(Array.isArray(pagosGuardados) ? pagosGuardados : []);
-      setAlumnos(Array.isArray(alumnosGuardados) ? alumnosGuardados : []);
-      setCuentasManuales(
-        Array.isArray(manualesGuardadas) ? manualesGuardadas : []
-      );
-    } catch (error) {
-      console.error("Error al cargar cuentas por cobrar:", error);
+
+const obtenerCuentasManuales = async () => {
+  const { data, error } = await supabase
+  .from("cuentas_manuales")
+  .select(`
+  *,
+  abonos_cuentas_manuales:abonos_cuentas_manuales!abonos_cuentas_manuales_cuenta_id_fkey (
+    id,
+    monto,
+    fecha
+  )
+`)
+  .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Error cargando cuentas manuales:", error);
+    return;
+  }
+
+const cuentasAdaptadas = (data || []).map(c => ({
+  ...c,
+  pagos: (c.abonos_cuentas_manuales || []).map(a => ({
+    id: a.id,
+    monto: Number(a.monto),
+    fecha: a.fecha
+  }))
+}));
+
+setCuentasManuales(cuentasAdaptadas);
+
+};
+
+useEffect(() => {
+  const fetchPagos = async () => {
+    const { data, error } = await supabase
+      .from("pagos")
+      .select("*")
+      .eq("eliminado", false);
+
+    if (error) {
+      console.error("Error cargando pagos:", error);
       setPagos([]);
-      setAlumnos([]);
-      setCuentasManuales([]);
+      return;
     }
-  }, []);
+
+
+    const pagosConHistorial = await Promise.all(
+      (data || []).map(async (p) => {
+        const { data: historial, error: errorHistorial } = await supabase
+          .from("historial_pagos")
+          .select("*")
+          .eq("pago_id", p.id)
+          .eq("eliminado", false)
+          .order("fecha_pago", { ascending: true });
+
+        if (errorHistorial) {
+          console.error("Error cargando historial:", errorHistorial);
+        }
+
+        const abonos = (historial || []).map((h) => ({
+          id: h.id,
+          monto: Number(h.monto || 0),
+          fecha: h.fecha_pago || h.created_at,
+          metodoPago: h.metodo_pago || "",
+          referenciaPago: h.referencia_pago || "",
+        }));
+
+        const totalPagado = abonos.reduce(
+          (acc, item) => acc + Number(item.monto || 0),
+          0
+        );
+
+        return {
+          ...p,
+          alumnoId: p.alumno_id,
+          alumnoDbId: p.alumno_db_id,
+          fechaInicio: p.fecha_inicio,
+          cuotaMensual: Number(p.cuota || 0),
+          valorTotal: Number(p.valor_total || 0),
+          montoPagado: totalPagado,
+          saldoPendiente: Number(p.valor_total || 0) - totalPagado,
+          modalidad: p.tipo_cuota || p.modalidad,
+          tipoCuota: p.tipo_cuota || p.modalidad,
+          plazo: Number(p.plazo || 0),
+          pagos: abonos,
+        };
+      })
+    );
+
+    setPagos(pagosConHistorial);
+  };
+
+  fetchPagos();
+
+  const interval = setInterval(fetchPagos, 5000);
+
+  return () => clearInterval(interval);
+}, []);
+
+useEffect(() => {
+  obtenerCuentasManuales();
+}, []);
 
   const guardarPagos = (data) => {
     localStorage.setItem(STORAGE_PAGOS, JSON.stringify(data));
     setPagos(data);
   };
 
-  const guardarCuentasManuales = (data) => {
-    localStorage.setItem(STORAGE_CUENTAS_MANUALES, JSON.stringify(data));
-    setCuentasManuales(data);
-  };
+ const guardarCuentasManuales = (data) => {
+  setCuentasManuales(data);
+};
 
   const formatearMonto = (valor) =>
     `$${Number(valor || 0).toLocaleString("es-CO")}`;
@@ -125,39 +207,135 @@ function CuentasPorCobrar() {
     return sumarMeses(base, numeroCuota - 1);
   };
 
-  const calcularCuotasExigibles = (plan) => {
-    if (!plan.fechaInicio || !plan.cuotaMensual) return 0;
+const calcularCuotasExigibles = (plan) => {
+  if (!plan.fechaInicio || !plan.cuotaMensual) return 0;
 
-    const fechaInicio = new Date(plan.fechaInicio);
-    if (Number.isNaN(fechaInicio.getTime())) return 0;
+  const fechaInicio = new Date(plan.fechaInicio);
+  if (Number.isNaN(fechaInicio.getTime())) return 0;
 
-    const hoy = new Date();
-    let contador = 0;
-    let cursor = new Date(fechaInicio);
+  const hoy = new Date();
 
-    while (cursor <= hoy && contador < 1000) {
-      contador += 1;
+  // 🔥 unificar modalidad correctamente
+  const tipo = plan.tipoCuota || plan.modalidad || "mensual";
 
-      if (plan.modalidad === "semanal") {
-        cursor = sumarDias(cursor, 7);
-      } else if (plan.modalidad === "quincenal") {
-        cursor = sumarDias(cursor, 15);
-      } else {
-        cursor = sumarMeses(cursor, 1);
-      }
+  let contador = 0;
+  let cursor = new Date(fechaInicio);
+
+  while (cursor <= hoy && contador < 1000) {
+    contador += 1;
+
+    if (tipo === "semanal") {
+      cursor.setDate(cursor.getDate() + 7);
+    } else if (tipo === "quincenal") {
+      cursor.setDate(cursor.getDate() + 15);
+    } else {
+      cursor.setMonth(cursor.getMonth() + 1);
     }
+  }
 
-    return contador;
-  };
+  return contador;
+};
 
-  const calcularCuotaManual = (valor, modalidad) => {
-    const montoBase = Number(valor || 0);
-    if (montoBase <= 0) return 0;
+const calcularCuotaManual = (valor, modalidad, plazo = 1) => {
+  const montoBase = Number(valor || 0);
+  const meses = Number(plazo || 1);
 
-    if (modalidad === "semanal") return Math.round(montoBase / 4);
-    if (modalidad === "quincenal") return Math.round(montoBase / 2);
-    return Math.round(montoBase);
-  };
+  if (montoBase <= 0) return 0;
+
+  let totalCuotas = meses;
+
+  if (modalidad === "quincenal") totalCuotas = meses * 2;
+  if (modalidad === "semanal") totalCuotas = meses * 4;
+
+  return Math.round(montoBase / totalCuotas);
+};
+
+  const generarFechasPagoManual = (cuenta) => {
+  const fechas = [];
+
+  const fechaInicio = new Date(cuenta.fecha);
+  const plazo = Number(cuenta.plazo || 1);
+  const modalidad = cuenta.modalidad || "mensual";
+
+  let cursor = new Date(fechaInicio);
+
+  let totalCuotas = plazo;
+
+if (modalidad === "quincenal") totalCuotas = plazo * 2;
+if (modalidad === "semanal") totalCuotas = plazo * 4;
+
+for (let i = 0; i < totalCuotas; i++) {
+    fechas.push(new Date(cursor));
+
+    if (modalidad === "semanal") {
+      cursor.setDate(cursor.getDate() + 7);
+    } else if (modalidad === "quincenal") {
+      cursor.setDate(cursor.getDate() + 15);
+    } else {
+      cursor.setMonth(cursor.getMonth() + 1);
+    }
+  }
+
+  return fechas;
+};
+
+const calcularEstadoCuotas = (cuenta) => {
+  const fechas = generarFechasPagoManual(cuenta);
+  const cuota = calcularCuotaManual(
+  cuenta.monto,
+  cuenta.modalidad,
+  cuenta.plazo
+);
+
+  let pagos = [...(cuenta.pagos || [])]
+  .map(p => ({ ...p, monto: Number(p.monto) }))
+  .sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+  let resultado = [];
+
+let totalAsignado = 0;
+
+for (let i = 0; i < fechas.length; i++) {
+  let cuotaActual = cuota;
+
+  // 🔥 AJUSTE EN LA ÚLTIMA CUOTA
+  if (i === fechas.length - 1) {
+    cuotaActual = Number(cuenta.monto) - totalAsignado;
+  }
+
+  let restanteCuota = cuotaActual;
+  let pagado = 0;
+
+  while (pagos.length > 0 && restanteCuota > 0) {
+    let pago = pagos[0];
+
+    if (pago.monto <= restanteCuota) {
+      pagado += pago.monto;
+      restanteCuota -= pago.monto;
+      pagos.shift();
+    } else {
+      pagado += restanteCuota;
+      pago.monto -= restanteCuota;
+      restanteCuota = 0;
+    }
+  }
+
+  totalAsignado += cuotaActual;
+
+  resultado.push({
+    fecha: fechas[i],
+    pagado,
+    cuota: cuotaActual,
+    estado:
+      pagado >= cuotaActual
+        ? "Pagado"
+        : pagado > 0
+        ? "Parcial"
+        : "Pendiente",
+  });
+}
+
+  return resultado;
+};
 
   const construirMensajeCobro = (cuenta) => {
     const montoTexto = formatearMonto(cuenta.montoExigible || cuenta.monto);
@@ -268,22 +446,56 @@ Muchas gracias por tu atención.`;
 
   const cuentas = useMemo(() => {
     const manualesNormalizadas = cuentasManuales.map((c) => {
-      const cuotaManual = calcularCuotaManual(c.monto, c.modalidad);
+ const cuotaManual = calcularCuotaManual(c.monto, c.modalidad, c.plazo);
 
-      return {
-        ...c,
-        source: "manual",
-        totalCurso: null,
-        valorCuota: cuotaManual,
-        montoExigible: Number(c.monto || 0),
-        montoVencido: Number(c.monto || 0),
-        saldoPendiente: Number(c.monto || 0),
-        diasMora: 0,
-        fechaPago: c.fecha || null,
-        modalidad: c.modalidad || "mensual",
-        monto: Number(c.monto || 0),
-      };
-    });
+  const pagos = c.pagos || [];
+
+  const totalPagado = pagos.reduce(
+    (acc, p) => acc + Number(p.monto || 0),
+    0
+  );
+
+  const saldoPendiente = Number(c.monto || 0) - totalPagado;
+
+  const cuotas = calcularEstadoCuotas(c);
+
+  const hoy = new Date();
+hoy.setHours(0, 0, 0, 0);
+
+const hayMora = cuotas.some((cuota) => {
+  const fechaCuota = new Date(cuota.fecha);
+  fechaCuota.setHours(0, 0, 0, 0);
+
+  return fechaCuota < hoy && cuota.estado !== "Pagado";
+});
+
+  let estadoCalculado = "Pendiente";
+
+  if (saldoPendiente <= 0) {
+    estadoCalculado = "Pagado";
+  } else if (hayMora) {
+    estadoCalculado = "En mora";
+  } else if (totalPagado > 0) {
+    estadoCalculado = "Al día";
+  }
+
+  return {
+    ...c,
+    source: "manual",
+    totalCurso: null,
+    valorCuota: cuotaManual,
+    montoExigible: Math.max(saldoPendiente, 0),
+montoVencido: Math.max(saldoPendiente, 0),
+    saldoPendiente,
+    diasMora: hayMora ? 1 : 0, // opcional luego lo mejoramos
+    fechaPago: c.fecha || null,
+    modalidad: c.modalidad || "mensual",
+    monto: Number(c.monto || 0),
+
+    // 🔥 ESTE ES EL CAMBIO CLAVE
+    estado: estadoCalculado,
+  };
+});
 
     return [...cuentasAutomaticas, ...manualesNormalizadas];
   }, [cuentasAutomaticas, cuentasManuales]);
@@ -296,31 +508,38 @@ Muchas gracias por tu atención.`;
     setModalidadManual("mensual");
   };
 
-  const agregarCuenta = () => {
-    if (
-      !cliente.trim() ||
-      !concepto.trim() ||
-      !monto ||
-      !fechaRegistro ||
-      !modalidadManual
-    ) {
-      return;
-    }
+ const agregarCuenta = async () => {
+  if (!cliente || !concepto || !monto || !fechaRegistro) return;
 
-    const nueva = {
-      id: `manual-${Date.now()}`,
-      cliente: cliente.trim(),
-      concepto: concepto.trim(),
-      monto: Number(monto),
-      fecha: new Date(`${fechaRegistro}T00:00:00`).toISOString(),
-      estado: "Pendiente",
-      telefono: "",
-      modalidad: modalidadManual,
-    };
+  const { error } = await supabase.from("cuentas_manuales").insert([
+  {
+    cliente: cliente.trim(),
+    concepto: concepto.trim(),
+    monto: Number(monto),
+    fecha: new Date(`${fechaRegistro}T00:00:00`).toISOString(),
+    estado: "Pendiente",
+    telefono: "",
+    modalidad: modalidadManual,
+    plazo: Number(plazoManual || 1),
+  },
+]);
 
-    guardarCuentasManuales([nueva, ...cuentasManuales]);
-    limpiarFormulario();
-  };
+  if (error) {
+    console.error("Error guardando cuenta manual:", error);
+    return;
+  }
+
+  // limpiar formulario
+  setCliente("");
+  setConcepto("");
+  setMonto("");
+  setFechaRegistro("");
+  setModalidadManual("mensual");
+  setPlazoManual(1);
+
+  // 🔥 recargar desde supabase (IMPORTANTE)
+  obtenerCuentasManuales();
+};
 
   const registrarIngreso = (cuenta, montoPagado) => {
     const ingresos = JSON.parse(localStorage.getItem(STORAGE_INGRESOS) || "[]");
@@ -368,7 +587,7 @@ Muchas gracias por tu atención.`;
     return "En mora";
   };
 
-  const marcarPagado = (cuenta) => {
+  const marcarPagado = async (cuenta) => {
     const montoAPagar = Number(cuenta.montoExigible || cuenta.monto || 0);
 
     if (montoAPagar <= 0) {
@@ -415,8 +634,29 @@ Muchas gracias por tu atención.`;
         };
       });
 
-      guardarPagos(pagosActualizados);
-      return;
+    // 🔥 GUARDAR EN SUPABASE (REAL)
+await supabase
+  .from("pagos")
+  .update({
+    pagos: pagosActualizados.find(p => p.id === cuenta.pagoId)?.pagos,
+    updated_at: new Date().toISOString(),
+  })
+  .eq("id", cuenta.pagoId);
+
+// 🔥 RECARGAR DESDE SUPABASE
+const { data } = await supabase.from("pagos").select("*");
+
+const adaptados = (data || []).map((p) => ({
+  ...p,
+  alumnoId: p.alumno_id,
+  alumnoDbId: p.alumno_db_id,
+  fechaInicio: p.fecha_inicio,
+  cuotaMensual: p.cuota,
+  valorTotal: p.valor_total,
+}));
+
+setPagos(adaptados);
+return;
     }
 
     const actualizadas = cuentasManuales.map((c) =>
@@ -431,17 +671,88 @@ Muchas gracias por tu atención.`;
     guardarCuentasManuales(actualizadas);
   };
 
-  const eliminarCuenta = (cuenta) => {
-    if (cuenta.source === "pago") {
-      alert(
-        "Esta cuenta proviene de la sesión de pagos. Debes gestionarla desde Pagos."
-      );
-      return;
-    }
+const registrarAbonoManual = async (cuenta, montoAbono) => {
+  if (!montoAbono || Number(montoAbono) <= 0) return;
 
-    const filtradas = cuentasManuales.filter((c) => c.id !== cuenta.id);
-    guardarCuentasManuales(filtradas);
-  };
+  const montoNumero = Number(montoAbono);
+
+  const pagosActuales = cuenta.pagos || [];
+
+  const totalPagadoActual = pagosActuales.reduce(
+    (acc, p) => acc + Number(p.monto || 0),
+    0
+  );
+
+  const saldoPendiente = Number(cuenta.monto) - totalPagadoActual;
+
+  if (montoNumero > saldoPendiente) {
+    alert(
+      `No puedes pagar más de lo que debes.\nSaldo pendiente: ${formatearMonto(saldoPendiente)}`
+    );
+    return;
+  }
+
+  const { error } = await supabase
+    .from("abonos_cuentas_manuales")
+    .insert([
+  {
+    cuenta_id: cuenta.id,
+    monto: montoNumero,
+    fecha: new Date().toISOString(),
+  },
+]);
+
+  if (error) {
+    console.error("Error guardando abono:", error);
+    return;
+  }
+
+  await obtenerCuentasManuales();
+
+  const { data } = await supabase
+    .from("cuentas_manuales")
+    .select(`
+      *,
+      abonos_cuentas_manuales (
+        id,
+        monto,
+        fecha
+      )
+    `)
+    .eq("id", cuenta.id)
+    .single();
+
+  if (data) {
+    setCuentaManualSeleccionada({
+      ...data,
+      pagos: (data.abonos_cuentas_manuales || []).map(a => ({
+        id: a.id,
+        monto: Number(a.monto),
+        fecha: a.fecha
+      }))
+    });
+  }
+};
+
+ const eliminarCuenta = async (cuenta) => {
+  if (cuenta.source === "pago") {
+    alert("Esta cuenta viene de pagos.");
+    return;
+  }
+
+  const { error } = await supabase
+    .from("cuentas_manuales")
+    .delete()
+    .eq("id", cuenta.id);
+
+  if (error) {
+    console.error("Error eliminando:", error);
+    return;
+  }
+
+  await obtenerCuentasManuales();
+  setCuentaManualSeleccionada(null);
+};
 
   return (
     <div className="dashboard-layout">
@@ -487,6 +798,20 @@ Muchas gracias por tu atención.`;
             <option value="mensual">Mensual</option>
           </select>
 
+          <select
+  value={plazoManual}
+  onChange={(e) => setPlazoManual(e.target.value)}
+  title="Plazo en meses"
+>
+  <option value={1}>1 mes</option>
+  <option value={2}>2 meses</option>
+  <option value={3}>3 meses</option>
+  <option value={4}>4 meses</option>
+  <option value={5}>5 meses</option>
+  <option value={6}>6 meses</option>
+  <option value={12}>12 meses</option>
+</select>
+
           <button className="btn-agregar" onClick={agregarCuenta}>
             + Agregar cuenta
           </button>
@@ -511,65 +836,86 @@ Muchas gracias por tu atención.`;
 
             <tbody>
               {cuentas.map((c) => (
-                <tr
-                  key={c.id}
-                  className={c.estado === "En mora" ? "en-mora" : ""}
-                >
-                  <td>{c.cliente}</td>
-                  <td>{c.concepto}</td>
-                  <td>{c.source === "manual" ? "-" : formatearMonto(c.totalCurso)}</td>
-                  <td>{formatearMonto(c.valorCuota)}</td>
-                 <td className="col-fecha">{formatearFecha(c.fechaPago)}</td>
-<td className="col-dias">{c.diasMora > 0 ? `${c.diasMora} días` : "-"}</td>
-<td className="col-modalidad">{c.modalidad || "-"}</td>
-<td className="col-exigible">{formatearMonto(c.montoExigible || c.monto)}</td>
-<td className="col-estado">
-                    {c.estado === "En mora" && (
-                      <span className="estado-badge estado-mora">
-                        🔴 En mora
-                      </span>
-                    )}
-                    {c.estado === "Pendiente" && (
-                      <span className="estado-badge estado-pendiente">
-                        🟡 Pendiente
-                      </span>
-                    )}
-                    {c.estado === "Al día" && (
-                      <span className="estado-badge estado-dia">🟢 Al día</span>
-                    )}
-                    {c.estado === "Pagado" && (
-                      <span className="estado-badge estado-dia">🟢 Pagado</span>
-                    )}
-                  </td>
-                  <td className="acciones-cuenta">
-                    {c.source === "manual" &&
-                      (c.estado === "Pendiente" || c.estado === "En mora") && (
-                        <button
-                          className="btn-editar"
-                          onClick={() => marcarPagado(c)}
-                        >
-                          Marcar pagado
-                        </button>
-                      )}
+            <tr
+  key={c.id}
+  className={c.estado === "En mora" ? "en-mora" : ""}
+>
+                <td data-label="Cliente">{c.cliente}</td>
 
-                    {(c.estado === "Pendiente" || c.estado === "En mora") && (
-                      <button
-                        className="btn-cobrar"
-                        onClick={() => cobrarPorWhatsapp(c)}
-                      >
-                        <span>💰</span> Cobrar
-                      </button>
-                    )}
+<td data-label="Concepto">{c.concepto}</td>
 
-                    {c.source === "manual" && (
-                      <button
-                        className="btn-eliminar"
-                        onClick={() => eliminarCuenta(c)}
-                      >
-                        Eliminar
-                      </button>
-                    )}
-                  </td>
+<td data-label="Total curso">
+  {c.source === "manual" ? "-" : formatearMonto(c.totalCurso)}
+</td>
+
+<td data-label="Cuota">
+  {formatearMonto(c.valorCuota)}
+</td>
+
+<td data-label="Fecha pago" className="col-fecha">
+  {formatearFecha(c.fechaPago)}
+</td>
+
+<td data-label="Días mora" className="col-dias">
+  {c.diasMora > 0 ? `${c.diasMora} días` : "-"}
+</td>
+
+<td data-label="Modalidad" className="col-modalidad">
+  {c.modalidad || "-"}
+</td>
+
+<td data-label="Exigible" className="col-exigible">
+  {formatearMonto(c.montoExigible || c.monto)}
+
+  {c.source === "manual" && c.saldoPendiente > 0 && (
+    <small style={{ display: "block", color: "#888" }}>
+      Saldo total
+    </small>
+  )}
+
+  {c.source === "pago" && c.montoVencido > 0 && (
+    <small style={{ display: "block", color: "#ff4d4d" }}>
+      En mora
+    </small>
+  )}
+</td>
+
+<td data-label="Estado" className="col-estado">
+  {c.estado === "En mora" && (
+    <span className="estado-badge estado-mora">🔴 En mora</span>
+  )}
+  {c.estado === "Pendiente" && (
+    <span className="estado-badge estado-pendiente">🟡 Pendiente</span>
+  )}
+  {c.estado === "Al día" && (
+    <span className="estado-badge estado-dia">🟢 Al día</span>
+  )}
+  {c.estado === "Pagado" && (
+    <span className="estado-badge estado-dia">🟢 Pagado</span>
+  )}
+</td>
+
+<td data-label="Acciones" className="acciones-cuenta">
+  {c.source === "manual" && (
+  <button
+    className="btn-ver"
+    onClick={() => {
+      const cuentaOriginal = cuentasManuales.find(cm => cm.id === c.id);
+      setCuentaManualSeleccionada(cuentaOriginal);
+    }}
+  >
+    Ver
+  </button>
+)}
+
+  {c.source !== "manual" &&
+    (c.estado === "Pendiente" || c.estado === "En mora") && (
+      <button className="btn-cobrar" onClick={() => cobrarPorWhatsapp(c)}>
+        <span>💰</span> Cobrar
+      </button>
+    )}
+</td>
+
                 </tr>
               ))}
 
@@ -582,6 +928,163 @@ Muchas gracias por tu atención.`;
           </table>
         </div>
       </main>
+
+{cuentaManualSeleccionada && (
+  <div className="modal-overlay">
+    <div
+      className="modal-card-cc"
+      onClick={(e) => e.stopPropagation()}
+    >
+
+      {/* HEADER */}
+      <div className="modal-header-cc">
+        <div>
+          <h2>{cuentaManualSeleccionada.cliente}</h2>
+          <p className="modal-subtitle">
+            {cuentaManualSeleccionada.concepto}
+          </p>
+        </div>
+      </div>
+
+      {/* GRID */}
+      <div className="modal-grid-cc">
+        <div className="modal-item-cc">
+          <span>Monto total</span>
+          <strong>{formatearMonto(cuentaManualSeleccionada.monto)}</strong>
+        </div>
+
+        <div className="modal-item-cc">
+          <span>Modalidad</span>
+          <strong>{cuentaManualSeleccionada.modalidad}</strong>
+        </div>
+
+        <div className="modal-item-cc">
+          <span>Plazo</span>
+          <strong>{cuentaManualSeleccionada.plazo} mes(es)</strong>
+        </div>
+
+        <div className="modal-item-cc">
+          <span>Cuota</span>
+          <strong>
+            {formatearMonto(
+              calcularCuotaManual(
+  cuentaManualSeleccionada.monto,
+  cuentaManualSeleccionada.modalidad,
+  cuentaManualSeleccionada.plazo
+)
+            )}
+          </strong>
+        </div>
+      </div>
+
+      {/* FECHAS */}
+      <div className="modal-fechas-cc">
+        <h4>Próximas fechas de pago</h4>
+
+       
+<div className="fechas-lista">
+  {calcularEstadoCuotas(cuentaManualSeleccionada).map((item, i) => (
+    <div key={i} className="fecha-item">
+
+      <div className="fecha-info">
+        <span>{formatearFecha(item.fecha)}</span>
+      </div>
+
+      <div className="fecha-datos">
+        <span>
+  {formatearMonto(item.pagado)} / {formatearMonto(item.cuota)}
+
+  {item.pagado < item.cuota && (
+    <small style={{ marginLeft: "8px", color: "#ff4d4d" }}>
+      Falta: {formatearMonto(item.cuota - item.pagado)}
+    </small>
+  )}
+</span>
+
+        <span
+          className={
+            item.estado === "Pagado"
+              ? "badge-pagado"
+              : item.estado === "Parcial"
+              ? "badge-parcial"
+              : "badge-pendiente"
+          }
+        >
+          {item.estado}
+        </span>
+      </div>
+
+    </div>
+  ))}
+</div>
+
+      </div>
+
+      {/* REGISTRAR ABONO */}
+<div className="modal-abono-cc">
+
+  <h4>Registrar abono</h4>
+
+  <input
+    type="number"
+    placeholder="Monto del abono"
+    value={montoAbono}
+    onChange={(e) => setMontoAbono(e.target.value)}
+    className="input-abono"
+  />
+
+  
+
+</div>
+
+      {/* BOTONES */}
+     <div className="modal-actions-cc">
+
+  {/* FILA 1 */}
+  <div className="acciones-row">
+    <button
+      className="btn-success"
+      onClick={() => {
+        if (!montoAbono || Number(montoAbono) <= 0) return;
+
+        registrarAbonoManual(cuentaManualSeleccionada, montoAbono);
+        setMontoAbono("");
+      }}
+    >
+      Registrar abono
+    </button>
+
+    <button
+      className="btn-warning"
+      onClick={() => cobrarPorWhatsapp(cuentaManualSeleccionada)}
+    >
+      💰 Cobrar
+    </button>
+  </div>
+
+  {/* FILA 2 */}
+  <button
+    className="btn-danger"
+    onClick={() => {
+      eliminarCuenta(cuentaManualSeleccionada);
+      setCuentaManualSeleccionada(null);
+    }}
+  >
+    Eliminar
+  </button>
+
+  <button
+    className="btn-neutral"
+    onClick={() => setCuentaManualSeleccionada(null)}
+  >
+    Cerrar
+  </button>
+
+</div>
+    </div>
+  </div>
+)}
+    
     </div>
   );
 }

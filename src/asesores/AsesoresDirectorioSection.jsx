@@ -87,11 +87,14 @@ setAsesores(adaptados);
 
 const asesoresConMetricas = useMemo(() => {
   return asesores.map((asesor) => {
-    const leadsAsesor = leads.filter(
-  (l) =>
-    l.asesorId === asesor.id || 
-    l.asesorId === asesor.asesorId
-);
+    const estaActivo = asesor.estado === "activo";
+   const leadsAsesor = estaActivo
+  ? leads.filter(
+      (l) =>
+        l.asesorId === asesor.id || 
+        l.asesorId === asesor.asesorId
+    )
+  : [];
 const totalLeads = leadsAsesor.length;
 
 const seguimiento = leadsAsesor.filter(
@@ -164,6 +167,28 @@ return {
     setAsesores((prev) => prev.filter((a) => a.id !== id));
   };
 
+  const updateEstadoAsesor = async (id, nuevoEstado) => {
+  const { error } = await supabase
+    .from("asesores")
+    .update({ estado: nuevoEstado })
+    .eq("id", id);
+
+  if (error) {
+    console.error("Error actualizando estado:", error);
+    alert("No se pudo actualizar el estado del asesor");
+    return;
+  }
+
+  setAsesores((prev) =>
+    prev.map((asesor) =>
+      asesor.id === id
+        ? { ...asesor, estado: nuevoEstado }
+        : asesor
+    )
+  );
+};
+
+
   // 🔹 reset password
  const resetPassword = async (email) => {
   const { error } = await supabase.auth.resetPasswordForEmail(email);
@@ -196,49 +221,91 @@ return {
 
           <div className="asesores-directorio-list">
 
-            {asesoresConMetricas.map((asesor) => (
-              <div key={asesor.id} className="asesor-item">
+          {asesoresConMetricas.length === 0 ? (
+  <div className="asesores-empty-state">
+    <div className="asesores-empty-icon">👥</div>
 
-                <div className="asesor-left">
-                <div className="asesor-nombre">{asesor.nombre}</div>
-                <div className="asesor-id">{asesor.asesorId}</div> {/* 👈 AQUÍ */}
-                <div className="asesor-email">{asesor.email}</div>
-              </div>
+    <h2>No hay asesores registrados</h2>
 
-              <div className="asesor-metricas">
+    <p>
+      Cuando registres asesores comerciales, aparecerán aquí con sus métricas,
+      estado, ventas, comisiones y acciones rápidas.
+    </p>
 
-  <div className="metrica-item">
-    <span>Leads</span>
-    <strong>{asesor.totalLeads}</strong>
+    <div className="asesores-empty-actions">
+     <button
+  type="button"
+  className="btn-ver"
+ onClick={() => navigate("/asesores-admin")}
+>
+  Registrar primer asesor
+</button>
+    </div>
   </div>
+) : (
+  asesoresConMetricas.map((asesor) => (
+    <div key={asesor.id} className="asesor-item">
 
-  <div className="metrica-item">
-    <span>Ventas</span>
-    <strong>{formatearPesos(asesor.ventas)}</strong>
-  </div>
+      <div className="asesor-left">
+        <div className="asesor-nombre">{asesor.nombre}</div>
+        <div className="asesor-id">{asesor.asesorId}</div>
+      </div>
 
-  <div className="metrica-item">
-    <span>Comisión</span>
-    <strong>{formatearPesos(asesor.comision)}</strong>
-  </div>
+      <div className="asesor-metricas">
 
-</div>
+        <div className="metrica-item">
+          <span>Leads</span>
 
-                <div className="asesor-actions">
-                  <button onClick={() => setSelectedAsesor(asesor.id)}>
-                    Ver
-                  </button>
+          <strong>
+            {asesor.estado !== "activo" ? "—" : asesor.totalLeads}
+          </strong>
+        </div>
 
-                  <button
-                    className="btn-delete"
-                    onClick={() => eliminarAsesor(asesor.id)}
-                  >
-                    🗑
-                  </button>
-                </div>
+        <div className="metrica-item">
+          <span>Ventas</span>
+          <strong>{formatearPesos(asesor.ventas)}</strong>
+        </div>
 
-              </div>
-            ))}
+        <div className="metrica-item">
+          <span>Comisión</span>
+          <strong>{formatearPesos(asesor.comision)}</strong>
+        </div>
+
+      </div>
+
+      <div className="asesor-actions">
+
+        <select
+          className={`status-select status-${asesor.estado || "activo"}`}
+          value={asesor.estado || "activo"}
+          onChange={(e) =>
+            updateEstadoAsesor(asesor.id, e.target.value)
+          }
+        >
+          <option value="activo">Activo</option>
+          <option value="inactivo">Inactivo</option>
+          <option value="vacaciones">Vacaciones</option>
+        </select>
+
+        <button
+          className="btn-ver"
+          onClick={() => setSelectedAsesor(asesor.id)}
+        >
+          Ver
+        </button>
+
+        <button
+          className="btn-delete"
+          onClick={() => eliminarAsesor(asesor.id)}
+        >
+          🗑
+        </button>
+
+      </div>
+
+    </div>
+  ))
+)}
 
           </div>
 

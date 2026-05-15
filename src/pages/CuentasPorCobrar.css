@@ -3,7 +3,12 @@
   gap: 12px;
   margin: 20px 0;
   flex-wrap: wrap;
+  align-items: center;
 }
+
+/* =========================
+   FORMULARIO BASE
+========================= */
 
 .form-ingresos input,
 .form-ingresos select {
@@ -13,26 +18,39 @@
   background: rgba(255,255,255,0.03);
   color: var(--text-main);
   padding: 0 12px;
+  flex: 1 1 160px;
+  min-width: 150px;
 }
 
-/* INPUT TYPE DATE */
+/* DATE */
 .form-ingresos input[type="date"] {
   appearance: none;
   -webkit-appearance: none;
   cursor: pointer;
 }
 
-/* ICONO CALENDARIO */
 .form-ingresos input[type="date"]::-webkit-calendar-picker-indicator {
   filter: invert(1) opacity(0.6);
   cursor: pointer;
 }
 
-/* SELECT MODO OSCURO */
+/* SELECT PREMIUM */
 .form-ingresos select {
   appearance: none;
   -webkit-appearance: none;
-  cursor: pointer;
+  -moz-appearance: none;
+
+  background-image: url("data:image/svg+xml,%3Csvg fill='%23a0a0a0' height='20' viewBox='0 0 20 20' width='20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M5 7l5 5 5-5z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px;
+
+  padding-right: 40px;
+}
+
+.form-ingresos select option {
+  background: #111;
+  color: #fff;
 }
 
 .form-ingresos input:hover,
@@ -47,77 +65,9 @@
   box-shadow: 0 0 0 2px rgba(0,255,120,0.2);
 }
 
-.tabla-ingresos {
-  width: 100%;
-  min-width: 1100px;
-  margin-top: 20px;
-  border-collapse: collapse;
-  background: rgba(255,255,255,0.02);
-  border-radius: 14px;
-  overflow: hidden;
-}
-
-.tabla-ingresos thead {
-  background: rgba(255,255,255,0.04);
-}
-
-.tabla-ingresos th {
-  font-size: 13px;
-  font-weight: 600;
-  color: #a0a0a0;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.tabla-ingresos td {
-  font-size: 14px;
-  color: #eaeaea;
-}
-
-.tabla-ingresos tr {
-  border-bottom: 1px solid rgba(255,255,255,0.05);
-}
-
-.tabla-ingresos th,
-.tabla-ingresos td {
-  padding: 14px;
-  text-align: left;
-}
-
-.btn-cobrar {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 14px;
-  border-radius: 10px;
-  border: 1px solid rgba(255, 200, 0, 0.4);
-  background: rgba(255, 200, 0, 0.12);
-  color: #ffc800;
-  font-weight: 600;
-  font-size: 13px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow:
-    inset 0 1px 2px rgba(255,255,255,0.08),
-    0 4px 10px rgba(0,0,0,0.4);
-}
-
-.btn-cobrar:hover {
-  background: rgba(255, 200, 0, 0.22);
-  border-color: #ffc800;
-  transform: translateY(-1px);
-  box-shadow:
-    0 0 12px rgba(255, 200, 0, 0.35),
-    0 6px 14px rgba(0,0,0,0.5);
-}
-
-.btn-cobrar:active {
-  transform: scale(0.95);
-}
-
-.btn-cobrar span {
-  font-size: 14px;
-}
+/* =========================
+   BOTÓN AGREGAR
+========================= */
 
 .btn-agregar {
   display: flex;
@@ -136,83 +86,56 @@
   font-weight: 600;
   font-size: 14px;
   cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow:
-    inset 0 1px 2px rgba(255,255,255,0.08),
-    0 4px 12px rgba(0,0,0,0.5);
 }
 
-.btn-agregar:hover {
-  background: linear-gradient(
-    135deg,
-    rgba(0, 255, 120, 0.28),
-    rgba(0, 255, 120, 0.12)
-  );
-  border-color: #00ff88;
-  transform: translateY(-1px);
-  box-shadow:
-    0 0 14px rgba(0, 255, 120, 0.4),
-    0 6px 16px rgba(0,0,0,0.6);
-}
-
-.btn-agregar:active {
-  transform: scale(0.95);
-}
+/* =========================
+   TABLA BASE
+========================= */
 
 .tabla-wrapper {
   width: 100%;
-  max-width: 100%;
   overflow-x: auto;
-  overflow-y: hidden;
   border-radius: 14px;
-  padding-bottom: 6px;
-  -webkit-overflow-scrolling: touch;
 }
 
-.tabla-wrapper::-webkit-scrollbar {
-  height: 10px;
+.tabla-ingresos {
+  width: 100%;
+  min-width: 1100px;
+  border-collapse: collapse;
+  background: rgba(255,255,255,0.02);
 }
 
-.tabla-wrapper::-webkit-scrollbar-thumb {
-  background: rgba(255,255,255,0.18);
-  border-radius: 999px;
+.tabla-ingresos th,
+.tabla-ingresos td {
+  padding: 14px;
+  font-size: 14px;
 }
 
-.tabla-wrapper::-webkit-scrollbar-track {
-  background: rgba(255,255,255,0.04);
-  border-radius: 999px;
+.tabla-ingresos th {
+  font-size: 13px;
+  color: #a0a0a0;
+  text-transform: uppercase;
 }
 
-.estado-badge {
+.tabla-ingresos tr {
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+/* =========================
+   BOTONES
+========================= */
+
+.btn-cobrar {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  gap: 4px;
-  padding: 3px 8px;
-  min-height: 28px;
-  border-radius: 999px;
-  font-size: 11px;
-  font-weight: 600;
-  line-height: 1;
-  white-space: nowrap;
-}
-
-.estado-mora {
-  background: rgba(255, 0, 0, 0.12);
-  color: #ff4d4d;
-  border: 1px solid rgba(255,0,0,0.3);
-}
-
-.estado-pendiente {
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 200, 0, 0.4);
   background: rgba(255, 200, 0, 0.12);
   color: #ffc800;
-  border: 1px solid rgba(255,200,0,0.3);
-}
-
-.estado-dia {
-  background: rgba(0, 255, 120, 0.12);
-  color: #00ff88;
-  border: 1px solid rgba(0,255,120,0.3);
+  font-weight: 600;
+  cursor: pointer;
 }
 
 .btn-editar {
@@ -221,73 +144,381 @@
   color: #00ff88;
   padding: 6px 12px;
   border-radius: 10px;
-  font-size: 13px;
-  cursor: pointer;
-  transition: all 0.2s ease;
 }
 
-.btn-editar:hover {
-  background: rgba(0,255,120,0.2);
-  box-shadow: 0 0 10px rgba(0,255,120,0.4);
+.btn-eliminar {
+  background: rgba(255,0,0,0.1);
+  border: 1px solid rgba(255,0,0,0.3);
+  color: #ff4d4d;
+  padding: 6px 12px;
+  border-radius: 10px;
 }
 
-.tabla-ingresos tr:hover {
-  background: rgba(255,255,255,0.04);
-  transform: scale(1.002);
-  transition: 0.15s ease;
+/* =========================
+   ESTADOS
+========================= */
+
+.estado-badge {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
 }
 
-.en-mora {
-  background: linear-gradient(
-    90deg,
-    rgba(255,0,0,0.12),
-    transparent
-  );
-  border-left: 4px solid #ff3c3c;
-}
-.tabla-ingresos {
-  width: max-content;
-  min-width: 1250px;
-  margin-top: 20px;
-  border-collapse: collapse;
-  background: rgba(255,255,255,0.02);
-  border-radius: 14px;
-  overflow: hidden;
+.estado-mora {
+  background: rgba(255,0,0,0.12);
+  color: #ff4d4d;
 }
 
-.tabla-ingresos th,
-.tabla-ingresos td {
-  vertical-align: middle;
+.estado-pendiente {
+  background: rgba(255,200,0,0.12);
+  color: #ffc800;
 }
 
-.tabla-ingresos td:last-child,
-.tabla-ingresos th:last-child {
-  min-width: 260px;
+.estado-dia {
+  background: rgba(0,255,120,0.12);
+  color: #00ff88;
 }
-.tabla-ingresos td:nth-child(5),
-.tabla-ingresos td:nth-child(6),
-.tabla-ingresos td:nth-child(7),
-.tabla-ingresos td:nth-child(8),
-.tabla-ingresos td:nth-child(9),
-.tabla-ingresos td:nth-child(10) {
-  white-space: nowrap;
-}
+
+/* =========================
+   ACCIONES (DESKTOP)
+========================= */
 
 .acciones-cuenta {
   display: flex;
   gap: 8px;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
+}
+
+/* =========================
+   RESPONSIVE TABLE → CARDS
+========================= */
+
+@media (max-width: 768px) {
+
+  .form-ingresos {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .form-ingresos input,
+  .form-ingresos select,
+  .btn-agregar {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .tabla-ingresos {
+    min-width: 100%;
+  }
+
+  .tabla-ingresos thead {
+    display: none;
+  }
+
+  .tabla-ingresos,
+  .tabla-ingresos tbody,
+  .tabla-ingresos tr,
+  .tabla-ingresos td {
+    display: block;
+    width: 100%;
+  }
+
+  .tabla-ingresos tr {
+    margin-bottom: 14px;
+    padding: 12px;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.03);
+  }
+
+  .tabla-ingresos td {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 8px;
+  }
+
+  .tabla-ingresos td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: #a0a0a0;
+    font-size: 12px;
+  }
+
+  /* 🔥 ACCIONES PERFECTAS EN MÓVIL */
+
+  .acciones-cuenta {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .acciones-cuenta button {
+    width: 100%;
+    padding: 10px;
+    border-radius: 10px;
+  }
+
+}
+
+/* =========================
+   MODAL CUENTAS MANUALES
+========================= */
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+
+  background: rgba(0,0,0,0.75);
+  backdrop-filter: blur(4px);
+
+  display: flex;
   align-items: center;
-  min-width: 260px;
+  justify-content: center;
+
+  z-index: 9999;
 }
 
-.tabla-ingresos .col-estado {
-  text-align: center;
+.modal-content {
+  background: #0c0c0c;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+
+  width: 95%;
+  max-width: 500px;
+
+  padding: 20px;
+
+  box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+
+  max-height: 90vh;
+  overflow-y: auto;
 }
 
-.tabla-ingresos .col-fecha,
-.tabla-ingresos .col-dias,
-.tabla-ingresos .col-modalidad,
-.tabla-ingresos .col-exigible {
-  white-space: nowrap;
+.modal-content h2 {
+  margin-bottom: 16px;
+}
+
+.modal-content p {
+  margin: 6px 0;
+  font-size: 14px;
+}
+
+/* BOTONES DEL MODAL */
+
+.modal-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.btn-cerrar {
+  background: rgba(255,255,255,0.08);
+  border: none;
+  color: #ccc;
+  padding: 10px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+/* =========================
+   MODAL PROFESIONAL CONTABLE
+========================= */
+
+.modal-card-cc {
+  width: min(100%, 520px);
+  max-height: 90vh;
+  overflow-y: auto;
+
+  background: linear-gradient(145deg, #0a0a0a, #111);
+  border-radius: 18px;
+  padding: 22px;
+
+  border: 1px solid rgba(255,255,255,0.06);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.7);
+}
+
+/* HEADER */
+.modal-header-cc {
+  margin-bottom: 18px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.modal-header-cc h2 {
+  margin: 0;
+  font-size: 20px;
+  letter-spacing: 0.3px;
+}
+
+.modal-subtitle {
+  margin-top: 6px;
+  font-size: 13px;
+  opacity: 0.6;
+}
+
+/* GRID INFO */
+.modal-grid-cc {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.modal-item-cc {
+  background: rgba(255,255,255,0.03);
+  border-radius: 14px;
+  padding: 14px 16px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.modal-item-cc span {
+  font-size: 11px;
+  opacity: 0.6;
+}
+
+.modal-item-cc strong {
+  font-size: 15px;
+  margin-top: 2px;
+}
+
+/* FECHAS */
+.modal-fechas-cc {
+  margin-top: 24px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255,255,255,0.05);
+}
+
+.modal-fechas-cc h4 {
+  margin-bottom: 12px;
+  font-size: 14px;
+  opacity: 0.85;
+}
+
+.fechas-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fecha-item {
+  background: rgba(255,255,255,0.04);
+  padding: 10px 12px;
+  border-radius: 12px;
+  font-size: 13px;
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* BOTONES */
+.modal-actions-cc {
+  margin-top: 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.btn-success {
+  background: linear-gradient(135deg,#00ff88,#00c853);
+  border: none;
+  color: #000;
+  padding: 12px;
+  border-radius: 10px;
+  font-weight: 700;
+}
+
+.btn-warning {
+  background: rgba(255,200,0,0.15);
+  border: 1px solid rgba(255,200,0,0.4);
+  color: #ffc800;
+  padding: 12px;
+  border-radius: 10px;
+}
+
+.btn-danger {
+  background: rgba(255,0,0,0.12);
+  border: 1px solid rgba(255,0,0,0.3);
+  color: #ff4d4d;
+  padding: 12px;
+  border-radius: 10px;
+}
+
+.btn-neutral {
+  background: rgba(255,255,255,0.08);
+  border: none;
+  color: #ccc;
+  padding: 12px;
+  border-radius: 10px;
+}
+
+/* ABONOS */
+.modal-abono-cc {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.input-abono {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px;
+  padding: 12px;
+  color: #fff;
+  font-size: 14px;
+}
+
+.input-abono:focus {
+  outline: none;
+  border-color: #00ff88;
+}
+
+.fecha-item {
+  background: rgba(255,255,255,0.04);
+  padding: 10px 12px;
+  border-radius: 12px;
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.fecha-datos {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.badge-pagado {
+  color: #00ff88;
+  font-size: 12px;
+}
+
+.badge-parcial {
+  color: #ffc107;
+  font-size: 12px;
+}
+
+.badge-pendiente {
+  color: #ff4d4d;
+  font-size: 12px;
+}
+.acciones-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.modal-actions-cc button {
+  width: 100%;
 }

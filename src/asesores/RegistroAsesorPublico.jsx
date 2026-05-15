@@ -145,6 +145,10 @@ const obtenerCursosBase = () => {
   return cursosConId;
 };
 
+const esUUID = (value = "") =>
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    String(value).trim()
+  );
 
 function RegistroAsesorPublico() {
   const navigate = useNavigate();
@@ -160,21 +164,77 @@ const [loadingAsesor, setLoadingAsesor] = useState(true);
 
   const [cursos, setCursos] = useState([]);
 
-  useEffect(() => {
-  if (!asesorId) {
-    setAsesor(null);
-    setLoadingAsesor(false);
-    return;
-  }
+ useEffect(() => {
+  const fetchAsesor = async () => {
+    setLoadingAsesor(true);
 
-  // 🔥 Simulación temporal del asesor
-  setAsesor({
-    id: asesorId,
-    asesorId: asesorId,
-    nombre: "Asesor",
-  });
+    const parametroAsesor = decodeURIComponent(asesorId || "").trim();
 
-  setLoadingAsesor(false);
+    if (!parametroAsesor) {
+      setAsesor(null);
+      setLoadingAsesor(false);
+      return;
+    }
+
+    try {
+      let asesorEncontrado = null;
+
+      const { data: asesorPorCodigo, error: errorCodigo } = await supabase
+        .from("asesores")
+        .select("id, asesor_id, nombre, estado")
+        .eq("asesor_id", parametroAsesor)
+        .maybeSingle();
+
+      if (errorCodigo) {
+        console.error("Error buscando asesor por código:", errorCodigo);
+      }
+
+      if (asesorPorCodigo) {
+        asesorEncontrado = asesorPorCodigo;
+      }
+
+      if (!asesorEncontrado && esUUID(parametroAsesor)) {
+        const { data: asesorPorId, error: errorId } = await supabase
+          .from("asesores")
+          .select("id, asesor_id, nombre, estado")
+          .eq("id", parametroAsesor)
+          .maybeSingle();
+
+        if (errorId) {
+          console.error("Error buscando asesor por id:", errorId);
+        }
+
+        if (asesorPorId) {
+          asesorEncontrado = asesorPorId;
+        }
+      }
+
+      if (!asesorEncontrado) {
+        setAsesor(null);
+        setLoadingAsesor(false);
+        return;
+      }
+
+      if (asesorEncontrado.estado !== "activo") {
+        setAsesor(null);
+        setLoadingAsesor(false);
+        return;
+      }
+
+      setAsesor({
+        id: asesorEncontrado.id,
+        asesorId: asesorEncontrado.asesor_id,
+        nombre: asesorEncontrado.nombre,
+      });
+    } catch (error) {
+      console.error("Error cargando asesor público:", error);
+      setAsesor(null);
+    } finally {
+      setLoadingAsesor(false);
+    }
+  };
+
+  fetchAsesor();
 }, [asesorId]);
 
 
@@ -191,34 +251,24 @@ const [loadingAsesor, setLoadingAsesor] = useState(true);
     numeroDocumento: "",
     cursoId: "",
     modalidad: "",
-    tipoPrograma: "",
-    notas: "",
-    claseGratis: false,
+   tipoPrograma: "",
+duracion: "",
+notas: "",
+claseGratis: false,
+edad: "",
+  nombreAcudiente: "",
+  telefonoAcudiente: "",
+  aceptaTerminos: false,
   
   });
 
   useEffect(() => {
   const fetchCursos = async () => {
     try {
-      setCursos(obtenerCursosBase());
-
-      let data = snapshot.docs.map((doc) => ({
-        ...doc.data(),
-        id: doc.id,
-      }));
-
-      // 🔥 SI FIRESTORE ESTÁ VACÍO O INCOMPLETO → USAR BASE
-  const cursosUnicos = data.filter(
-  (curso, index, self) =>
-    index === self.findIndex((c) => c.nombre === curso.nombre)
-);
-
-setCursos(cursosUnicos);
-
+      const base = obtenerCursosBase();
+      setCursos(base);
     } catch (error) {
-     
-
-      // 🔥 FALLBACK TOTAL
+      console.error("Error cargando cursos:", error);
       setCursos(obtenerCursosBase());
     }
   };
@@ -307,7 +357,7 @@ setCursos(cursosUnicos);
       asesorId: asesor.id,
       asesorCodigo: asesor.asesorId || "",
       asesorNombre: asesor.nombre,
-      asesorLink: `${window.location.origin}/registro-asesor/${asesor.id}`,
+      asesorLink: `${window.location.origin}/registro-asesor/${asesor.asesorId || asesor.id}`,
       nombre: form.nombre.trim(),
       telefono: form.telefono.trim(),
       email: form.email.trim(),
@@ -320,7 +370,7 @@ telefonoAcudiente: form.telefonoAcudiente || "",
 
       cursoId: form.cursoId,
       cursoNombre: cursoSeleccionado?.nombre || "",
-      duracion: "",
+      duracion: null,
       modalidad: form.modalidad,
       tipoPrograma: form.tipoPrograma,
       tipoCliente: "nuevo",
@@ -350,6 +400,7 @@ telefonoAcudiente: form.telefonoAcudiente || "",
 
    try {
 // 1️⃣ Guardar en Supabase primero
+
 const { data, error } = await supabase
   .from("leads")
   .insert([
@@ -357,19 +408,27 @@ const { data, error } = await supabase
       id: crypto.randomUUID(),
       nombre: payload.nombre,
       telefono: payload.telefono,
-      email: payload.email || "sin-email@temp.com",
+      email: payload.email,
+
+      tipo_documento: payload.tipoDocumento,
+    numero_documento: payload.numeroDocumento,
 
       curso_id: payload.cursoId,
+      curso_nombre: payload.cursoNombre,
       estado: payload.estado,
       valor: payload.valor,
-      descuento: payload.descuento || 0,
       asesor_id: payload.asesorId,
 
-      // 🔥 AGREGA ESTO
       tipo_cliente: payload.tipoCliente,
+      duracion: payload.duracion,
       modalidad: payload.modalidad,
       tipo_programa: payload.tipoPrograma,
-     
+      descuento: payload.descuento,
+
+      // 🔥 NUEVO (MENOR DE EDAD)
+      edad: payload.edad || null,
+      nombre_acudiente: payload.nombreAcudiente || null,
+      telefono_acudiente: payload.telefonoAcudiente || null,
 
       created_at: new Date().toISOString()
     }
@@ -544,6 +603,8 @@ if (loadingAsesor) {
                 </option>
               ))}
             </select>
+
+       
 
           </div>
           <div className="field-group field-group-full">

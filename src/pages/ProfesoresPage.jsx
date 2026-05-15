@@ -4,6 +4,15 @@ import { useEffect, useMemo, useState } from "react";
 import "./ProfesoresPage.css";
 import { supabase } from "../services/supabaseClient";
 
+function generarIdProfesor(nombreCompleto) {
+  return String(nombreCompleto || "")
+    .trim()
+    .split(/\s+/)
+    .map((parte) => parte[0])
+    .join("")
+    .toUpperCase();
+}
+
 function ProfesoresPage() {
   const navigate = useNavigate();
   const STORAGE_KEY = "profesores";
@@ -173,7 +182,7 @@ function ProfesoresPage() {
     }
 
     const nuevoProfesor = {
-      id: Date.now(),
+      id: generarIdProfesor(payload.nombre),
       createdAt: new Date().toISOString(),
       clasesAsignadas: 0,
       alumnosActivos: 0,

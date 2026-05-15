@@ -6,6 +6,8 @@ import { generarIdAlumnoBonito, generarIdCurso } from "../utils/idGenerator";
 import { supabase } from "../services/supabaseClient";
 
 
+
+
 const LEADS_KEY = "leads";
 const ALUMNOS_KEY = "alumnos";
 const CURSOS_KEY = "planesCursos";
@@ -190,7 +192,7 @@ const estadoLabels = {
   activo: "Activo",
   curso_pausado: "Curso pausado",
   falta_pago: "Falta de pago",
-  pagado: "Pagado",
+ pagado: "Pagado (NO USAR)",
 };
 
 function AsesoresPanel() {
@@ -225,6 +227,7 @@ if (!auth) {
 
   const [refresh, setRefresh] = useState(0);
   const [leads, setLeads] = useState([]);
+  const [pagos, setPagos] = useState([]);
   const [vista, setVista] = useState("dashboard");
   const [search, setSearch] = useState("");
   const [estadoFiltro, setEstadoFiltro] = useState("todos");
@@ -239,20 +242,23 @@ const [motivoEdicion, setMotivoEdicion] = useState("");
 
 const [cursos, setCursos] = useState([]);  
 
+
 const cursoModalSeleccionado = cursos.find(
-  (c) =>
-    c.id === cursoModal ||
-    cursoModal.includes(c.categoria) // 👈 fallback inteligente
+  (c) => String(c.id) === String(cursoModal)
 );
-const tipoNormalizado = (tipoModal || "").toLowerCase().trim();
+
+const tipoNormalizado = (() => {
+  const t = (tipoModal || "").toLowerCase().trim();
+
+  if (t === "personalizado") return "personalizado";
+  if (t === "semi" || t === "semi-personalizado") return "semi";
+  if (t === "grupal") return "grupal";
+
+  return t;
+})();
 
 const precioBaseModal =
   cursoModalSeleccionado?.tipos?.[tipoNormalizado]?.precio || 0;
-
-  console.log("cursoModal:", cursoModal);
-console.log("tipoModal:", tipoModal);
-console.log("curso encontrado:", cursoModalSeleccionado);
-console.log("precioBase:", precioBaseModal);
 
 const descuentoNumero = aplicarDescuentoAutorizado
   ? Number(descuentoModal) || 0
@@ -261,6 +267,18 @@ const descuentoNumero = aplicarDescuentoAutorizado
 const precioFinalModal = Math.round(
   precioBaseModal * (1 - descuentoNumero / 100)
 );
+
+useEffect(() => {
+  if (!leadActivo) return;
+
+  setLeadActivo((prev) => ({
+    ...prev,
+    valorBase: precioBaseModal,
+    valor: precioFinalModal,
+    descuento: descuentoNumero,
+  }));
+}, [precioBaseModal, precioFinalModal]);
+
 
 /*
 useEffect(() => {
@@ -343,11 +361,14 @@ useEffect(() => {
   asesorId: l.asesor_id,
   createdAt: l.created_at,
 
-  // 🔥 AGREGA ESTO
   tipoCliente: l.tipo_cliente,
   modalidad: l.modalidad,
   tipoPrograma: l.tipo_programa,
-  descuento: l.descuento
+  descuento: l.descuento,
+
+  // 🔥 NUEVO
+  tipoDocumento: l.tipo_documento,
+  numeroDocumento: l.numero_documento
 }));
 
       setLeads(adaptados);
@@ -360,6 +381,36 @@ useEffect(() => {
   fetchLeads();
 }, [refresh]);
 
+
+useEffect(() => {
+  const fetchPagos = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("pagos")
+        .select("*");
+
+      if (error) {
+        console.error("Error cargando pagos:", error);
+        setPagos([]);
+        return;
+      }
+
+      const adaptados = (data || []).map((p) => ({
+        ...p,
+        alumnoId: p.alumno_id,
+        montoPagado: p.monto_pagado,
+      }));
+
+      setPagos(adaptados);
+
+    } catch (err) {
+      console.error(err);
+      setPagos([]);
+    }
+  };
+
+  fetchPagos();
+}, []);
 
 const misLeads = useMemo(() => {
   return leads.filter((l) => l.asesorId === auth?.id);
@@ -442,11 +493,20 @@ const descuentoAplicado = form.descuentoAutorizado
       .filter((l) => l.estado === "pagado")
       .reduce((acc, l) => acc + Number(l.valor || 0), 0);
 
-    const totalComision = misLeads.reduce((acc, l) => {
-      if (l.estado !== "pagado") return acc;
-      const tasa = obtenerTasaComision(l.tipoCliente);
-      return acc + (Number(l.valor || 0) * tasa) / 100;
-    }, 0);
+  const totalComision = misLeads.reduce((acc, lead) => {
+  const tasa = obtenerTasaComision(lead.tipoCliente);
+
+  const pagosAlumno = pagos.filter(
+    (p) => String(p.alumnoId) === String(lead.alumnoId)
+  );
+
+  const totalPagado = pagosAlumno.reduce(
+    (sum, p) => sum + Number(p.montoPagado || 0),
+    0
+  );
+
+  return acc + (totalPagado * tasa) / 100;
+}, 0);
 
     return {
       total,
@@ -499,6 +559,10 @@ const linkAsesor = `${window.location.origin}/registro-asesor/${auth?.asesorId |
     fechaVisita: "",
     claseGratis: false,
     notas: "",
+    edad: "",
+nombreAcudiente: "",
+telefonoAcudiente: "",
+aceptaTerminos: false,
   });
 };
 
@@ -522,17 +586,18 @@ const handleSubmit = async (e) => {
   });
   return;
 }
-
-const documentoLimpio = form.numeroDocumento
-  .replace(/\D/g, "") // elimina todo lo que no sea número
-  .trim();
-
-
-const telefonoLimpio = form.telefono
+const documentoLimpio = (form.numeroDocumento || "")
   .replace(/\D/g, "")
   .trim();
 
-const emailLimpio = form.email.trim().toLowerCase();
+const telefonoLimpio = (form.telefono || "")
+  .replace(/\D/g, "")
+  .trim();
+
+const emailLimpio = (form.email || "")
+  .trim()
+  .toLowerCase();
+
 
 
 
@@ -689,18 +754,38 @@ const crearAlumnoDesdeLead = async (lead) => {
 const { error } = await supabase
   .from("alumnos")
   .insert([
-    {
-      id: crypto.randomUUID(),
-      nombre: nuevoAlumno.nombre,
-      telefono: nuevoAlumno.telefono,
-     email: nuevoAlumno.email || "sin-email@temp.com",
-      curso_id: nuevoAlumno.cursoId,
-      estado: "activo",
-      valor: nuevoAlumno.valor,
-      descuento: nuevoAlumno.descuento,
-      asesor_id: nuevoAlumno.asesorId,
-      created_at: new Date().toISOString()
-    }
+   {
+  id: crypto.randomUUID(),
+  nombre: nuevoAlumno.nombre,
+  telefono: nuevoAlumno.telefono,
+  email: nuevoAlumno.email || "sin-email@temp.com",
+
+  curso_id: nuevoAlumno.cursoId,
+  curso_nombre: nuevoAlumno.cursoNombre,
+
+  estado: "activo",
+
+  valor: nuevoAlumno.valor,
+  valor_base: nuevoAlumno.valorBase,
+  descuento: nuevoAlumno.descuento,
+
+  asesor_id: nuevoAlumno.asesorId,
+
+  tipo_documento: nuevoAlumno.tipoDocumento,
+  numero_documento: nuevoAlumno.numeroDocumento,
+
+  edad: nuevoAlumno.edad,
+  nombre_acudiente: nuevoAlumno.nombreAcudiente,
+  telefono_acudiente: nuevoAlumno.telefonoAcudiente,
+
+  modalidad: nuevoAlumno.modalidad,
+  tipo_programa: nuevoAlumno.tipoPrograma,
+  duracion: nuevoAlumno.duracion,
+
+  alumno_id: nuevoAlumno.alumnoId,
+
+  created_at: new Date().toISOString()
+}
   ]);
 
 if (error) {
@@ -743,6 +828,10 @@ const guardarCambiosLead = async () => {
     tipo_programa: tipoModal,
     descuento: descuentoFinal,
     valor: precioFinalModal,
+
+    valor_base: precioBaseModal,
+  tipo_documento: leadActivo.tipoDocumento,
+  numero_documento: leadActivo.numeroDocumento,
   };
 
   const { data, error } = await supabase
@@ -761,17 +850,23 @@ const guardarCambiosLead = async () => {
     return;
   }
 
-  const leadActualizado = {
-    ...data,
-    descuento: data.descuento,
-    cursoId: data.curso_id,
-    cursoNombre: data.curso_nombre,
-    asesorId: data.asesor_id,
-    createdAt: data.created_at,
-    tipoCliente: data.tipo_cliente,
-    modalidad: data.modalidad,
-    tipoPrograma: data.tipo_programa,
-  };
+ const leadActualizado = {
+  ...data,
+
+  cursoId: data.curso_id,
+  cursoNombre: data.curso_nombre,
+  asesorId: data.asesor_id,
+  createdAt: data.created_at,
+
+  tipoCliente: data.tipo_cliente,
+  modalidad: data.modalidad,
+  tipoPrograma: data.tipo_programa,
+
+  // 🔥 CLAVE
+  tipoDocumento: data.tipo_documento,
+  numeroDocumento: data.numero_documento,
+  valorBase: data.valor_base,
+};
 
   setLeads((prev) =>
     prev.map((l) =>
@@ -808,24 +903,58 @@ const actualizarEstadoLead = async (id, nuevoEstado, lead) => {
     let alumnoId = lead.alumnoId || null;
 
     // 🔥 CREAR ALUMNO AUTOMÁTICO
-   if (nuevoEstado === "pagado" && !lead.alumnoId) {
+   if (nuevoEstado === "inscrito" && !lead.alumnoId) {
 
-  const leadActualizado = {
-    ...lead,
-    duracion: leadActivo?.duracion || lead.duracion,
-    cursoId: leadActivo?.cursoId || lead.cursoId,
-    tipoPrograma: leadActivo?.tipoPrograma || lead.tipoPrograma,
-    valor: leadActivo?.valor || lead.valor,
-    valorBase: leadActivo?.valorBase || lead.valorBase,
-    descuento: leadActivo?.descuento || lead.descuento,
-    numeroDocumento: leadActivo?.numeroDocumento || lead.numeroDocumento,
-  tipoDocumento: leadActivo?.tipoDocumento || lead.tipoDocumento,
-  edad: leadActivo?.edad || lead.edad || "",
-nombreAcudiente: leadActivo?.nombreAcudiente || lead.nombreAcudiente || "",
-telefonoAcudiente: leadActivo?.telefonoAcudiente || lead.telefonoAcudiente || "",
-  };
+  const leadNormalizado = {
+  ...lead,
 
-  alumnoId = await crearAlumnoDesdeLead(leadActualizado);
+  cursoId: leadActivo?.cursoId ?? lead.cursoId ?? lead.curso_id ?? "",
+    cursoNombre: leadActivo?.cursoNombre ?? lead.cursoNombre ?? lead.curso_nombre ?? "",
+
+  duracion: leadActivo?.duracion ?? lead.duracion ?? "",
+  modalidad: leadActivo?.modalidad ?? lead.modalidad ?? "",
+  tipoPrograma: leadActivo?.tipoPrograma ?? lead.tipoPrograma ?? lead.tipo_programa,
+
+  valor: leadActivo?.valor ?? lead.valor ?? 0,
+  valorBase: leadActivo?.valorBase ?? lead.valorBase ?? lead.valor_base ?? 0,
+  descuento: leadActivo?.descuento ?? lead.descuento ?? 0,
+
+tipoDocumento:
+  leadActivo?.tipoDocumento ??
+  lead.tipoDocumento ??
+  lead.tipo_documento ??
+  "",
+
+  numeroDocumento:
+    leadActivo?.numeroDocumento ??
+    lead.numeroDocumento ??
+    lead.numero_documento ??
+    "",
+
+  edad:
+    leadActivo?.edad ??
+    lead.edad ??
+    "",
+
+  nombreAcudiente:
+    leadActivo?.nombreAcudiente??
+    lead.nombreAcudiente ??
+    lead.nombre_acudiente ??
+    "",
+
+  telefonoAcudiente:
+    leadActivo?.telefonoAcudiente ??
+    lead.telefonoAcudiente ??
+    lead.telefono_acudiente ??
+    "",
+
+  asesorId: lead.asesorId ?? lead.asesor_id ?? auth?.id,
+  asesorNombre: lead.asesorNombre ?? lead.asesor_nombre ?? auth?.nombre,
+};
+
+console.log("LEAD NORMALIZADO FINAL:", leadNormalizado);
+
+alumnoId = await crearAlumnoDesdeLead(leadNormalizado);
 }
 
   const { error } = await supabase
@@ -1213,6 +1342,47 @@ return (
               
             </div>
 
+            {form.tipoDocumento === "ti" && (
+  <>
+    <div className="field-group">
+      <label>Edad</label>
+      <input
+        type="number"
+        value={form.edad}
+        onChange={(e) =>
+          setForm({ ...form, edad: e.target.value })
+        }
+        placeholder="Edad"
+        required
+      />
+    </div>
+
+    <div className="field-group">
+      <label>Nombre del acudiente</label>
+      <input
+        value={form.nombreAcudiente}
+        onChange={(e) =>
+          setForm({ ...form, nombreAcudiente: e.target.value })
+        }
+        placeholder="Nombre del acudiente"
+        required
+      />
+    </div>
+
+    <div className="field-group">
+      <label>Teléfono del acudiente</label>
+      <input
+        value={form.telefonoAcudiente}
+        onChange={(e) =>
+          setForm({ ...form, telefonoAcudiente: e.target.value })
+        }
+        placeholder="Teléfono del acudiente"
+        required
+      />
+    </div>
+  </>
+)}
+
 
 
 
@@ -1494,10 +1664,19 @@ onChange={(e) =>
               ) : (
                 leadsFiltrados.map((lead) => {
                   const tasa = obtenerTasaComision(lead.tipoCliente);
-                  const comision =
-                    lead.estado === "pagado"
-                      ? (Number(lead.valor || 0) * tasa) / 100
-                      : 0;
+                  
+
+                  const pagosAlumno = pagos.filter(
+                  (p) =>
+                    String(p.alumnoId) === String(lead.alumnoId)
+                );
+
+                const totalPagado = pagosAlumno.reduce(
+                  (acc, p) => acc + Number(p.montoPagado || 0),
+                  0
+                );
+
+                const comision = (totalPagado * tasa) / 100;
 
                   return (
                     <tr key={lead.id}>
@@ -1548,15 +1727,7 @@ onChange={(e) =>
                         >
                           Ver
                         </button>
-                          {lead.estado !== "pagado" && (
-                            <button
-  className="pay-btn"
-  onClick={() => actualizarEstadoLead(lead.id, "pagado", lead)}
-  disabled={!lead.duracion || Number(lead.duracion) <= 0}
->
-  Marcar pagado
-</button>
-                          )}
+                         
                         </div>
                       </td>
                     </tr>
@@ -1590,6 +1761,29 @@ onChange={(e) =>
                 <small>Estado</small>
                 <strong>{estadoLabels[leadActivo.estado] || leadActivo.estado}</strong>
               </div>
+
+
+            <div className="modal-data-card">
+  <small>
+    {
+      leadActivo.tipoDocumento === "ti"
+        ? "Tarjeta de identidad (TI)"
+        : leadActivo.tipoDocumento === "cedula" || leadActivo.tipoDocumento === "cc"
+        ? "Cédula (CC)"
+        : leadActivo.tipoDocumento === "extranjeria"
+        ? "Cédula extranjería"
+        : leadActivo.tipoDocumento === "nit"
+        ? "NIT"
+        : leadActivo.tipoDocumento === "ppt"
+        ? "PPT"
+        : "Documento"
+    }
+  </small>
+
+  <strong>{leadActivo.numeroDocumento || "-"}</strong>
+</div>
+
+
               <div className="modal-data-card">
                 <small>Tipo cliente</small>
                 <strong>{leadActivo.tipoCliente}</strong>

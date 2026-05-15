@@ -1,0 +1,136 @@
+:root {
+  --font-primary:
+    Inter,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+
+  --text-primary: #f5f7ff;
+  --text-secondary: #cfd7e6;
+  --text-muted: #9da6b8;
+}
+
+/* =========================================
+   BASE GLOBAL
+========================================= */
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+  font-family: var(--font-primary);
+  background: #050816;
+  color: var(--text-primary);
+
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* =========================================
+   TIPOGRAFÍA GLOBAL
+========================================= */
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin-top: 0;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  color: var(--text-primary);
+}
+
+label {
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--text-secondary);
+}
+
+p,
+span,
+td,
+li,
+input,
+textarea,
+select {
+  font-weight: 400;
+  color: var(--text-secondary);
+}
+
+button {
+  font-family: inherit;
+  font-weight: 600;
+}
+
+/* =========================================
+   FORMULARIOS
+========================================= */
+
+input,
+textarea,
+select,
+button {
+  font: inherit;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #7f8aa3;
+}
+
+/* =========================================
+   MEDIA
+========================================= */
+
+img,
+video,
+iframe {
+  max-width: 100%;
+}
+
+/* =========================================
+   OVERRIDE GLOBAL DE PESOS TIPOGRÁFICOS
+   Debe ir al final para ganarle a CSS de módulos
+========================================= */
+
+.dashboard-layout h1,
+.dashboard-layout h2,
+.dashboard-layout h3,
+.dashboard-layout h4,
+.dashboard-layout strong {
+  font-weight: 700 !important;
+  letter-spacing: -0.015em;
+}
+
+.dashboard-layout label,
+.dashboard-layout th,
+.dashboard-layout small,
+.dashboard-layout button {
+  font-weight: 600 !important;
+}
+
+.dashboard-layout p,
+.dashboard-layout span,
+.dashboard-layout td,
+.dashboard-layout input,
+.dashboard-layout textarea,
+.dashboard-layout select {
+  font-weight: 400 !important;
+}
+
+.dashboard-layout input,
+.dashboard-layout textarea,
+.dashboard-layout select {
+  font-size: 15px;
+}

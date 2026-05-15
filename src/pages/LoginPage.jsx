@@ -30,10 +30,11 @@ const handleLogin = async (e) => {
     password,
   });
 
-  if (error) {
-    alert("Credenciales incorrectas");
-    return;
-  }
+ if (error) {
+  console.error("Error login Supabase:", error);
+  alert(error.message);
+  return;
+}
 
   // validar rol en Supabase
   // 🔥 obtener usuario autenticado
@@ -58,22 +59,32 @@ if (!usuario) {
 }
 const rolNormalizado = usuario.role?.toLowerCase();
 
-if (!["owner", "contador", "coordinador", "gerente"].includes(rolNormalizado)) {
+if (
+  ![
+    "owner",
+    "admin",
+    "contador",
+    "coordinador",
+    "coordinador_academico",
+    "gerente",
+  ].includes(rolNormalizado)
+) {
   alert("No tienes permisos");
   return;
 }
 
-const roleLabels = {
-  owner: "Gerente",
-  contador: "Contador",
-  coordinador: "Coordinador",
-};
+if (rolNormalizado === "coordinador_academico") {
+  navigate("/coordinador");
+  return;
+}
 
-
+if (rolNormalizado === "coordinador") {
+  navigate("/coordinador");
+  return;
+}
 
 navigate("/dashboard");
 };
-
 
   return (
     <>

@@ -21,6 +21,10 @@ import Solicitudes from "../pages/Solicitudes";
 import ProfesorLayout from "../profesor/ProfesorLayout";
 import AsesoresDirectorioSection from "../asesores/AsesoresDirectorioSection";
 import GraciasRegistro from "../asesores/GraciasRegistro";
+import LeadsAdminSection from "../pages/LeadsAdminSection";
+import CoordinadorPanel from "../coordinador/CoordinadorPanel";
+import RegistroCoordinadores from "../coordinador/RegistroCoordinadores";
+
 
 function AppRouter() {
   return (
@@ -52,8 +56,35 @@ function AppRouter() {
           }
         />
 
+               <Route
+          path="/coordinador"
+          element={
+            <ProtectedRoute role={["admin", "owner", "coordinador", "coordinador_academico"]}>
+              <CoordinadorPanel />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+  path="/registro-coordinadores"
+  element={
+    <ProtectedRoute role={["admin", "owner", "coordinador_academico"]}>
+      <RegistroCoordinadores />
+    </ProtectedRoute>
+  }
+/>
+
         <Route path="/alumnos" element={<ProtectedRoute role="admin"><AlumnosPage /></ProtectedRoute>} />
-        <Route path="/profesores" element={<ProtectedRoute role="admin"><ProfesoresPage /></ProtectedRoute>} />
+                
+                <Route
+          path="/profesores"
+          element={
+            <ProtectedRoute role={["admin", "owner", "coordinador_academico"]}>
+              <ProfesoresPage />
+            </ProtectedRoute>
+          }
+        />
+
         <Route path="/pagos" element={<ProtectedRoute role="admin"><PagosPage /></ProtectedRoute>} />
         <Route path="/historial-pagos" element={<ProtectedRoute role="admin"><HistorialDePagos /></ProtectedRoute>} />
         <Route path="/ingresos" element={<ProtectedRoute role="admin"><IngresosPage /></ProtectedRoute>} />
@@ -77,23 +108,34 @@ function AppRouter() {
           }
           
         />
+       
+               <Route
+          path="/asesores-admin"
+          element={
+            <ProtectedRoute role={["admin", "owner", "coordinador_academico"]}>
+              <AsesoresAdminSection />
+            </ProtectedRoute>
+          }
+        />
+
         <Route
-  path="/asesores-admin"
-  element={
-    <ProtectedRoute role="admin">
-      <AsesoresAdminSection />
-    </ProtectedRoute>
-  }
-  
-/>
+          path="/asesores"
+          element={
+            <ProtectedRoute role={["admin", "owner", "coordinador_academico"]}>
+              <AsesoresDirectorioSection />
+            </ProtectedRoute>
+          }
+        />
+
 <Route
-  path="/asesores"
+  path="/leads"
   element={
-    <ProtectedRoute role="admin">
-      <AsesoresDirectorioSection />
+    <ProtectedRoute role={["admin", "owner", "coordinador_academico"]}>
+      <LeadsAdminSection />
     </ProtectedRoute>
   }
 />
+
   <Route 
   path="/solicitudes" 
   element={

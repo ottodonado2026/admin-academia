@@ -155,13 +155,87 @@ useEffect(() => {
 }, []);
 
 // 🔹 cargar asesores
+
 useEffect(() => {
+  const fetchUsuarioActual = async () => {
+    const { data: authData } = await supabase.auth.getUser();
+    const authUser = authData?.user;
+
+    if (!authUser) return;
+
+    const { data, error } = await supabase
+      .from("usuarios")
+      .select("*")
+      .eq("auth_uid", authUser.id)
+      .maybeSingle();
+
+    if (error) {
+      console.error("Error cargando usuario actual:", error);
+      return;
+    }
+
+    setUsuarioActual(data);
+  };
+
+  fetchUsuarioActual();
+}, []);
+
+
+// 🔹 usuario actual
+const [usuarioActual, setUsuarioActual] = useState(null);
+
+useEffect(() => {
+  const fetchUsuarioActual = async () => {
+    const { data: authData } = await supabase.auth.getUser();
+    const authUser = authData?.user;
+
+    if (!authUser) return;
+
+    const { data, error } = await supabase
+      .from("usuarios")
+      .select("*")
+      .eq("auth_uid", authUser.id)
+      .maybeSingle();
+
+    if (error) {
+      console.error("Error cargando usuario actual:", error);
+      return;
+    }
+
+    setUsuarioActual(data);
+  };
+
+  fetchUsuarioActual();
+}, []);
+
+// 🔹 cargar asesores
+useEffect(() => {
+  if (!usuarioActual) return;
+
   const fetchAsesores = async () => {
     try {
-      const { data, error } = await supabase
-        .from("asesores")
-        .select("*")
-        .order("created_at", { ascending: false });
+      const esAdministrador =
+        usuarioActual?.role === "admin" ||
+        usuarioActual?.role === "owner" ||
+        usuarioActual?.role === "contador";
+
+      const esCoordinadorPrincipal =
+        usuarioActual?.role === "coordinador_academico" &&
+        (usuarioActual?.puede_registrar_coordinadores === true ||
+          usuarioActual?.coordinador_nivel === "principal");
+
+      const puedeVerTodos =
+        usuarioActual?.puede_ver_todos_leads === true;
+
+      let asesoresQuery = supabase.from("asesores").select("*");
+
+      if (!esAdministrador && !esCoordinadorPrincipal && !puedeVerTodos) {
+        asesoresQuery = asesoresQuery.eq("creado_por", usuarioActual.id);
+      }
+
+      const { data, error } = await asesoresQuery.order("created_at", {
+        ascending: false,
+      });
 
       if (error) {
         console.error("Error cargando asesores:", error);
@@ -169,10 +243,9 @@ useEffect(() => {
         return;
       }
 
-      // 🔥 adaptar a tu UI (igual que hiciste con leads)
-      const adaptados = data.map((a) => ({
+      const adaptados = (data || []).map((a) => ({
         ...a,
-        createdAt: a.created_at
+        createdAt: a.created_at,
       }));
 
       setAsesores(adaptados);
@@ -183,7 +256,7 @@ useEffect(() => {
   };
 
   fetchAsesores();
-}, [refresh]);
+}, [refresh, usuarioActual]);
 
 const asesoresConMetricas = useMemo(() => {
   return (asesores || []).map((asesor) => {
@@ -345,11 +418,14 @@ const generarIdAsesor = (nombreCompleto) => {
 const handleSubmit = async (e) => {
   e.preventDefault();
 
-  const existe = asesores.some(
-    (item) => item.email.trim().toLowerCase() === form.email.trim().toLowerCase()
-  );
+ const existe = asesores.some(
+  (item) =>
+    (item.email || "").trim().toLowerCase() ===
+    (form.email || "").trim().toLowerCase()
+);
 const cedulaExiste = asesores.some(
-  (item) => item.cedula?.trim() === form.cedula.trim()
+  (item) =>
+    (item.cedula || "").trim() === (form.cedula || "").trim()
 );
 
 if (cedulaExiste) {
@@ -370,6 +446,7 @@ if (cedulaExiste) {
 });
     return;
   }
+
 
   const nuevoAsesorId = generarIdAsesor(form.nombre, asesores);
 
@@ -397,13 +474,40 @@ const asesorIdBonito = generarIdAsesor(nuevo.nombre);
 
 const linkAsesor = `${window.location.origin}/registro-asesor/${asesorIdReal}`;
 
-const userCredential = await createUserWithEmailAndPassword(
-  auth,
-  nuevo.email,
-  "12345678" // o password generado
-);
+console.log("EMAIL ENVIADO:", nuevo.email);
+// 🔥 llamar a la función de Supabase
+const { data: response, error: functionError } =
+  await supabase.functions.invoke("create-asesor", {
+    body: JSON.stringify({ email: nuevo.email }),
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+console.log("RESPONSE FUNCTION:", response);
+console.log("ERROR FUNCTION:", functionError);
+if (functionError || !response) {
+  console.error("Error en función create-asesor:", functionError);
+  console.error("Respuesta función create-asesor:", response);
 
-const authUid = userCredential.user.uid;
+  setAlerta({
+    visible: true,
+    tipo: "error",
+    mensaje:
+      response?.error ||
+      functionError?.message ||
+      "No se pudo crear el usuario Auth del asesor.",
+  });
+
+  return;
+}
+
+if (!nuevo.email || !nuevo.email.includes("@")) {
+  alert("Email inválido");
+  return;
+}
+
+const authUid = response.auth_uid;
+
     // 🔐 Crear usuario en Firebase Auth
 
 // 🔥 Guardar en Supabase
@@ -427,9 +531,23 @@ const { data, error } = await supabase
       link_asesor: linkAsesor,
 
       // 🔥 CLAVE
-      auth_uid: authUid,
+     auth_uid: authUid,
 
-      created_at: new Date().toISOString()
+creado_por: usuarioActual?.id
+  ? String(usuarioActual.id)
+  : null,
+
+creado_por_nombre:
+  usuarioActual?.nombre_completo ||
+  usuarioActual?.nombre ||
+  usuarioActual?.email ||
+  "Sin coordinador",
+
+creado_por_role:
+  usuarioActual?.role ||
+  "coordinador_academico",
+
+created_at: new Date().toISOString()
     }
   ])
   .select()
@@ -451,11 +569,7 @@ setAlerta({
     resetForm();
     setRefresh((v) => v + 1);
     
-setAlerta({
-  visible: true,
-  tipo: "success",
-  mensaje: "Asesor creado correctamente",
-});
+
 
   } catch (error) {
     console.error("Error creando asesor:", error);
@@ -556,7 +670,7 @@ const updateEstado = async (id, estado) => {
             </div>
 
             <form className="asesor-admin-form" onSubmit={handleSubmit}>
-              <div className="asesor-field">
+              <div className="asesor-field asesor-col-3">
                 <label>Nombre completo</label>
                 <input
                   name="nombre"
@@ -567,7 +681,7 @@ const updateEstado = async (id, estado) => {
                 />
               </div>
 
-              <div className="asesor-field">
+              <div className="asesor-field asesor-col-3">
                 <label>Correo</label>
                 <input
                   name="email"
@@ -578,7 +692,7 @@ const updateEstado = async (id, estado) => {
                   required
                 />
               </div>
-              <div className="asesor-field">
+              <div className="asesor-field asesor-col-3">
               <label>Cédula</label>
               <input
                name="cedula"
@@ -590,7 +704,7 @@ const updateEstado = async (id, estado) => {
             </div>
 
 
-              <div className="asesor-field">
+             <div className="asesor-field asesor-col-3">
                 <label>Teléfono</label>
                 <input
                   name="telefono"
@@ -600,7 +714,7 @@ const updateEstado = async (id, estado) => {
                 />
               </div>
 
-              <div className="asesor-field">
+              <div className="asesor-field asesor-col-3">
                 <label>Salario base</label>
                 <input
                   name="salarioBase"
@@ -612,7 +726,7 @@ const updateEstado = async (id, estado) => {
                 />
               </div>
 
-              <div className="asesor-field">
+             <div className="asesor-field asesor-col-3">
                 <label>Meta mensual</label>
                 <input
                   name="metaMensual"
@@ -623,7 +737,7 @@ const updateEstado = async (id, estado) => {
                 />
               </div>
 
-              <div className="asesor-field">
+              <div className="asesor-field asesor-col-3">
                 <label>Comisión cliente nuevo (%)</label>
                 <input
                   name="comisionNuevo"
@@ -634,7 +748,7 @@ const updateEstado = async (id, estado) => {
                 />
               </div>
 
-              <div className="asesor-field">
+            <div className="asesor-field asesor-col-3">
                 <label>Comisión cliente activo (%)</label>
                 <input
                   name="comisionActivo"
@@ -645,25 +759,29 @@ const updateEstado = async (id, estado) => {
                 />
               </div>
 
-              <div className="asesor-field">
-                <label>Comisión reactivado (%)</label>
-                <input
-                  name="comisionReactivado"
-                  type="number"
-                  value={form.comisionReactivado}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
+              <div className="asesor-field asesor-col-3">
+  <label>Comisión reactivado (%)</label>
+  <input
+    name="comisionReactivado"
+    type="number"
+    value={form.comisionReactivado}
+    onChange={handleChange}
+    required
+  />
+</div>
 
-              <div className="asesor-field">
-                <label>Estado</label>
-                <select name="estado" value={form.estado} onChange={handleChange}>
-                  <option value="activo">Activo</option>
-                  <option value="inactivo">Inactivo</option>
-                  <option value="vacaciones">Vacaciones</option>
-                </select>
-              </div>
+<div className="asesor-field asesor-col-1">
+  <label>Estado</label>
+  <select
+    name="estado"
+    value={form.estado}
+    onChange={handleChange}
+  >
+    <option value="activo">Activo</option>
+    <option value="inactivo">Inactivo</option>
+    <option value="vacaciones">Vacaciones</option>
+  </select>
+</div>
 
               <div className="asesor-field asesor-field-full">
                 <label>Notas</label>

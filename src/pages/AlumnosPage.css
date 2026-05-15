@@ -112,15 +112,34 @@
 
 .alumnos-page .alumnos-form > *:nth-child(6) { grid-column: span 3; } /* Curso */
 .alumnos-page .alumnos-form > *:nth-child(7) { grid-column: span 2; } /* Duración */
+
 .alumnos-page .alumnos-form > *:nth-child(8) { 
   grid-column: span 2; 
-}/* Modalidad */
+} /* Modalidad */
 
-.alumnos-page .alumnos-form > *:nth-child(9) { grid-column: span 4; } /* Tipo + precio */
-.alumnos-page .alumnos-form > *:nth-child(10) { grid-column: span 3; } /* Botón */
+.alumnos-page .alumnos-form > *:nth-child(9) { 
+  grid-column: span 2; 
+} /* Formato clase */
+
+.alumnos-page .alumnos-form > *:nth-child(10) { 
+  grid-column: span 2; 
+} /* Tipo */
+
+.alumnos-page .alumnos-form > *:nth-child(11) { 
+  grid-column: span 3; 
+} /* Tipo row */
+
+.alumnos-page .alumnos-form > *:nth-child(12) { 
+  grid-column: span 2; 
+} /* Botón */
+
+.alumnos-page .tipo-row {
+  grid-template-columns: 1.3fr 1fr 1fr;
+}
+
 .alumnos-page .tipo-row {
   display: grid;
-  grid-template-columns: 6.5fr 6fr 5fr;
+ grid-template-columns: 1.3fr 1fr;
   gap: 10px;
   align-items: center;
   min-width: 0;
@@ -132,20 +151,23 @@
 }
 
 .alumnos-page .inicio-badge {
-  grid-column: 1 / -1;
-  min-height: 38px;
   display: inline-flex;
   align-items: center;
-  width: fit-content;
-  max-width: 100%;
-  padding: 8px 12px;
+  justify-content: center;
+
+  height: 45px;
+  padding: 0 18px;
+
   border-radius: 999px;
+
   background: rgba(57,255,20,0.1);
   border: 1px solid rgba(57,255,20,0.18);
+
   color: #9dff8a;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
-  white-space: normal;
+
+  white-space: nowrap;
 }
 
 /* =========================
@@ -551,10 +573,12 @@
   .alumnos-page .alumnos-form > *:nth-child(3) { grid-column: span 4; }
   .alumnos-page .alumnos-form > *:nth-child(4) { grid-column: span 4; }
   .alumnos-page .alumnos-form > *:nth-child(5) { grid-column: span 4; }
-  .alumnos-page .alumnos-form > *:nth-child(6) { grid-column: span 2; }
-  .alumnos-page .alumnos-form > *:nth-child(7) { grid-column: span 2; }
-  .alumnos-page .alumnos-form > *:nth-child(8) { grid-column: span 8; }
-  .alumnos-page .alumnos-form > *:nth-child(9) { grid-column: span 4; }
+  .alumnos-page .alumnos-form > *:nth-child(6) { grid-column: span 3; }
+.alumnos-page .alumnos-form > *:nth-child(7) { grid-column: span 3; }
+.alumnos-page .alumnos-form > *:nth-child(8) { grid-column: span 3; }
+.alumnos-page .alumnos-form > *:nth-child(9) { grid-column: span 3; }
+.alumnos-page .alumnos-form > *:nth-child(10) { grid-column: span 8; }
+.alumnos-page .alumnos-form > *:nth-child(11) { grid-column: span 4; }
 }
 }
 
@@ -814,4 +838,16 @@
     background: #0b0b0b; /* fuerza fondo sólido */
   }
 
+}
+
+/* Quitar flechas input number */
+.alumnos-page input[type="number"]::-webkit-outer-spin-button,
+.alumnos-page input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.alumnos-page input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
 }

@@ -38,50 +38,57 @@ export const AuthProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    // Obtener sesión inicial al cargar la app
-    const initializeAuth = async () => {
+    let isMounted = true;
+    let initialLoadDone = false;
+
+    const loadSessionAndRole = async (session) => {
+      if (!isMounted) return;
+
       try {
-        const { data: { session } } = await supabase.auth.getSession();
         if (session?.user) {
           setUser(session.user);
           await fetchUserRole(session.user.id);
         } else {
           setUser(null);
           setRole(null);
+          setUserData(null);
         }
-      } catch (error) {
-        console.error("Error inicializando auth:", error);
+      } catch (err) {
+        console.error("Error cargando sesión y rol:", err);
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+          initialLoadDone = true;
+        }
       }
     };
 
-    initializeAuth();
+    // 1. Obtener sesión inicial de forma explícita
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!initialLoadDone) {
+        loadSessionAndRole(session);
+      }
+    });
 
-    // Escuchar cambios de sesión (login, logout, refresh de token)
+    // 2. Escuchar cambios de sesión (login, logout, refresh de token)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      // Ignorar eventos duplicados mientras ya estamos procesando uno
-      if (isFetching.current) return;
-      isFetching.current = true;
+      if (!isMounted) return;
 
-      try {
-        if (event === "SIGNED_OUT") {
-          setUser(null);
-          setRole(null);
-          setUserData(null);
-        } else if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
-          if (session?.user) {
-            setUser(session.user);
-            await fetchUserRole(session.user.id);
-          }
-        }
-        // Para TOKEN_REFRESHED en background, no mostramos loading
-      } finally {
-        isFetching.current = false;
+      // Para INITIAL_SESSION, si ya lo cargamos con getSession, lo ignoramos para evitar doble fetch
+      if (event === "INITIAL_SESSION" && initialLoadDone) return;
+
+      if (event === "SIGNED_OUT") {
+        setUser(null);
+        setRole(null);
+        setUserData(null);
+        setLoading(false);
+      } else if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
+        await loadSessionAndRole(session);
       }
     });
 
     return () => {
+      isMounted = false;
       subscription?.unsubscribe();
     };
   }, []);

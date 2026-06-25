@@ -39,7 +39,7 @@ function DashboardPage() {
   const [mesSeleccionado, setMesSeleccionado] = useState(hoy.getMonth());
   const [anioSeleccionado, setAnioSeleccionado] = useState(hoy.getFullYear());
 
-  const { ingresos, egresos, alumnos, pagos, historialPagos, loading: loadingData } = useDashboard();
+  const { ingresos, egresos, alumnos, pagos, historialPagos, loading: loadingData, refetch } = useDashboard();
   const { user, role, userData } = useAuth();
 
   const [busqueda, setBusqueda] = useState("");
@@ -88,14 +88,14 @@ function DashboardPage() {
       "postgres_changes",
       { event: "*", schema: "public", table: "historial_pagos" },
       () => {
-        fetchDashboard();
+        refetch();
       }
     )
     .on(
       "postgres_changes",
       { event: "*", schema: "public", table: "pagos" },
       () => {
-        fetchDashboard();
+        refetch();
       }
     )
     .subscribe();

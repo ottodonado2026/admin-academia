@@ -129,52 +129,6 @@ function DashboardPage() {
       minimumFractionDigits: 0,
     }).format(valor || 0);
 
-  // 🔥 FILTROS
-  const ingresosFiltrados = useMemo(() => {
-    return ingresos.filter((item) => {
-      if (!item.fecha) return false;
-      const fechaMatch = chequearFiltroFecha(new Date(item.fecha));
-
-      // 🔹 FILTRO POR MÉTODO
-      const metodoItem = (item.metodo || "").trim().toLowerCase();
-      const metodoFiltro = (filtroMetodo || "").trim().toLowerCase();
-      const metodoMatch = metodoFiltro === "todos" || metodoItem === metodoFiltro;
-
-      // 🔹 FILTRO POR BÚSQUEDA
-      const textoBusqueda = busqueda.trim().toLowerCase();
-      const busquedaMatch =
-        !textoBusqueda ||
-        (item.descripcion || "").toLowerCase().includes(textoBusqueda) ||
-        (item.referencia || "").toLowerCase().includes(textoBusqueda);
-
-      return fechaMatch && metodoMatch && busquedaMatch;
-    });
-  }, [ingresos, filtroFecha, mesSeleccionado, anioSeleccionado, fechaExacta, fechaInicioCustom, fechaFinCustom, filtroMetodo, busqueda]);
-
-
-
-  const egresosFiltrados = useMemo(() => {
-    return egresos.filter((item) => {
-      if (!item.fecha) return false;
-      const fechaMatch = chequearFiltroFecha(new Date(item.fecha));
-
-      // 🔹 FILTRO MÉTODO
-      const metodoItem = (item.metodo || "").trim().toLowerCase();
-      const metodoFiltro = (filtroMetodo || "").trim().toLowerCase();
-      const metodoMatch = metodoFiltro === "todos" || metodoItem === metodoFiltro;
-
-      // 🔹 FILTRO BÚSQUEDA
-      const textoBusqueda = busqueda.trim().toLowerCase();
-      const busquedaMatch =
-        !textoBusqueda ||
-        (item.descripcion || "").toLowerCase().includes(textoBusqueda) ||
-        (item.categoria || "").toLowerCase().includes(textoBusqueda);
-
-      return fechaMatch && metodoMatch && busquedaMatch;
-    });
-  }, [egresos, filtroFecha, mesSeleccionado, anioSeleccionado, fechaExacta, fechaInicioCustom, fechaFinCustom, filtroMetodo, busqueda]);
-
-
   const normalizarFecha = (fecha) => {
     const d = new Date(fecha);
     const year = d.getFullYear();
@@ -223,6 +177,51 @@ function DashboardPage() {
 
     return true;
   };
+
+  // 🔥 FILTROS
+  const ingresosFiltrados = useMemo(() => {
+    return ingresos.filter((item) => {
+      if (!item.fecha) return false;
+      const fechaMatch = chequearFiltroFecha(new Date(item.fecha));
+
+      // 🔹 FILTRO POR MÉTODO
+      const metodoItem = (item.metodo || "").trim().toLowerCase();
+      const metodoFiltro = (filtroMetodo || "").trim().toLowerCase();
+      const metodoMatch = metodoFiltro === "todos" || metodoItem === metodoFiltro;
+
+      // 🔹 FILTRO POR BÚSQUEDA
+      const textoBusqueda = busqueda.trim().toLowerCase();
+      const busquedaMatch =
+        !textoBusqueda ||
+        (item.descripcion || "").toLowerCase().includes(textoBusqueda) ||
+        (item.referencia || "").toLowerCase().includes(textoBusqueda);
+
+      return fechaMatch && metodoMatch && busquedaMatch;
+    });
+  }, [ingresos, filtroFecha, mesSeleccionado, anioSeleccionado, fechaExacta, fechaInicioCustom, fechaFinCustom, filtroMetodo, busqueda]);
+
+
+
+  const egresosFiltrados = useMemo(() => {
+    return egresos.filter((item) => {
+      if (!item.fecha) return false;
+      const fechaMatch = chequearFiltroFecha(new Date(item.fecha));
+
+      // 🔹 FILTRO MÉTODO
+      const metodoItem = (item.metodo || "").trim().toLowerCase();
+      const metodoFiltro = (filtroMetodo || "").trim().toLowerCase();
+      const metodoMatch = metodoFiltro === "todos" || metodoItem === metodoFiltro;
+
+      // 🔹 FILTRO BÚSQUEDA
+      const textoBusqueda = busqueda.trim().toLowerCase();
+      const busquedaMatch =
+        !textoBusqueda ||
+        (item.descripcion || "").toLowerCase().includes(textoBusqueda) ||
+        (item.categoria || "").toLowerCase().includes(textoBusqueda);
+
+      return fechaMatch && metodoMatch && busquedaMatch;
+    });
+  }, [egresos, filtroFecha, mesSeleccionado, anioSeleccionado, fechaExacta, fechaInicioCustom, fechaFinCustom, filtroMetodo, busqueda]);
 
 const historialBase = useMemo(() => {
   return historialPagos.map((item) => {

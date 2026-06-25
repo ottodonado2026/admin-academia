@@ -227,6 +227,7 @@ function EgresosPage() {
   };
 
   const generarExcel = async () => {
+    if (isExporting) return;
     setIsExporting(true);
     setExportStep(1);
     const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -305,7 +306,7 @@ function EgresosPage() {
       await delay(500);
     } catch (err) {
       console.error(err);
-      alert("Error al generar Excel.");
+      setTimeout(() => alert("Error al generar Excel."), 100);
     } finally {
       setIsExporting(false);
       setShowDownloadMenu(false);
@@ -313,6 +314,7 @@ function EgresosPage() {
   };
 
   const generarPDF = async () => {
+    if (isExporting) return;
     setIsExporting(true);
     setExportStep(1);
     const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -382,7 +384,7 @@ function EgresosPage() {
       await delay(500);
     } catch (err) {
       console.error(err);
-      alert("Error al generar PDF.");
+      setTimeout(() => alert("Error al generar PDF."), 100);
     } finally {
       setIsExporting(false);
       setShowDownloadMenu(false);

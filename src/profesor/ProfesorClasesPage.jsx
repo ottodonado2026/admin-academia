@@ -53,12 +53,24 @@ useEffect(() => {
   let activo = true;
 
   const cargarDatos = async () => {
-    const [{ data: clasesData, error: clasesError }, { data: pagosData }, { data: alumnosResp }] =
+    const userDataStr = localStorage.getItem("user");
+    const userData = userDataStr ? JSON.parse(userDataStr) : null;
+    const profeId = userData?.id || authUser?.id;
+
+    if (!profeId) return;
+
+    const [{ data: clasesData, error: clasesError }, { data: clasesGratisData, error: gratisError }, { data: pagosData }, { data: alumnosResp }] =
       await Promise.all([
         supabase
           .from("clases")
           .select("*")
-          .or(`profesor_id.eq.${authUser.id},profesor_db_id.eq.${authUser.id}`)
+          .or(`profesor_id.eq.${profeId},profesor_db_id.eq.${profeId}`)
+          .order("fecha", { ascending: false }),
+
+        supabase
+          .from("clases_gratis")
+          .select("*")
+          .or(`profesor_id.eq.${profeId}`)
           .order("fecha", { ascending: false }),
 
         supabase.from("pagos").select("*"),
@@ -79,7 +91,8 @@ useEffect(() => {
       });
       setAlumnosData(alumnosMap);
 
-      const clasesConAlumnos = (clasesData || []).map(c => {
+      // Unir clases normales y gratis
+      const clasesNormales = (clasesData || []).map(c => {
         const alumnoDB = alumnosMap[c.alumno_db_id] || alumnosMap[c.alumno_id];
         if (alumnoDB && c.alumnos && c.alumnos.length > 0) {
            c.alumnos[0] = { ...c.alumnos[0], horas_acumuladas: alumnoDB.horas_acumuladas, modalidad: alumnoDB.modalidad };
@@ -87,7 +100,15 @@ useEffect(() => {
         return c;
       });
 
-      setClases(clasesConAlumnos);
+      const clasesGratisMerge = (clasesGratisData || []).map(cg => ({
+        ...cg,
+        esGratis: true,
+        alumnos: [{ nombre: cg.nombre, telefono: cg.telefono, id: cg.id }]
+      }));
+
+      const todas = [...clasesNormales, ...clasesGratisMerge].sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+
+      setClases(todas);
     }
 
     setPagos(pagosData || []);

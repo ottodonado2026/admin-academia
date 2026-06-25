@@ -21,7 +21,89 @@ const HORAS_SEMANA_POR_MODALIDAD = {
   superintensiva: 16,
 };
 
+const MODULOS_CURSO_DJ = [
+  {
+    numero: 1,
+    nombre: "Módulo 1",
+    horas: 16,
+    temas: [
+      "Fundamentos básicos del DJ",
+      "Equipos y formatos de DJ",
+      "Elementos y estructuras de las canciones",
+      "Introducción a Rekordbox",
+      "Ecualización",
+      "Empate perfecto",
+      "Géneros musicales 1",
+    ],
+  },
+  {
+    numero: 2,
+    nombre: "Módulo 2",
+    horas: 16,
+    temas: [
+      "Mezcla avanzada",
+      "Filtros",
+      "Loops",
+      "Mezcla armónica",
+      "Efectos 1: Reverb, Echo y Delay",
+      "Géneros musicales 2",
+    ],
+  },
+  {
+    numero: 3,
+    nombre: "Módulo 3",
+    horas: 16,
+    temas: [
+      "Introducción Pioneer XDJ RR",
+      "Color FX",
+      "Mezcla sin visual",
+      "Mezcla sin BPM",
+      "PADS",
+      "Prácticas avanzadas",
+    ],
+  },
+  {
+    numero: 4,
+    nombre: "Módulo 4",
+    horas: 16,
+    temas: [
+      "Géneros musicales 3",
+      "Efectos 2",
+      "Cómo preparar presentaciones en vivo",
+      "Music Business 1",
+      "Prácticas 2",
+      "PAD FX",
+      "Introducción XDJ RX",
+      "Crossover 1",
+      "Cómo mezclar con la XDJ y el computador",
+    ],
+  },
+  {
+    numero: 5,
+    nombre: "Módulo 5",
+    horas: 16,
+    temas: [
+      "Hot Cues",
+      "Conexiones avanzadas",
+      "Efectos avanzados",
+      "Mezcla avanzada con Loops y Acapella",
+      "Music Business 3",
+      "Cómo grabar tu propio SET desde Rekordbox",
+    ],
+  },
+];
+
+const MODULOS_POR_CURSO = {
+  DJ: MODULOS_CURSO_DJ,
+  "Producción musical": [],
+  Piano: [],
+  Guitarra: [],
+  "Técnica vocal": [],
+};
+
 const HORAS_POR_MODULO = 16;
+
+
 
 const DURACIONES_CLASE = [1, 2, 3, 4, 5, 6, 7, 8];
 
@@ -31,6 +113,7 @@ const formClaseInicial = {
   alumnoId: "",
   profesorId: "",
   curso: "",
+  tema: "",
   fecha: "",
   hora: "",
   horaFin: "",
@@ -42,7 +125,13 @@ const formClaseInicial = {
 
 const formVisitaInicial = {
   nombreVisitante: "",
+  apellidoVisitante: "",
+  tipoDocumento: "",
+  numeroDocumento: "",
   telefono: "",
+  esMenorEdad: false,
+  nombreAcudiente: "",
+  telefonoAcudiente: "",
   cursoInteres: "",
   fecha: "",
   hora: "",
@@ -57,6 +146,8 @@ const formClaseGratisInicial = {
   profesorId: "",
   fecha: "",
   hora: "",
+  horaFin: "",
+  duracionMinutos: 60,
   observaciones: "",
 };
 
@@ -112,6 +203,23 @@ const calcularHoraFin = (horaInicio, duracionClase) => {
   ).padStart(2, "0")}`;
 };
 
+const calcularHoraFinMinutos = (horaInicio, duracionMinutos) => {
+  if (!horaInicio || !duracionMinutos) return "";
+
+  const [horas, minutos] = horaInicio.split(":").map(Number);
+
+  const fecha = new Date();
+  fecha.setHours(horas);
+  fecha.setMinutes(minutos);
+  fecha.setSeconds(0);
+  fecha.setMilliseconds(0);
+
+  fecha.setMinutes(fecha.getMinutes() + Number(duracionMinutos));
+
+  return `${String(fecha.getHours()).padStart(2, "0")}:${String(
+    fecha.getMinutes()
+  ).padStart(2, "0")}`;
+};
 
 
 const calcularComisionLead = (lead) => {
@@ -130,7 +238,16 @@ function CoordinadorPanel() {
   const navigate = useNavigate();
 
   const [usuario, setUsuario] = useState(null);
+  const [permisosClases, setPermisosClases] = useState({
+  puedeEditarClases: false,
+  puedePausarClases: false,
+  puedeCancelarClases: false,
+  puedeEliminarClases: false,
+});
+
   const [alumnos, setAlumnos] = useState([]);
+  
+
   const [profesores, setProfesores] = useState([]);
   const [clases, setClases] = useState([]);
   const [visitas, setVisitas] = useState([]);
@@ -147,12 +264,25 @@ function CoordinadorPanel() {
 
   const [claseSeleccionada, setClaseSeleccionada] = useState(null);
 const [editandoClaseId, setEditandoClaseId] = useState(null);
+const [editandoVisitaId, setEditandoVisitaId] = useState(null);
+const [modalVisitaAbierto, setModalVisitaAbierto] = useState(false);
+
+const [visitaSeleccionada, setVisitaSeleccionada] = useState(null);
+const [modalVerVisitaAbierto, setModalVerVisitaAbierto] = useState(false);
+
 const [alumnoExtraId, setAlumnoExtraId] = useState("");
 
  const [formClase, setFormClase] = useState(formClaseInicial);
 const [alumnosClaseSeleccionados, setAlumnosClaseSeleccionados] = useState([]);
 const [formVisita, setFormVisita] = useState(formVisitaInicial);
 const [formClaseGratis, setFormClaseGratis] = useState(formClaseGratisInicial);
+
+const [modalClasesGratisAbierto, setModalClasesGratisAbierto] = useState(false);
+const [busquedaClaseGratis, setBusquedaClaseGratis] = useState("");
+const [estadoClaseGratisFiltro, setEstadoClaseGratisFiltro] = useState("todas");
+const [paginaClasesGratis, setPaginaClasesGratis] = useState(1);
+
+const CLASES_GRATIS_POR_PAGINA = 10;
 
   const [alerta, setAlerta] = useState({
     visible: false,
@@ -239,6 +369,13 @@ const puedeCancelarClases =
 const puedeEliminarClases =
   esPrincipal ||
   usuarioActual?.puede_eliminar_clases === true;
+
+  setPermisosClases({
+  puedeEditarClases,
+  puedePausarClases,
+  puedeCancelarClases,
+  puedeEliminarClases,
+});
 
 const clasesQuery = supabase
   .from("clases")
@@ -336,12 +473,13 @@ const [
           setClases(clasesResponse.data || []);
         }
 
-        if (visitasResponse.error) {
-          console.error("Error cargando visitas:", visitasResponse.error);
-          setVisitas([]);
-        } else {
-          setVisitas(visitasResponse.data || []);
-        }
+       if (visitasResponse.error) {
+  console.error("Error cargando visitas:", visitasResponse.error);
+  setVisitas([]);
+} else {
+  console.log("VISITAS CARGADAS:", visitasResponse.data);
+  setVisitas(visitasResponse.data || []);
+}
 
         if (clasesGratisResponse.error) {
           console.error("Error cargando clases gratis:", clasesGratisResponse.error);
@@ -503,6 +641,78 @@ const resumenClases = useMemo(() => {
   };
 }, [clases]);
 
+const clasesGratisOrdenadas = useMemo(() => {
+  return [...clasesGratis].sort((a, b) => {
+    const fechaA = new Date(`${a.fecha || ""}T${a.hora || "00:00"}`);
+    const fechaB = new Date(`${b.fecha || ""}T${b.hora || "00:00"}`);
+
+    return fechaB - fechaA;
+  });
+}, [clasesGratis]);
+
+const clasesGratisFiltradas = useMemo(() => {
+  const term = busquedaClaseGratis.trim().toLowerCase();
+
+  return clasesGratisOrdenadas.filter((clase) => {
+    const estado = String(clase.estado || "programada").toLowerCase();
+
+    const coincideEstado =
+      estadoClaseGratisFiltro === "todas" ||
+      estado === estadoClaseGratisFiltro;
+
+    const textoBusqueda = [
+      clase.nombre,
+      clase.telefono,
+      clase.curso,
+      clase.profesor_nombre,
+      clase.fecha,
+      clase.hora,
+      clase.estado,
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+
+    const coincideBusqueda = !term || textoBusqueda.includes(term);
+
+    return coincideEstado && coincideBusqueda;
+  });
+}, [clasesGratisOrdenadas, busquedaClaseGratis, estadoClaseGratisFiltro]);
+
+const totalPaginasClasesGratis = Math.max(
+  1,
+  Math.ceil(clasesGratisFiltradas.length / CLASES_GRATIS_POR_PAGINA)
+);
+
+const clasesGratisPaginadas = useMemo(() => {
+  const inicio = (paginaClasesGratis - 1) * CLASES_GRATIS_POR_PAGINA;
+  const fin = inicio + CLASES_GRATIS_POR_PAGINA;
+
+  return clasesGratisFiltradas.slice(inicio, fin);
+}, [clasesGratisFiltradas, paginaClasesGratis]);
+
+useEffect(() => {
+  setPaginaClasesGratis(1);
+}, [busquedaClaseGratis, estadoClaseGratisFiltro]);
+
+const resumenClasesGratis = useMemo(() => {
+  const hoy = new Date().toISOString().split("T")[0];
+
+  return {
+    total: clasesGratis.length,
+    hoy: clasesGratis.filter((clase) => clase.fecha === hoy).length,
+    programadas: clasesGratis.filter(
+      (clase) => String(clase.estado || "").toLowerCase() === "programada"
+    ).length,
+    enCurso: clasesGratis.filter(
+      (clase) => String(clase.estado || "").toLowerCase() === "en_curso"
+    ).length,
+    finalizadas: clasesGratis.filter(
+      (clase) => String(clase.estado || "").toLowerCase() === "finalizada"
+    ).length,
+  };
+}, [clasesGratis]);
+
 const obtenerAlumnosDeClase = (clase) => {
   if (!clase) return [];
 
@@ -607,6 +817,22 @@ const calcularHorasModulo = (horas) => {
   return restante;
 };
 
+const obtenerProgresoAlumno = (alumnoId) => {
+  const horasAcumuladas = calcularHorasAlumno(alumnoId);
+  const moduloActual = calcularModuloActual(horasAcumuladas);
+  const horasModulo = calcularHorasModulo(horasAcumuladas);
+
+  const horasRestantesModulo =
+    horasModulo === 0 ? HORAS_POR_MODULO : HORAS_POR_MODULO - horasModulo;
+
+  return {
+    horasAcumuladas,
+    moduloActual,
+    horasModulo,
+    horasRestantesModulo,
+  };
+};
+
   const validarAlumnoAlDia = async (alumno) => {
     if (!alumno) return false;
 
@@ -658,10 +884,38 @@ const agregarAlumnoAClaseTemporal = () => {
 
  const alumno = alumnosPorId.get(String(formClase.alumnoId));
 
+ const estadoPago = String(
+  alumno.estado_pago ||
+  alumno.estado ||
+  "sin_validar"
+).toLowerCase();
+
+const alumnoEnMora =
+  estadoPago.includes("mora") ||
+  estadoPago.includes("pendiente") ||
+  estadoPago.includes("falta_pago");
+
+if (alumnoEnMora) {
+  const confirmarIngreso = window.confirm(
+    "Este alumno está en mora o tiene pagos pendientes.\n\n¿Gerencia autorizó permitir el ingreso a clase?"
+  );
+
+  if (!confirmarIngreso) {
+    mostrarAlerta(
+      "warning",
+      "No se agregó el alumno por estado de mora."
+    );
+
+    return;
+  }
+}
+
 if (!alumno) {
   mostrarAlerta("error", "No se encontró el alumno seleccionado.");
   return;
 }
+
+const progresoAlumno = obtenerProgresoAlumno(alumno.id || alumno.alumno_id);
 
   setAlumnosClaseSeleccionados((prev) => [
     ...prev,
@@ -669,8 +923,16 @@ if (!alumno) {
       id: alumno.id || alumno.alumno_id,
       alumno_id: alumno.alumno_id || alumno.id,
       nombre: alumno.nombre || "",
+      moduloActual: progresoAlumno.moduloActual,
+horasAcumuladas: progresoAlumno.horasAcumuladas,
+horasModulo: progresoAlumno.horasModulo,
+horasRestantesModulo: progresoAlumno.horasRestantesModulo,
       telefono: alumno.telefono || "",
-      estadoPago: alumno.estado_pago || alumno.estadoPago || "Sin validar",
+      estadoPago:
+  alumno.estado_pago ||
+  alumno.estado ||
+  alumno.estadoPago ||
+  "Sin validar",
       asistio: false,
       sumaHoras: false,
       horasManual: 0,
@@ -723,14 +985,52 @@ const handleClaseChange = (e) => {
   });
 };
   const handleVisitaChange = (e) => {
-    const { name, value } = e.target;
-    setFormVisita((prev) => ({ ...prev, [name]: value }));
+    const { name, value, type, checked } = e.target;
+    setFormVisita((prev) => {
+
+  const nuevoValor =
+    type === "checkbox" ? checked : value;
+
+  const nuevoState = {
+    ...prev,
+    [name]: nuevoValor,
   };
 
-  const handleClaseGratisChange = (e) => {
-    const { name, value } = e.target;
-    setFormClaseGratis((prev) => ({ ...prev, [name]: value }));
+  if (name === "tipoDocumento") {
+    nuevoState.esMenorEdad =
+      value === "ti";
+  }
+
+  return nuevoState;
+});
   };
+
+ const handleClaseGratisChange = (e) => {
+  const { name, value } = e.target;
+
+  setFormClaseGratis((prev) => {
+    const actualizado = {
+      ...prev,
+      [name]: value,
+    };
+
+    if (name === "hora") {
+      actualizado.horaFin = calcularHoraFinMinutos(
+        value,
+        actualizado.duracionMinutos
+      );
+    }
+
+    if (name === "duracionMinutos") {
+      actualizado.horaFin = calcularHoraFinMinutos(
+        actualizado.hora,
+        value
+      );
+    }
+
+    return actualizado;
+  });
+};
 
   const crearClase = async (e) => {
     e.preventDefault();
@@ -741,10 +1041,14 @@ if (
   alumnosClaseSeleccionados.length === 0 ||
   !profesor ||
   !formClase.curso ||
+  !formClase.tema ||
   !formClase.fecha ||
   !formClase.hora
 ) {
-  mostrarAlerta("warning", "Agrega al menos un alumno y completa profesor, curso, fecha y hora.");
+  mostrarAlerta(
+    "warning",
+    "Agrega al menos un alumno y completa profesor, curso, tema, fecha y hora."
+  );
   return;
 }
 
@@ -753,7 +1057,8 @@ const alumnoPrincipal = alumnosClaseSeleccionados[0];
     setGuardandoClase(true);
 
     try {
-      
+      console.log("USUARIO ACTUAL:", usuario);
+console.log("COORDINADOR ID QUE SE GUARDA:", usuario?.id);
       const payload = {
         id: crearIdSeguro(),
         alumno_id: alumnoPrincipal.alumno_id || alumnoPrincipal.id,
@@ -763,8 +1068,9 @@ const alumnoPrincipal = alumnosClaseSeleccionados[0];
         profesor_db_id: profesor.id || null,
         profesor_nombre: profesor.nombre || "",
         curso: limpiarTexto(formClase.curso),
-       fecha: formClase.fecha,
-      hora: formClase.hora,
+        tema: limpiarTexto(formClase.tema),
+        fecha: formClase.fecha,
+        hora: formClase.hora,
       hora_fin: formClase.horaFin,
       duracion_horas: Number(formClase.duracionClase || 0),
       modalidad: formClase.modalidad,
@@ -773,6 +1079,8 @@ const alumnoPrincipal = alumnosClaseSeleccionados[0];
 alumnos: alumnosClaseSeleccionados,
 estado: "programada",
 coordinador_id: usuario?.id || null,
+
+
         coordinador_nombre: usuario?.nombre || usuario?.email || "Coordinador",
         created_at: new Date().toISOString(),
       };
@@ -801,14 +1109,15 @@ await registrarAuditoriaClase({
   profesor,
   coordinador: usuario,
   datos: {
-    clase: claseCreada || payload,
-    hora: payload.hora,
-    hora_fin: payload.hora_fin,
-    duracion_horas: payload.duracion_horas,
-    modalidad: payload.modalidad,
-    formato_clase: payload.formato_clase,
-    curso: payload.curso,
-  },
+  clase: claseCreada || payload,
+  hora: payload.hora,
+  hora_fin: payload.hora_fin,
+  duracion_horas: payload.duracion_horas,
+  modalidad: payload.modalidad,
+  formato_clase: payload.formato_clase,
+  curso: payload.curso,
+  tema: payload.tema,
+},
 });
 
 
@@ -824,36 +1133,117 @@ mostrarAlerta("success", "Clase programada correctamente.");
     }
   };
 
+  const abrirDetalleVisita = (visita) => {
+  setVisitaSeleccionada(visita);
+  setModalVerVisitaAbierto(true);
+};
+
+  const iniciarEdicionVisita = (visita) => {
+  setEditandoVisitaId(visita.id);
+  setModalVisitaAbierto(true);
+
+  setFormVisita({
+    nombreVisitante: visita.nombre_visitante || "",
+    apellidoVisitante: visita.apellido_visitante || "",
+    tipoDocumento: visita.tipo_documento || "",
+    numeroDocumento: visita.numero_documento || "",
+    telefono: visita.telefono || "",
+    esMenorEdad:
+  visita.es_menor_edad === true ||
+  String(visita.tipo_documento || "").toLowerCase() === "ti",
+    nombreAcudiente:
+      visita.nombre_acudiente === "No aplica" ? "" : visita.nombre_acudiente || "",
+    telefonoAcudiente:
+      visita.telefono_acudiente === "No aplica" ? "" : visita.telefono_acudiente || "",
+    cursoInteres: visita.curso_interes || "",
+    fecha: visita.fecha || "",
+    hora: visita.hora || "",
+    responsable: visita.responsable || "",
+    observaciones: visita.observaciones || "",
+  });
+
+  setVistaActiva("dashboard");
+
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth",
+  });
+};
+
   const crearVisita = async (e) => {
     e.preventDefault();
 
     const nombreVisitante = limpiarTexto(formVisita.nombreVisitante);
-    const telefono = limpiarTelefono(formVisita.telefono);
+const apellidoVisitante = limpiarTexto(formVisita.apellidoVisitante);
+const tipoDocumento = limpiarTexto(formVisita.tipoDocumento);
+const numeroDocumento = limpiarTexto(formVisita.numeroDocumento);
+const telefono = limpiarTelefono(formVisita.telefono);
+const nombreAcudiente = limpiarTexto(formVisita.nombreAcudiente);
+const telefonoAcudiente = limpiarTelefono(formVisita.telefonoAcudiente);
 
-    if (!nombreVisitante || !telefono || !formVisita.cursoInteres || !formVisita.fecha || !formVisita.hora) {
-      mostrarAlerta("warning", "Completa nombre, teléfono, curso, fecha y hora de la visita.");
-      return;
-    }
+if (
+  !nombreVisitante ||
+  !apellidoVisitante ||
+  !tipoDocumento ||
+  !numeroDocumento ||
+  !telefono ||
+  !formVisita.cursoInteres ||
+  !formVisita.fecha ||
+  !formVisita.hora ||
+  !limpiarTexto(formVisita.responsable) ||
+  !limpiarTexto(formVisita.observaciones)
+) {
+  mostrarAlerta(
+    "warning",
+    "Completa todos los campos de la visita, incluyendo responsable y observaciones."
+
+  );
+  return;
+}
+
+if (formVisita.esMenorEdad && (!nombreAcudiente || !telefonoAcudiente)) {
+  mostrarAlerta(
+    "warning",
+    "Para menores de edad debes completar acudiente y teléfono del acudiente."
+  );
+  return;
+}
 
     setGuardandoVisita(true);
 
     try {
       const payload = {
-        id: crearIdSeguro(),
-        nombre_visitante: nombreVisitante,
-        telefono,
-        curso_interes: limpiarTexto(formVisita.cursoInteres),
+  id: crearIdSeguro(),
+
+  nombre_visitante: nombreVisitante,
+  apellido_visitante: apellidoVisitante,
+
+  tipo_documento: tipoDocumento,
+  numero_documento: numeroDocumento,
+
+  telefono,
+
+  es_menor_edad: Boolean(formVisita.esMenorEdad),
+  nombre_acudiente: formVisita.esMenorEdad ? nombreAcudiente : "No aplica",
+telefono_acudiente: formVisita.esMenorEdad ? telefonoAcudiente : "No aplica",
+
+  curso_interes: limpiarTexto(formVisita.cursoInteres),
         fecha: formVisita.fecha,
         hora: formVisita.hora,
-        responsable: limpiarTexto(formVisita.responsable) || usuario?.nombre || "Coordinador",
-        observaciones: limpiarTexto(formVisita.observaciones),
+        responsable: limpiarTexto(formVisita.responsable) || usuario?.nombre || usuario?.email || "Coordinador académico",
+observaciones: limpiarTexto(formVisita.observaciones) || "Sin observaciones",
         estado: "agendada",
         coordinador_id: usuario?.id || null,
         coordinador_nombre: usuario?.nombre || usuario?.email || "Coordinador",
         created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       };
 
-      const { error } = await supabase.from("visitas").insert([payload]);
+      const { data: visitaCreada, error } = await supabase
+      .from("visitas")
+      .insert([payload])
+      .select()
+      .single();
 
       if (error) {
         console.error("Error creando visita:", error);
@@ -862,6 +1252,9 @@ mostrarAlerta("success", "Clase programada correctamente.");
       }
 
       setFormVisita(formVisitaInicial);
+      if (visitaCreada) {
+  setVisitas((prev) => [visitaCreada, ...prev]);
+}
       setRefresh((prev) => prev + 1);
       mostrarAlerta("success", "Visita programada correctamente.");
     } catch (error) {
@@ -872,56 +1265,270 @@ mostrarAlerta("success", "Clase programada correctamente.");
     }
   };
 
-  const crearClaseGratis = async (e) => {
-    e.preventDefault();
+  const guardarEdicionVisita = async (e) => {
+  e.preventDefault();
 
-    const profesor = profesoresPorId.get(String(formClaseGratis.profesorId));
-    const nombre = limpiarTexto(formClaseGratis.nombre);
-    const telefono = limpiarTelefono(formClaseGratis.telefono);
+  if (!editandoVisitaId) return;
 
-    if (!nombre || !telefono || !formClaseGratis.curso || !profesor || !formClaseGratis.fecha || !formClaseGratis.hora) {
-      mostrarAlerta("warning", "Completa nombre, teléfono, curso, profesor, fecha y hora.");
+  const nombreVisitante = limpiarTexto(formVisita.nombreVisitante);
+  const apellidoVisitante = limpiarTexto(formVisita.apellidoVisitante);
+  const tipoDocumento = limpiarTexto(formVisita.tipoDocumento);
+  const numeroDocumento = limpiarTexto(formVisita.numeroDocumento);
+  const telefono = limpiarTelefono(formVisita.telefono);
+  const nombreAcudiente = limpiarTexto(formVisita.nombreAcudiente);
+  const telefonoAcudiente = limpiarTelefono(formVisita.telefonoAcudiente);
+
+  if (
+    !nombreVisitante ||
+    !apellidoVisitante ||
+    !tipoDocumento ||
+    !numeroDocumento ||
+    !telefono ||
+    !formVisita.cursoInteres ||
+    !formVisita.fecha ||
+    !formVisita.hora ||
+    !limpiarTexto(formVisita.responsable) ||
+    !limpiarTexto(formVisita.observaciones)
+  ) {
+    mostrarAlerta(
+      "warning",
+      "Completa todos los campos de la visita antes de guardar cambios."
+    );
+    return;
+  }
+
+  if (formVisita.esMenorEdad && (!nombreAcudiente || !telefonoAcudiente)) {
+    mostrarAlerta(
+      "warning",
+      "Para menores de edad debes completar acudiente y teléfono del acudiente."
+    );
+    return;
+  }
+
+  setGuardandoVisita(true);
+
+  try {
+    const payload = {
+      nombre_visitante: nombreVisitante,
+      apellido_visitante: apellidoVisitante,
+      tipo_documento: tipoDocumento,
+      numero_documento: numeroDocumento,
+      telefono,
+      es_menor_edad: Boolean(formVisita.esMenorEdad),
+      nombre_acudiente: formVisita.esMenorEdad ? nombreAcudiente : "No aplica",
+      telefono_acudiente: formVisita.esMenorEdad ? telefonoAcudiente : "No aplica",
+      curso_interes: limpiarTexto(formVisita.cursoInteres),
+      fecha: formVisita.fecha,
+      hora: formVisita.hora,
+      responsable: limpiarTexto(formVisita.responsable),
+      observaciones: limpiarTexto(formVisita.observaciones),
+      estado: "reprogramada",
+      updated_at: new Date().toISOString(),
+    };
+
+    const { data: visitaActualizada, error } = await supabase
+      .from("visitas")
+      .update(payload)
+      .eq("id", editandoVisitaId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Error actualizando visita:", error);
+      mostrarAlerta("error", error.message || "No se pudo actualizar la visita.");
       return;
     }
 
-    setGuardandoClaseGratis(true);
+    setVisitas((prev) =>
+      prev.map((visita) =>
+        String(visita.id) === String(editandoVisitaId)
+          ? visitaActualizada
+          : visita
+      )
+    );
 
-    try {
-      const payload = {
-        id: crearIdSeguro(),
-        nombre,
-        telefono,
-        curso: limpiarTexto(formClaseGratis.curso),
-        profesor_id: profesor.profesor_id || profesor.id,
-        profesor_db_id: profesor.id || null,
-        profesor_nombre: profesor.nombre || "",
-        fecha: formClaseGratis.fecha,
-        hora: formClaseGratis.hora,
-        observaciones: limpiarTexto(formClaseGratis.observaciones),
-        estado: "programada",
-        coordinador_id: usuario?.id || null,
-        coordinador_nombre: usuario?.nombre || usuario?.email || "Coordinador",
-        created_at: new Date().toISOString(),
-      };
+    setEditandoVisitaId(null);
+setModalVisitaAbierto(false);
 
-      const { error } = await supabase.from("clases_gratis").insert([payload]);
+    setFormVisita(formVisitaInicial);
+    setRefresh((prev) => prev + 1);
+    mostrarAlerta("success", "Visita actualizada correctamente.");
+  } catch (error) {
+    console.error("Error inesperado actualizando visita:", error);
+    mostrarAlerta("error", "Error inesperado actualizando la visita.");
+  } finally {
+    setGuardandoVisita(false);
+  }
+};
 
-      if (error) {
-        console.error("Error creando clase gratis:", error);
-        mostrarAlerta("error", error.message || "No se pudo crear la clase gratis.");
-        return;
-      }
+  const cancelarVisita = async (visitaId) => {
+  const confirmar = window.confirm(
+    "¿Seguro que deseas cancelar esta visita?"
+  );
 
-      setFormClaseGratis(formClaseGratisInicial);
-      setRefresh((prev) => prev + 1);
-      mostrarAlerta("success", "Clase gratis programada correctamente.");
-    } catch (error) {
-      console.error("Error inesperado creando clase gratis:", error);
-      mostrarAlerta("error", "Error inesperado creando la clase gratis.");
-    } finally {
-      setGuardandoClaseGratis(false);
+  if (!confirmar) return;
+
+  try {
+    const { data: visitaActualizada, error } = await supabase
+      .from("visitas")
+      .update({
+        estado: "cancelada",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", visitaId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Error cancelando visita:", error);
+
+      mostrarAlerta(
+        "error",
+        "No se pudo cancelar la visita."
+      );
+
+      return;
     }
-  };
+
+    setVisitas((prev) =>
+      prev.map((visita) =>
+        String(visita.id) === String(visitaId)
+          ? visitaActualizada
+          : visita
+      )
+    );
+
+    setRefresh((prev) => prev + 1);
+
+    mostrarAlerta(
+      "success",
+      "Visita cancelada correctamente."
+    );
+  } catch (error) {
+    console.error("Error inesperado cancelando visita:", error);
+
+    mostrarAlerta(
+      "error",
+      "Error inesperado cancelando la visita."
+    );
+  }
+};
+
+const cerrarModalVerVisita = () => {
+  setModalVerVisitaAbierto(false);
+  setVisitaSeleccionada(null);
+};
+
+const cerrarModalVisita = () => {
+  setModalVisitaAbierto(false);
+
+  setEditandoVisitaId(null);
+
+  setFormVisita(formVisitaInicial);
+};
+
+const crearClaseGratis = async (e) => {
+  e.preventDefault();
+
+  const nombre = limpiarTexto(formClaseGratis.nombre);
+  const telefono = limpiarTelefono(formClaseGratis.telefono);
+  const curso = limpiarTexto(formClaseGratis.curso);
+  const profesorId = limpiarTexto(formClaseGratis.profesorId);
+  const fecha = limpiarTexto(formClaseGratis.fecha);
+  const hora = limpiarTexto(formClaseGratis.hora);
+  const duracionMinutos = Number(formClaseGratis.duracionMinutos || 60);
+  const horaFin = calcularHoraFinMinutos(hora, duracionMinutos);
+  const observaciones = limpiarTexto(formClaseGratis.observaciones);
+
+  if (!nombre) {
+    mostrarAlerta("warning", "El nombre del interesado es obligatorio.");
+    return;
+  }
+
+  if (!telefono || telefono.length < 7) {
+    mostrarAlerta("warning", "Ingresa un teléfono válido.");
+    return;
+  }
+
+  if (!curso) {
+    mostrarAlerta("warning", "Selecciona el curso de interés.");
+    return;
+  }
+
+  if (!profesorId) {
+    mostrarAlerta("warning", "Selecciona el profesor asignado.");
+    return;
+  }
+
+  if (!fecha) {
+    mostrarAlerta("warning", "Selecciona la fecha de la clase gratis.");
+    return;
+  }
+
+  if (!hora) {
+    mostrarAlerta("warning", "Selecciona la hora de la clase gratis.");
+    return;
+  }
+
+  if (!duracionMinutos || duracionMinutos < 15) {
+    mostrarAlerta("warning", "La duración mínima debe ser de 15 minutos.");
+    return;
+  }
+
+  const profesor = profesoresPorId.get(String(profesorId));
+
+const payload = {
+  id: crearIdSeguro(),
+  nombre,
+  telefono,
+  curso,
+  profesor_id: profesorId,
+  profesor_nombre: profesor?.nombre || "Profesor asignado",
+  fecha,
+  hora,
+  hora_fin: horaFin || null,
+  duracion_minutos: duracionMinutos,
+  estado: "programada",
+  observaciones,
+
+  coordinador_id: usuario?.id || null,
+  coordinador_nombre: usuario?.nombre || usuario?.email || "Coordinador",
+
+  creado_por: usuario?.id || null,
+  creado_por_nombre: usuario?.nombre || usuario?.email || "Coordinador",
+};
+
+  setGuardandoClaseGratis(true);
+
+  try {
+    const { data, error } = await supabase
+  .from("clases_gratis")
+  .insert([payload])
+  .select()
+  .single();
+
+  if (error) {
+  console.error("Error creando clase gratis completo:", JSON.stringify(error, null, 2));
+
+  mostrarAlerta(
+    "error",
+    error.message || error.details || "No se pudo programar la clase gratis."
+  );
+
+  return;
+}
+
+    mostrarAlerta("success", "Clase gratis programada correctamente.");
+
+    setFormClaseGratis(formClaseGratisInicial);
+    setRefresh((prev) => prev + 1);
+  } catch (error) {
+    console.error("Error inesperado creando clase gratis:", error);
+    mostrarAlerta("error", "Ocurrió un error inesperado.");
+  } finally {
+    setGuardandoClaseGratis(false);
+  }
+};
 
 
   const actualizarEstadoClase = async (claseId, estado) => {
@@ -1135,11 +1742,13 @@ const iniciarEdicionClase = (clase) => {
   setEditandoClaseId(clase.id);
   setClaseSeleccionada(null);
 
-  setFormClase({
-    alumnoId: clase.alumno_db_id || clase.alumno_id || "",
-    profesorId: clase.profesor_db_id || clase.profesor_id || "",
-    curso: clase.curso || "",
-    fecha: clase.fecha || "",
+  
+   setFormClase({
+  alumnoId: clase.alumno_db_id || clase.alumno_id || "",
+  profesorId: clase.profesor_db_id || clase.profesor_id || "",
+  curso: clase.curso || "",
+  tema: clase.tema || "",
+  fecha: clase.fecha || "",
     hora: clase.hora || clase.hora_inicio || "",
     horaFin: clase.hora_fin || "",
     duracionClase: clase.duracion_horas || 2,
@@ -1198,7 +1807,10 @@ const alumno = alumnosPorId.get(String(formClase.alumnoId)) || null;
 
 const profesor = profesoresPorId.get(String(formClase.profesorId)) || null;
 
-  
+  if (!formClase.tema || !limpiarTexto(formClase.tema)) {
+  mostrarAlerta("warning", "El tema de la clase es obligatorio.");
+  return;
+}
 
   setGuardandoClase(true);
 
@@ -1252,11 +1864,15 @@ alumnos: alumnosActualizadosEdicion,
     "",
 
   curso: limpiarTexto(
-    formClase.curso || claseAnterior?.curso || ""
-  ),
+  formClase.curso || claseAnterior?.curso || ""
+),
 
-  fecha:
-    formClase.fecha || claseAnterior?.fecha,
+tema: limpiarTexto(
+  formClase.tema || claseAnterior?.tema || ""
+),
+
+fecha:
+  formClase.fecha || claseAnterior?.fecha,
 
   hora:
     formClase.hora ||
@@ -1413,6 +2029,10 @@ profesor_nombre: profesor?.nombre || profesor?.name || profesor?.profesor_nombre
   }
 };
 
+const claseSeleccionadaSegura = claseSeleccionada || {
+  alumnos: [],
+};
+
 
   return (
     <div className="dashboard-layout">
@@ -1427,17 +2047,20 @@ profesor_nombre: profesor?.nombre || profesor?.name || profesor?.profesor_nombre
   {vistaActiva === "comisiones" && "Comisiones del coordinador"}
   {vistaActiva === "pagos" && "Pagos al coordinador"}
   {vistaActiva === "clases" && "Clases programadas"}
+  {vistaActiva === "visitas" && "Visitas programadas"}
 </h1>
             <span>
               {vistaActiva === "dashboard" &&
-  "Programa clases, visitas y clases gratis desde una vista limpia."}
-{vistaActiva === "comisiones" &&
-  "Consulta métricas de comisiones por día, semana, mes, año y leads pagados."}
-{vistaActiva === "pagos" &&
-  "Consulta pagos recibidos, abonos, método, estado y descripción del pago."}
-           {vistaActiva === "clases" &&
-  "Administra clases, profesores, alumnos, estado académico, asistencias y progreso."}
-           
+              "Programa clases, visitas y clases gratis desde una vista limpia."}
+            {vistaActiva === "comisiones" &&
+              "Consulta métricas de comisiones por día, semana, mes, año y leads pagados."}
+            {vistaActiva === "pagos" &&
+              "Consulta pagos recibidos, abonos, método, estado y descripción del pago."}
+                      {vistaActiva === "clases" &&
+              "Administra clases, profesores, alumnos, estado académico, asistencias y progreso."}
+
+            {vistaActiva === "visitas" &&
+            "Consulta visitas programadas, responsables, datos del visitante y seguimiento por WhatsApp."}
             </span>
           </div>
 
@@ -1538,6 +2161,16 @@ profesor_nombre: profesor?.nombre || profesor?.name || profesor?.profesor_nombre
   <span>Ver, modificar, pausar, cancelar, eliminar o agregar alumnos extra.</span>
 </button>
 
+<button
+  type="button"
+  className="coordinador-shortcut-card cyan"
+  onClick={() => setVistaActiva("visitas")}
+>
+  <small>Seguimiento comercial</small>
+  <strong>Visitas programadas</strong>
+  <span>Ver visitas, responsables y enviar recordatorios por WhatsApp.</span>
+</button>
+
   </section>
 )}
 
@@ -1629,6 +2262,18 @@ profesor_nombre: profesor?.nombre || profesor?.name || profesor?.profesor_nombre
                 </select>
               </div>
 
+              <div className="coordinador-field full">
+  <label>Tema de la clase *</label>
+  <input
+    type="text"
+    name="tema"
+    value={formClase.tema}
+    onChange={handleClaseChange}
+    placeholder="Ej: Ecualización, mezcla básica, acordes mayores..."
+    required
+  />
+</div>
+
              <div className="coordinador-field mobile-half">
   <label>Fecha</label>
   <input type="date" name="fecha" value={formClase.fecha} onChange={handleClaseChange} />
@@ -1690,15 +2335,15 @@ profesor_nombre: profesor?.nombre || profesor?.name || profesor?.profesor_nombre
                 </select>
               </div>
 
-              <div className="coordinador-field full">
-                <label>Observaciones</label>
-                <textarea
-                  name="observaciones"
-                  value={formClase.observaciones}
-                  onChange={handleClaseChange}
-                  placeholder="Notas internas de la clase"
-                />
-              </div>
+                 <div className="coordinador-field full">
+  <label>Observaciones</label>
+  <textarea
+    name="observaciones"
+    value={formClase.observaciones}
+    onChange={handleClaseChange}
+    placeholder="Notas internas de la clase"
+  />
+</div> 
 
               <div className="coordinador-actions full">
               <button type="submit" className="coordinador-primary-btn" disabled={guardandoClase}>
@@ -1724,64 +2369,165 @@ profesor_nombre: profesor?.nombre || profesor?.name || profesor?.profesor_nombre
             </form>
           </article>
 
-          <article className="coordinador-card visitas-card">
-            <div className="coordinador-card-head">
-              <div>
-                <h2>Programar visitas</h2>
-                <p>Agenda visitas comerciales o académicas.</p>
-              </div>
-            </div>
+        <article className="coordinador-card visitas-card">
+  <div className="coordinador-card-head">
+    <div>
+      <h2>Programar visitas</h2>
+      <p>Agenda visitas comerciales o académicas.</p>
+    </div>
+  </div>
 
-            <form className="coordinador-form" onSubmit={crearVisita}>
-              <div className="coordinador-field">
-                <label>Nombre visitante</label>
-                <input name="nombreVisitante" value={formVisita.nombreVisitante} onChange={handleVisitaChange} />
-              </div>
+  <form
+  className="coordinador-form"
+  onSubmit={editandoVisitaId ? guardarEdicionVisita : crearVisita}
+>
+    <div className="coordinador-field">
+      <label>Nombre visitante</label>
+      <input
+        name="nombreVisitante"
+        value={formVisita.nombreVisitante}
+        onChange={handleVisitaChange}
+      />
+    </div>
 
-              <div className="coordinador-field">
-                <label>Teléfono</label>
-                <input name="telefono" value={formVisita.telefono} onChange={handleVisitaChange} />
-              </div>
+    <div className="coordinador-field">
+      <label>Apellido visitante</label>
+      <input
+        name="apellidoVisitante"
+        value={formVisita.apellidoVisitante}
+        onChange={handleVisitaChange}
+      />
+    </div>
 
-              <div className="coordinador-field">
-                <label>Curso de interés</label>
-                <select name="cursoInteres" value={formVisita.cursoInteres} onChange={handleVisitaChange}>
-                  <option value="">Seleccionar curso</option>
-                  {CURSOS.map((curso) => (
-                    <option key={curso} value={curso}>
-                      {curso}
-                    </option>
-                  ))}
-                </select>
-              </div>
+    <div className="coordinador-field">
+      <label>Tipo documento</label>
+      <select
+        name="tipoDocumento"
+        value={formVisita.tipoDocumento}
+        onChange={handleVisitaChange}
+      >
+        <option value="">Seleccionar</option>
+        <option value="cc">Cédula</option>
+        <option value="ti">Tarjeta identidad</option>
+        <option value="ce">Cédula extranjería</option>
+        <option value="pasaporte">Pasaporte</option>
+      </select>
+    </div>
 
-              <div className="coordinador-field">
-                <label>Responsable</label>
-                <input name="responsable" value={formVisita.responsable} onChange={handleVisitaChange} />
-              </div>
+    <div className="coordinador-field">
+      <label>Número documento</label>
+      <input
+        name="numeroDocumento"
+        value={formVisita.numeroDocumento}
+        onChange={handleVisitaChange}
+      />
+    </div>
 
-              <div className="coordinador-field">
-                <label>Fecha</label>
-                <input type="date" name="fecha" value={formVisita.fecha} onChange={handleVisitaChange} />
-              </div>
+    <div className="coordinador-field">
+      <label>Teléfono alumno</label>
+      <input
+        name="telefono"
+        value={formVisita.telefono}
+        onChange={handleVisitaChange}
+      />
+    </div>
 
-              <div className="coordinador-field">
-                <label>Hora</label>
-                <input type="time" name="hora" value={formVisita.hora} onChange={handleVisitaChange} />
-              </div>
+    <div className="coordinador-field">
+      <label>Curso de interés</label>
+      <select
+        name="cursoInteres"
+        value={formVisita.cursoInteres}
+        onChange={handleVisitaChange}
+      >
+        <option value="">Seleccionar curso</option>
+        {CURSOS.map((curso) => (
+          <option key={curso} value={curso}>
+            {curso}
+          </option>
+        ))}
+      </select>
+    </div>
 
-              <div className="coordinador-field full">
-                <label>Observaciones</label>
-                <textarea name="observaciones" value={formVisita.observaciones} onChange={handleVisitaChange} />
-              </div>
+    {formVisita.esMenorEdad && (
+      <>
+        <div className="coordinador-field">
+          <label>Nombre acudiente</label>
+          <input
+            name="nombreAcudiente"
+            value={formVisita.nombreAcudiente}
+            onChange={handleVisitaChange}
+          />
+        </div>
 
-              <div className="coordinador-actions full">
-                <button type="submit" className="coordinador-primary-btn" disabled={guardandoVisita}>
-                  {guardandoVisita ? "Guardando..." : "Guardar visita"}
-                </button>
-              </div>
-            </form>
-          </article>
+        <div className="coordinador-field">
+          <label>Teléfono acudiente</label>
+          <input
+            name="telefonoAcudiente"
+            value={formVisita.telefonoAcudiente}
+            onChange={handleVisitaChange}
+          />
+        </div>
+      </>
+    )}
+
+    <div className="coordinador-field mobile-half">
+      <label>Fecha</label>
+      <input
+        type="date"
+        name="fecha"
+        value={formVisita.fecha}
+        onChange={handleVisitaChange}
+      />
+    </div>
+
+    <div className="coordinador-field mobile-half">
+      <label>Hora</label>
+      <input
+        type="time"
+        name="hora"
+        value={formVisita.hora}
+        onChange={handleVisitaChange}
+      />
+    </div>
+
+    <div className="coordinador-field full">
+      <label>Responsable</label>
+      <input
+        name="responsable"
+        value={formVisita.responsable}
+        onChange={handleVisitaChange}
+        placeholder="Opcional"
+      />
+    </div>
+
+    <div className="coordinador-field full observaciones-field">
+      <label>Observaciones</label>
+      <textarea
+        name="observaciones"
+        value={formVisita.observaciones}
+        onChange={handleVisitaChange}
+      />
+    </div>
+
+    <div className="coordinador-actions full">
+      <button
+  type="submit"
+  className="coordinador-primary-btn"
+  disabled={guardandoVisita}
+>
+  {guardandoVisita
+    ? editandoVisitaId
+      ? "Actualizando..."
+      : "Guardando..."
+    : editandoVisitaId
+    ? "Guardar cambios"
+    : "Guardar visita"}
+</button>
+    </div>
+  </form>
+</article>
+
+          
 
           <article className="coordinador-card gratis-card">
             <div className="coordinador-card-head">
@@ -1836,6 +2582,30 @@ profesor_nombre: profesor?.nombre || profesor?.name || profesor?.profesor_nombre
                 <input type="time" name="hora" value={formClaseGratis.hora} onChange={handleClaseGratisChange} />
               </div>
 
+              <div className="coordinador-field">
+  <label>Duración</label>
+  <select
+    name="duracionMinutos"
+    value={formClaseGratis.duracionMinutos}
+    onChange={handleClaseGratisChange}
+  >
+    <option value={30}>30 minutos</option>
+    <option value={45}>45 minutos</option>
+    <option value={60}>1 hora</option>
+    <option value={90}>1 hora 30 minutos</option>
+    <option value={120}>2 horas</option>
+  </select>
+</div>
+
+<div className="coordinador-field">
+  <label>Hora fin</label>
+  <input
+    value={formClaseGratis.horaFin || ""}
+    disabled
+    placeholder="Automática"
+  />
+</div>
+
               <div className="coordinador-field full">
                 <label>Observaciones</label>
                 <textarea
@@ -1851,8 +2621,365 @@ profesor_nombre: profesor?.nombre || profesor?.name || profesor?.profesor_nombre
                 </button>
               </div>
             </form>
+
+            <div className="gratis-resumen-grid gratis-resumen-compacto">
+  <article>
+    <small>Total</small>
+    <strong>{resumenClasesGratis.total}</strong>
+  </article>
+
+  <article>
+    <small>Hoy</small>
+    <strong>{resumenClasesGratis.hoy}</strong>
+  </article>
+
+  <article>
+    <small>Programadas</small>
+    <strong>{resumenClasesGratis.programadas}</strong>
+  </article>
+
+  <article>
+    <small>En curso</small>
+    <strong>{resumenClasesGratis.enCurso}</strong>
+  </article>
+
+  <article>
+    <small>Finalizadas</small>
+    <strong>{resumenClasesGratis.finalizadas}</strong>
+  </article>
+</div>
+
+<div className="clases-gratis-panel-action">
+  <button
+    type="button"
+    className="coordinador-secondary-btn clases-gratis-ver-btn"
+    onClick={() => setModalClasesGratisAbierto(true)}
+  >
+    Ver clases gratis programadas
+    <span>{resumenClasesGratis.total}</span>
+  </button>
+</div>
+ 
+
+
+<div className="coordinador-table-wrap gratis-table-wrap">
+  <table className="coordinador-table">
+    <thead>
+      <tr>
+        <th>Interesado</th>
+        <th>Curso</th>
+        <th>Profesor</th>
+        <th>Fecha</th>
+        <th>Duración</th>
+        <th>Estado</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      {loading ? (
+        <tr>
+          <td colSpan="6" className="empty-cell">
+            Cargando clases gratis...
+          </td>
+        </tr>
+      ) : clasesGratisOrdenadas.length === 0 ? (
+        <tr>
+          <td colSpan="6" className="empty-cell">
+            No hay clases gratis programadas.
+          </td>
+        </tr>
+      ) : (
+        clasesGratisOrdenadas.map((clase) => (
+          <tr key={clase.id}>
+            <td data-label="Interesado">
+              <strong>{clase.nombre || "-"}</strong>
+              <span>{clase.telefono || "-"}</span>
+            </td>
+
+            <td data-label="Curso">
+              {clase.curso || "-"}
+            </td>
+
+            <td data-label="Profesor">
+              {clase.profesor_nombre || "-"}
+            </td>
+
+            <td data-label="Fecha">
+              <strong>{formatearFecha(clase.fecha)}</strong>
+              <span>
+                {clase.hora || "--:--"}
+                {clase.hora_fin ? ` - ${clase.hora_fin}` : ""}
+              </span>
+            </td>
+
+            <td data-label="Duración">
+              {clase.duracion_minutos || 60} min
+            </td>
+
+            <td data-label="Estado">
+              <span className={`status-pill status-${clase.estado || "programada"}`}>
+                {String(clase.estado || "programada").replace("_", " ")}
+              </span>
+            </td>
+          </tr>
+        ))
+      )}
+    </tbody>
+  </table>
+</div>
           </article>
        </section>
+)}
+
+{modalClasesGratisAbierto && (
+  <div className="clases-gratis-modal-backdrop">
+    <section className="clases-gratis-modal">
+      <div className="clases-gratis-modal-head">
+        <div>
+          <p className="coordinador-kicker">Clases gratis</p>
+          <h2>Clases gratis programadas</h2>
+          <span>
+            Consulta, filtra y revisa las clases gratis sin saturar el panel principal.
+          </span>
+        </div>
+
+        <button
+          type="button"
+          className="clases-gratis-close-btn"
+          onClick={() => setModalClasesGratisAbierto(false)}
+        >
+          ×
+        </button>
+      </div>
+
+      <div className="clases-gratis-toolbar">
+        <input
+          className="clases-gratis-search"
+          value={busquedaClaseGratis}
+          onChange={(e) => setBusquedaClaseGratis(e.target.value)}
+          placeholder="Buscar por nombre, teléfono, curso o profesor..."
+        />
+
+        <select
+          className="clases-gratis-filter"
+          value={estadoClaseGratisFiltro}
+          onChange={(e) => setEstadoClaseGratisFiltro(e.target.value)}
+        >
+          <option value="todas">Todos los estados</option>
+          <option value="programada">Programadas</option>
+          <option value="en_curso">En curso</option>
+          <option value="finalizada">Finalizadas</option>
+          <option value="cancelada">Canceladas</option>
+        </select>
+      </div>
+
+      <div className="clases-gratis-modal-summary">
+        <span>
+          Mostrando <strong>{clasesGratisPaginadas.length}</strong> de{" "}
+          <strong>{clasesGratisFiltradas.length}</strong> resultados
+        </span>
+
+        <span>
+          Página <strong>{paginaClasesGratis}</strong> de{" "}
+          <strong>{totalPaginasClasesGratis}</strong>
+        </span>
+      </div>
+
+      <div className="coordinador-table-wrap gratis-table-wrap">
+        <table className="coordinador-table clases-gratis-table">
+          <thead>
+            <tr>
+              <th>Interesado</th>
+              <th>Curso</th>
+              <th>Profesor</th>
+              <th>Fecha</th>
+              <th>Duración</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {loading ? (
+              <tr>
+                <td colSpan="6" className="empty-cell">
+                  Cargando clases gratis...
+                </td>
+              </tr>
+            ) : clasesGratisPaginadas.length === 0 ? (
+              <tr>
+                <td colSpan="6" className="empty-cell">
+                  No hay clases gratis con esos filtros.
+                </td>
+              </tr>
+            ) : (
+              clasesGratisPaginadas.map((clase) => (
+                <tr key={clase.id}>
+                  <td data-label="Interesado">
+                    <strong>{clase.nombre || "-"}</strong>
+                    <span>{clase.telefono || "-"}</span>
+                  </td>
+
+                  <td data-label="Curso">{clase.curso || "-"}</td>
+
+                  <td data-label="Profesor">{clase.profesor_nombre || "-"}</td>
+
+                  <td data-label="Fecha">
+                    <strong>{formatearFecha(clase.fecha)}</strong>
+                    <span>
+                      {clase.hora || "--:--"}
+                      {clase.hora_fin ? ` - ${clase.hora_fin}` : ""}
+                    </span>
+                  </td>
+
+                  <td data-label="Duración">
+                    {clase.duracion_minutos || 60} min
+                  </td>
+
+                  <td data-label="Estado">
+                    <span className={`status-pill status-${clase.estado || "programada"}`}>
+                      {String(clase.estado || "programada").replace("_", " ")}
+                    </span>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="clases-gratis-pagination">
+        <button
+          type="button"
+          disabled={paginaClasesGratis <= 1}
+          onClick={() => setPaginaClasesGratis((prev) => Math.max(prev - 1, 1))}
+        >
+          Anterior
+        </button>
+
+        <span>
+          {paginaClasesGratis} / {totalPaginasClasesGratis}
+        </span>
+
+        <button
+          type="button"
+          disabled={paginaClasesGratis >= totalPaginasClasesGratis}
+          onClick={() =>
+            setPaginaClasesGratis((prev) =>
+              Math.min(prev + 1, totalPaginasClasesGratis)
+            )
+          }
+        >
+          Siguiente
+        </button>
+      </div>
+    </section>
+  </div>
+)}
+
+{vistaActiva === "visitas" && (
+  <section className="coordinador-card">
+    <div className="coordinador-card-head">
+      <div>
+        <h2>Visitas programadas</h2>
+        <p>
+          Consulta visitas agendadas, responsables y seguimiento comercial.
+        </p>
+      </div>
+    </div>
+
+    <div className="coordinador-table-wrap">
+      <table className="coordinador-table">
+        <thead>
+          <tr>
+            <th>Visitante</th>
+            <th>Curso</th>
+           
+            <th>Hora</th>
+            <th>Responsable</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {visitas.length === 0 ? (
+            <tr>
+             <td colSpan="6" className="empty-cell">
+                No hay visitas programadas.
+              </td>
+            </tr>
+
+
+          ) : (
+            visitas.map((visita) => (
+              <tr key={visita.id}>
+                <td data-label="Visitante">
+               <strong>
+  {visita.nombre_visitante || "Sin nombre"}{" "}
+  {visita.apellido_visitante || "Sin apellido"}
+</strong>
+
+<span>{visita.telefono || "Sin teléfono"}</span>
+                </td>
+
+                <td data-label="Curso">
+                  {visita.curso_interes || "Sin curso"}
+                </td>
+
+             
+
+                <td data-label="Hora">
+                  {visita.hora || "Sin hora"}
+                </td>
+
+                <td data-label="Responsable">
+                  {visita.responsable || visita.coordinador_nombre || "Sin responsable"}
+                </td>
+
+                <td data-label="Estado">
+                  <span className="status-pill">
+                    {visita.estado || "Agendada"}
+                  </span>
+                </td>
+
+                <td data-label="Acciones">
+
+                  
+ 
+<div className="coordinador-row-actions">
+  <button
+    type="button"
+    className="mini-action-btn"
+    onClick={() => abrirDetalleVisita(visita)}
+  >
+    Ver
+  </button>
+
+  <button
+    type="button"
+    className="mini-action-btn cyan"
+    onClick={() => iniciarEdicionVisita(visita)}
+  >
+    Editar
+  </button>
+
+
+    <button
+      type="button"
+      className="mini-action-btn danger"
+      onClick={() => cancelarVisita(visita.id)}
+    >
+      Cancelar
+    </button>
+  </div>
+</td>
+              </tr>
+            ))
+          )}
+        </tbody>
+      </table>
+    </div>
+  </section>
 )}
 
 {vistaActiva === "comisiones" && (
@@ -2039,6 +3166,9 @@ profesor_nombre: profesor?.nombre || profesor?.name || profesor?.profesor_nombre
                     </span>
                   </td>
 
+             
+
+
                   <td data-label="Descripción">
                     {pago.descripcion || pago.observaciones || "-"}
                   </td>
@@ -2091,7 +3221,7 @@ profesor_nombre: profesor?.nombre || profesor?.name || profesor?.profesor_nombre
               <th>Clase</th>
               <th>Alumno</th>
               <th>Profesor</th>
-              <th>Fecha</th>
+              
               <th>Modalidad</th>
               <th>Estado</th>
               <th>Acciones</th>
@@ -2222,7 +3352,7 @@ profesor_nombre: profesor?.nombre || profesor?.name || profesor?.profesor_nombre
         <article className="coordinador-modal-card">
           <h3>Información general</h3>
 
-          <div className="coordinador-detail-list">
+          <div className="coordinador-detail-row">
             <p>
               <span>Alumno principal</span>
               <strong>{claseSeleccionada.alumno_nombre || "-"}</strong>
@@ -2272,8 +3402,8 @@ profesor_nombre: profesor?.nombre || profesor?.name || profesor?.profesor_nombre
                 Módulo{" "}
                 {calcularModuloActual(
                   calcularHorasAlumno(
-                    claseSeleccionada.alumno_db_id ||
-                      claseSeleccionada.alumno_id
+                    claseSeleccionadaSegura.alumno_db_id ||
+                      claseSeleccionadaSegura.alumno_id
                   )
                 )}
               </strong>
@@ -2284,8 +3414,8 @@ profesor_nombre: profesor?.nombre || profesor?.name || profesor?.profesor_nombre
 
                 <strong>
                   {calcularHorasAlumno(
-                    claseSeleccionada.alumno_db_id ||
-                      claseSeleccionada.alumno_id
+                    claseSeleccionadaSegura.alumno_db_id ||
+                      claseSeleccionadaSegura.alumno_id
                   )}
                   h
                 </strong>
@@ -2297,16 +3427,16 @@ profesor_nombre: profesor?.nombre || profesor?.name || profesor?.profesor_nombre
             <strong>
   {calcularHorasModulo(
     calcularHorasAlumno(
-      claseSeleccionada.alumno_db_id ||
-        claseSeleccionada.alumno_id
+      claseSeleccionadaSegura.alumno_db_id ||
+        claseSeleccionadaSegura.alumno_id
     )
   ) >= HORAS_POR_MODULO
     ? 0
     : HORAS_POR_MODULO -
       calcularHorasModulo(
         calcularHorasAlumno(
-          claseSeleccionada.alumno_db_id ||
-            claseSeleccionada.alumno_id
+          claseSeleccionadaSegura.alumno_db_id ||
+            claseSeleccionadaSegura.alumno_id
         )
       )}
   h
@@ -2324,12 +3454,12 @@ profesor_nombre: profesor?.nombre || profesor?.name || profesor?.profesor_nombre
       const alumno = obtenerAlumnosDeClase(clase).find(
         (item) =>
           String(item.id) === String(
-            claseSeleccionada.alumno_db_id ||
-              claseSeleccionada.alumno_id
+            claseSeleccionadaSegura.alumno_db_id ||
+              claseSeleccionadaSegura.alumno_id
           ) ||
           String(item.alumno_id) === String(
-            claseSeleccionada.alumno_db_id ||
-              claseSeleccionada.alumno_id
+            claseSeleccionadaSegura.alumno_db_id ||
+              claseSeleccionadaSegura.alumno_id
           )
       );
 
@@ -2342,8 +3472,8 @@ profesor_nombre: profesor?.nombre || profesor?.name || profesor?.profesor_nombre
   <span>Inasistencias alumno</span>
   <strong>
     {calcularInasistenciasAlumno(
-      claseSeleccionada.alumno_db_id ||
-        claseSeleccionada.alumno_id
+      claseSeleccionadaSegura.alumno_db_id ||
+        claseSeleccionadaSegura.alumno_id
     )}
   </strong>
 </div>
@@ -2358,8 +3488,8 @@ profesor_nombre: profesor?.nombre || profesor?.name || profesor?.profesor_nombre
       Math.min(
         calcularHorasModulo(
           calcularHorasAlumno(
-            claseSeleccionada.alumno_db_id ||
-              claseSeleccionada.alumno_id
+            claseSeleccionadaSegura.alumno_db_id ||
+              claseSeleccionadaSegura.alumno_id
           )
         ),
         HORAS_POR_MODULO
@@ -2375,8 +3505,8 @@ profesor_nombre: profesor?.nombre || profesor?.name || profesor?.profesor_nombre
 <p className="coordinador-progress-text">
   {calcularHorasModulo(
   calcularHorasAlumno(
-    claseSeleccionada.alumno_db_id ||
-      claseSeleccionada.alumno_id
+    claseSeleccionadaSegura.alumno_db_id ||
+      claseSeleccionadaSegura.alumno_id
   )
 ) >= HORAS_POR_MODULO && (
   <span className="modulo-completado-badge">
@@ -2442,7 +3572,7 @@ profesor_nombre: profesor?.nombre || profesor?.name || profesor?.profesor_nombre
      {(
   <div className="coordinador-modal-actions">
        
-       {puedeEditarClases && (
+       {permisosClases.puedeEditarClases && (
   <button
     type="button"
     className="coordinador-secondary-btn"
@@ -2453,7 +3583,7 @@ profesor_nombre: profesor?.nombre || profesor?.name || profesor?.profesor_nombre
 )}
 
 
-{puedePausarClases && (
+{permisosClases.puedePausarClases && (
         <button
           type="button"
           className="coordinador-secondary-btn"
@@ -2463,7 +3593,7 @@ profesor_nombre: profesor?.nombre || profesor?.name || profesor?.profesor_nombre
         </button>
 )}
        
-       {puedeCancelarClases && (
+       {permisosClases.puedeEliminarClases && (
   <button
     type="button"
     className="coordinador-secondary-btn"
@@ -2475,7 +3605,7 @@ profesor_nombre: profesor?.nombre || profesor?.name || profesor?.profesor_nombre
   </button>
 )}
 
-        {puedeEliminarClases && (
+        {permisosClases.puedeEliminarClases && (
   <button
     type="button"
     className="mini-action-btn danger-outline"
@@ -2487,6 +3617,303 @@ profesor_nombre: profesor?.nombre || profesor?.name || profesor?.profesor_nombre
 
         </div>
 )}
+    </div>
+  </div>
+)}
+
+
+{modalVerVisitaAbierto && visitaSeleccionada && (
+  <div className="coordinador-modal-overlay">
+    <div className="coordinador-modal visita-detalle-modal">
+      <div className="coordinador-modal-head visita-detalle-head">
+        <div>
+          <p className="visita-detalle-kicker">Detalle comercial</p>
+          <h2>Detalle de la visita</h2>
+          <span>Información registrada solo para consulta.</span>
+        </div>
+
+        <button
+          type="button"
+          className="coordinador-modal-close"
+          onClick={cerrarModalVerVisita}
+        >
+          ×
+        </button>
+      </div>
+
+      <div className="visita-detalle-grid">
+        <div className="visita-detalle-card principal">
+          <small>Visitante</small>
+          <h3>
+            {visitaSeleccionada.nombre_visitante || "-"}{" "}
+            {visitaSeleccionada.apellido_visitante || ""}
+          </h3>
+
+         <div className="visita-detalle-items visita-visitante-grid">
+            <p>
+              <span>Tipo documento</span>
+              <strong>
+  {{
+    ti: "Tarjeta de identidad",
+    cc: "Cédula",
+    cedula: "Cédula",
+    ce: "Cédula de extranjería",
+    ppt: "Permiso por protección temporal",
+    pasaporte: "Pasaporte",
+    nit: "NIT",
+  }[
+    String(
+      visitaSeleccionada?.tipo_documento || ""
+    ).toLowerCase()
+  ] || "-"}
+</strong>
+            </p>
+
+            <p>
+              <span>Número documento</span>
+              <strong>{visitaSeleccionada.numero_documento || "-"}</strong>
+            </p>
+
+            <p>
+              <span>Teléfono</span>
+              <strong>{visitaSeleccionada.telefono || "-"}</strong>
+            </p>
+          </div>
+        </div>
+
+        <div className="visita-detalle-card">
+  <small>Agenda</small>
+
+        <div className="visita-detalle-items visita-agenda-grid">
+            <p>
+              <span>Curso de interés</span>
+              <strong>{visitaSeleccionada.curso_interes || "-"}</strong>
+            </p>
+
+            <p>
+              <span>Fecha</span>
+              <strong>{visitaSeleccionada.fecha || "-"}</strong>
+            </p>
+
+            <p>
+              <span>Hora</span>
+              <strong>{visitaSeleccionada.hora || "-"}</strong>
+            </p>
+
+          <p className="visita-agenda-estado-item">
+  <span>Estado</span>
+  <strong className={`visita-detalle-estado estado-${visitaSeleccionada.estado || "sin-estado"}`}>
+    {String(visitaSeleccionada.estado || "-").toUpperCase()}
+  </strong>
+</p>
+          </div>
+        </div>
+
+      <div className="visita-detalle-card">
+  <small>Responsables</small>
+
+  <div className="visita-detalle-items visita-responsables-grid">
+    <p>
+      <span>Responsable</span>
+      <strong>{visitaSeleccionada?.responsable || "-"}</strong>
+    </p>
+
+    <p>
+      <span>Coordinador</span>
+      <strong>{visitaSeleccionada?.coordinador_nombre || "-"}</strong>
+    </p>
+  </div>
+</div>
+
+<div className="visita-detalle-card">
+  <small>Acudiente</small>
+
+  <div className="visita-detalle-items visita-responsables-grid">
+    <p>
+      <span>Nombre acudiente</span>
+      <strong>{visitaSeleccionada?.nombre_acudiente || "-"}</strong>
+    </p>
+
+    <p>
+      <span>Teléfono acudiente</span>
+      <strong>{visitaSeleccionada?.telefono_acudiente || "-"}</strong>
+    </p>
+  </div>
+</div>
+       
+
+        <div className="visita-detalle-card full">
+          <small>Observaciones</small>
+          <p className="visita-detalle-observacion">
+            {visitaSeleccionada.observaciones || "-"}
+          </p>
+        </div>
+
+        <div className="visita-detalle-actions">
+ 
+</div>
+      </div>
+    </div>
+  </div>
+)}
+
+{modalVisitaAbierto && (
+  <div className="coordinador-modal-overlay">
+    <div className="coordinador-modal">
+
+      <div className="coordinador-modal-head">
+        <div>
+          <h2>Editar visita</h2>
+          <span>
+            Modifica la información y guarda cambios.
+          </span>
+        </div>
+
+        <button
+          type="button"
+          className="coordinador-modal-close"
+          onClick={cerrarModalVisita}
+        >
+          ×
+        </button>
+      </div>
+
+      <form
+        className="coordinador-form"
+        onSubmit={guardarEdicionVisita}
+      >
+
+        <div className="coordinador-field">
+          <label>Nombre</label>
+
+          <input
+            type="text"
+            name="nombreVisitante"
+            value={formVisita.nombreVisitante}
+            onChange={handleVisitaChange}
+          />
+        </div>
+
+        <div className="coordinador-field">
+          <label>Apellido</label>
+
+          <input
+            type="text"
+            name="apellidoVisitante"
+            value={formVisita.apellidoVisitante}
+            onChange={handleVisitaChange}
+          />
+        </div>
+
+        <div className="coordinador-field">
+          <label>Teléfono</label>
+
+          <input
+            type="text"
+            name="telefono"
+            value={formVisita.telefono}
+            onChange={handleVisitaChange}
+          />
+        </div>
+
+        <div className="coordinador-field">
+          <label>Curso</label>
+
+          <select
+            name="cursoInteres"
+            value={formVisita.cursoInteres}
+            onChange={handleVisitaChange}
+          >
+            {CURSOS.map((curso) => (
+              <option key={curso} value={curso}>
+                {curso}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="coordinador-field">
+          <label>Fecha</label>
+
+          <input
+            type="date"
+            name="fecha"
+            value={formVisita.fecha}
+            onChange={handleVisitaChange}
+          />
+        </div>
+
+        <div className="coordinador-field">
+          <label>Hora</label>
+
+          <input
+            type="time"
+            name="hora"
+            value={formVisita.hora}
+            onChange={handleVisitaChange}
+          />
+        </div>
+
+       
+
+{formVisita.esMenorEdad && (
+  <>
+    <div className="coordinador-field">
+      <label>Nombre acudiente</label>
+
+      <input
+        type="text"
+        name="nombreAcudiente"
+        value={formVisita.nombreAcudiente}
+        onChange={handleVisitaChange}
+      />
+    </div>
+
+    <div className="coordinador-field">
+      <label>Teléfono acudiente</label>
+
+      <input
+        type="text"
+        name="telefonoAcudiente"
+        value={formVisita.telefonoAcudiente}
+        onChange={handleVisitaChange}
+      />
+    </div>
+  </>
+)}
+
+        <div className="coordinador-field full">
+          <label>Responsable</label>
+
+          <input
+            type="text"
+            name="responsable"
+            value={formVisita.responsable}
+            onChange={handleVisitaChange}
+          />
+        </div>
+
+        <div className="coordinador-field full">
+          <label>Observaciones</label>
+
+          <textarea
+            name="observaciones"
+            value={formVisita.observaciones}
+            onChange={handleVisitaChange}
+          />
+        </div>
+
+        <div className="coordinador-actions full">
+
+          <button
+            type="submit"
+            className="coordinador-primary-btn"
+          >
+            Guardar cambios
+          </button>
+        </div>
+
+      </form>
     </div>
   </div>
 )}

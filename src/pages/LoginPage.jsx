@@ -1,7 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "../services/supabaseClient";
-
+import { useAuth } from "../context/AuthContext";
 
 
 function LoginPage() {
@@ -17,74 +16,37 @@ const [roleLabel, setRoleLabel] = useState("");
 
   const [fade, setFade] = useState(false);
 
-const handleLogin = async (e) => {
-  e.preventDefault();
+  const { user, role, login } = useAuth();
 
-  if (!email || !password) {
-    alert("Completa todos los campos");
-    return;
-  }
+  useEffect(() => {
+    if (user && role) {
+      if (role === "coordinador_academico" || role === "coordinador") {
+        navigate("/coordinador");
+      } else if (
+        ["owner", "admin", "contador", "gerente"].includes(role)
+      ) {
+        navigate("/dashboard");
+      } else {
+        // Otros roles usarán sus respectivos logins (profesor, asesor)
+      }
+    }
+  }, [user, role, navigate]);
 
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
+  const handleLogin = async (e) => {
+    e.preventDefault();
 
- if (error) {
-  console.error("Error login Supabase:", error);
-  alert(error.message);
-  return;
-}
+    if (!email || !password) {
+      alert("Completa todos los campos");
+      return;
+    }
 
-  // validar rol en Supabase
-  // 🔥 obtener usuario autenticado
-const user = data.user;
+    const { error } = await login(email, password);
 
-// 🔥 buscar por auth_uid (forma correcta)
-const { data: usuario, error: userError } = await supabase
-  .from("usuarios")
-  .select("role, nombre")
-  .eq("auth_uid", user.id)
-  .maybeSingle();
-
-  if (!usuario || !usuario.nombre) {
-  alert("El usuario no tiene nombre asignado en el sistema");
-  return;
-}
-
-
-if (!usuario) {
-  alert("Usuario no registrado en el sistema");
-  return;
-}
-const rolNormalizado = usuario.role?.toLowerCase();
-
-if (
-  ![
-    "owner",
-    "admin",
-    "contador",
-    "coordinador",
-    "coordinador_academico",
-    "gerente",
-  ].includes(rolNormalizado)
-) {
-  alert("No tienes permisos");
-  return;
-}
-
-if (rolNormalizado === "coordinador_academico") {
-  navigate("/coordinador");
-  return;
-}
-
-if (rolNormalizado === "coordinador") {
-  navigate("/coordinador");
-  return;
-}
-
-navigate("/dashboard");
-};
+    if (error) {
+      console.error("Error login:", error);
+      alert(error.message);
+    }
+  };
 
   return (
     <>

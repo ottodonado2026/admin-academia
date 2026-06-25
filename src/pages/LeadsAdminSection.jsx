@@ -799,26 +799,55 @@ if (debeRegistrarAcudiente) {
   }
 }
 
+if (esLeadCoordinador && !usuarioActual?.id) {
+  setAlerta({
+    visible: true,
+    tipo: "error",
+    mensaje:
+      "No se pudo identificar el coordinador actual. Cierra sesión e inicia nuevamente.",
+  });
+  return;
+}
+
+if (!esLeadCoordinador && !asesorSeleccionado?.id) {
+  setAlerta({
+    visible: true,
+    tipo: "warning",
+    mensaje: "Selecciona un asesor responsable válido.",
+  });
+  return;
+}
+
   setGuardando(true);
 
   try {
-    const { data: duplicado, error: errorDuplicado } = await supabase
-      .from("leads")
-      .select("id, nombre, telefono, curso_id, asesor_id, estado")
-      .eq("asesor_id", asesorSeleccionado.id)
-      .eq("telefono", telefonoLimpio)
-      .eq("curso_id", form.cursoId)
-      .in("estado", [
-        "lead",
-        "seguimiento",
-        "visita_programada",
-        "inscrito",
-        "activo",
-        "curso_pausado",
-        "falta_pago",
-      ])
-      .limit(1)
-      .maybeSingle();
+    let duplicadoQuery = supabase
+  .from("leads")
+  .select("id, nombre, telefono, curso_id, asesor_id, coordinador_id, estado")
+  .eq("telefono", telefonoLimpio)
+  .eq("curso_id", form.cursoId)
+  .in("estado", [
+    "lead",
+    "seguimiento",
+    "visita_programada",
+    "inscrito",
+    "activo",
+    "curso_pausado",
+    "falta_pago",
+  ])
+  .limit(1);
+
+if (esLeadCoordinador) {
+  duplicadoQuery = duplicadoQuery
+    .eq("origen_lead", "coordinador")
+    .eq("coordinador_id", usuarioActual?.id);
+} else {
+  duplicadoQuery = duplicadoQuery
+    .eq("asesor_id", asesorSeleccionado?.id);
+}
+
+const { data: duplicado, error: errorDuplicado } =
+  await duplicadoQuery.maybeSingle();
 
     if (errorDuplicado) {
       console.error("Error validando duplicado:", errorDuplicado);
@@ -857,18 +886,23 @@ if (debeRegistrarAcudiente) {
       valor: Number(valorFinal || 0),
       valor_base: Number(precioBase || 0),
 
-    asesor_id: asesorSeleccionado?.id || null,
+    asesor_id: esLeadCoordinador
+  ? null
+  : asesorSeleccionado?.id || null,
 
 origen_lead: esLeadCoordinador
   ? "coordinador"
   : "asesor",
 
 coordinador_id: esLeadCoordinador
-  ? "coordinador-admin"
+  ? usuarioActual?.id || null
   : null,
 
 coordinador_nombre: esLeadCoordinador
-  ? "Coordinador"
+  ? usuarioActual?.nombre ||
+    usuarioActual?.nombre_completo ||
+    usuarioActual?.email ||
+    "Coordinador académico"
   : null,
 
      duracion: duracionLimpia,
@@ -914,7 +948,9 @@ telefono_acudiente: debeRegistrarAcudiente ? telefonoAcudienteLimpio : "",
     setAlerta({
       visible: true,
       tipo: "success",
-      mensaje: "Lead manual creado y asignado correctamente.",
+      mensaje: esLeadCoordinador
+  ? "Lead propio del coordinador creado correctamente."
+  : "Lead manual creado y asignado correctamente.",
     });
   } catch (error) {
     console.error("Error inesperado creando lead:", error);

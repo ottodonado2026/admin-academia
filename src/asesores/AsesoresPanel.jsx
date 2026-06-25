@@ -1136,6 +1136,33 @@ console.log("ID usado para update:", leadActivo?.id);
 const estaBloqueado = leadActivo?.bloqueado === true;
 const puedeEditar = !leadActivo?.bloqueado || leadActivo?.aprobadoPorAdmin;
 
+  const solicitarCambioClave = async () => {
+    const nuevaClave = window.prompt("Ingresa la nueva contraseña que deseas (mínimo 6 caracteres):");
+    if (!nuevaClave || nuevaClave.length < 6) {
+      if (nuevaClave !== null) alert("La contraseña debe tener al menos 6 caracteres.");
+      return;
+    }
+    
+    try {
+      const payload = {
+        tipo: 'cambio_clave',
+        estado: 'pendiente',
+        solicitante_tipo: 'asesor',
+        solicitante_id: String(auth?.id || auth?.asesor_id || auth?.asesorId),
+        solicitante_nombre: auth?.nombre || auth?.email,
+        nueva_clave: nuevaClave
+      };
+
+      const { error } = await supabase.from('solicitudes').insert([payload]);
+      
+      if (error) throw error;
+      alert("Solicitud de cambio de contraseña enviada. Un administrador la aprobará pronto.");
+    } catch (err) {
+      console.error(err);
+      alert("Error enviando solicitud.");
+    }
+  };
+
 return (
   <>
     <div className="asesor-pro-page">
@@ -1184,6 +1211,9 @@ return (
           <div className="hero-actions">
             <button className="ghost-btn-pro" onClick={copiarLink}>
               Copiar link personalizado
+            </button>
+            <button className="ghost-btn-pro" onClick={solicitarCambioClave}>
+              🔑 Cambiar contraseña
             </button>
             <button className="danger-btn-pro" onClick={logout}>
               Cerrar sesión

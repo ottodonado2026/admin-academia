@@ -58,27 +58,27 @@ export default function ModalClase({ clase, onClose, onGuardar, pagos = [] }) {
           </button>
         </div>
 
-        <div className="modal-grid-pro">
-          <div className="modal-info-box">
-            <span>Estado</span>
-            <strong>{localClase.estado}</strong>
-          </div>
+       <div className="modal-grid-pro">
+  <div className="modal-info-box">
+    <span>Tema</span>
+    <strong>{localClase.tema || "No definido"}</strong>
+  </div>
 
-          <div className="modal-info-box">
-            <span>Módulo</span>
-            <strong>{localClase.modulo || "-"}</strong>
-          </div>
+  <div className="modal-info-box">
+    <span>Módulo</span>
+   <strong>{localClase.modulo || "No definido"}</strong>
+  </div>
 
-          <div className="modal-info-box">
-            <span>Duración</span>
-           <strong>{localClase.duracionHoras || localClase.duracion_horas || 0}h</strong>
-          </div>
+  <div className="modal-info-box">
+    <span>Duración</span>
+    <strong>{localClase.duracionHoras || localClase.duracion_horas || 0}h</strong>
+  </div>
 
-          <div className="modal-info-box">
-            <span>Tema</span>
-            <strong>{localClase.tema || "-"}</strong>
-          </div>
-        </div>
+  <div className="modal-info-box">
+    <span>Estado</span>
+    <strong>{localClase.estado}</strong>
+  </div>
+</div>
 
         <div className="modal-section-pro">
           <h3>Resumen</h3>
@@ -97,7 +97,7 @@ export default function ModalClase({ clase, onClose, onGuardar, pagos = [] }) {
             </div>
             <div className="modal-info-box">
               <span>Observaciones</span>
-              <strong>{localClase.observaciones || "-"}</strong>
+              <strong>{localClase.observaciones || "Sin observaciones"}</strong>
             </div>
           </div>
         </div>
@@ -114,7 +114,7 @@ export default function ModalClase({ clase, onClose, onGuardar, pagos = [] }) {
                   <div className="modal-alumno-main">
                     <strong>{alumno.nombre}</strong>
                     <span>
-                      {alumno.curso || "-"} · {estadoPago}
+                    {alumno.curso || "Sin curso"} · {estadoPago}
                     </span>
                   </div>
 

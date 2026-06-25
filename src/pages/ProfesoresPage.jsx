@@ -35,12 +35,18 @@ function ProfesoresPage() {
   const [comision, setComision] = useState("");
   const [estado, setEstado] = useState("activo");
   const [observaciones, setObservaciones] = useState("");
+  
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
   const [editandoId, setEditandoId] = useState(null);
   const [profesorSeleccionado, setProfesorSeleccionado] = useState(null);
   const [busqueda, setBusqueda] = useState("");
   const [salario, setSalario] = useState("");
 
+  const [usuarioProfesor, setUsuarioProfesor] = useState(null);
+const [clasesProfesor, setClasesProfesor] = useState([]);
+const [cargandoClases, setCargandoClases] = useState(false);
 
   const handleLogout = () => {
     localStorage.removeItem("user");
@@ -51,6 +57,90 @@ function ProfesoresPage() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(profesores));
   }, [profesores]);
 
+
+  useEffect(() => {
+  const cargarClasesDelProfesor = async () => {
+    setCargandoClases(true);
+
+    try {
+      const { data: authData } = await supabase.auth.getUser();
+      const authUser = authData?.user || null;
+
+      if (!authUser) {
+        setCargandoClases(false);
+        return;
+      }
+
+      const { data: profesorData, error: profesorError } = await supabase
+        .from("profesores")
+        .select("*")
+        .eq("data->>email", authUser.email)
+        .maybeSingle();
+
+      if (profesorError) {
+        console.error("Error cargando profesor actual:", profesorError);
+        setCargandoClases(false);
+        return;
+      }
+
+      if (!profesorData) {
+        setCargandoClases(false);
+        return;
+      }
+
+      const profesorActual = {
+        id: profesorData.id,
+        ...(profesorData.data || {}),
+      };
+
+      setUsuarioProfesor(profesorActual);
+
+      const { data: clasesData, error: clasesError } = await supabase
+        .from("clases")
+        .select("*")
+        .or(
+          `profesor_db_id.eq.${profesorActual.id},profesor_id.eq.${profesorActual.id}`
+        )
+        .order("fecha", { ascending: false });
+
+      if (clasesError) {
+        console.error("Error cargando clases del profesor:", clasesError);
+        setClasesProfesor([]);
+        return;
+      }
+
+      setClasesProfesor(clasesData || []);
+    } catch (error) {
+      console.error("Error inesperado cargando clases del profesor:", error);
+    } finally {
+      setCargandoClases(false);
+    }
+  };
+
+  cargarClasesDelProfesor();
+}, []);
+
+useEffect(() => {
+  const interval = setInterval(() => {
+    clasesProfesor.forEach(async (clase) => {
+      if (clase.estado !== "en_curso") return;
+
+      if (!clase.fecha || !clase.hora_fin) return;
+
+      const ahora = new Date();
+
+      const fechaFinClase = new Date(
+        `${clase.fecha}T${clase.hora_fin}`
+      );
+
+      if (ahora >= fechaFinClase) {
+        await finalizarClase(clase, "automatico");
+      }
+    });
+  }, 30000);
+
+  return () => clearInterval(interval);
+}, [clasesProfesor]);
 
   useEffect(() => {
   const cargarProfesores = async () => {
@@ -85,6 +175,8 @@ function ProfesoresPage() {
     setComision("");
     setEstado("activo");
     setObservaciones("");
+    setPassword("");
+    setConfirmPassword("");
     setEditandoId(null);
   };
 
@@ -118,6 +210,17 @@ function ProfesoresPage() {
   alert("Selecciona al menos una especialidad");
   return false;
 }
+
+    if (!editandoId) {
+      if (!password || password.length < 6) {
+        alert("La contraseña es obligatoria y debe tener al menos 6 caracteres");
+        return false;
+      }
+      if (password !== confirmPassword) {
+        alert("Las contraseñas no coinciden");
+        return false;
+      }
+    }
 
     if (!modalidad) {
       alert("Selecciona la modalidad");
@@ -187,7 +290,7 @@ function ProfesoresPage() {
       clasesAsignadas: 0,
       alumnosActivos: 0,
       email: `${payload.numeroDocumento}@profe.com`,
-      password: payload.numeroDocumento,
+      password: password || payload.numeroDocumento, // Si edita y no pone clave, queda igual o usa documento (en edicion no deberia cambiar)
       role: "profesor",
       salario: Number(salario) || 0,
       ...payload,
@@ -255,6 +358,66 @@ if (error) {
     }
   };
 
+  const refrescarClasesProfesor = async () => {
+  if (!usuarioProfesor?.id) return;
+
+  const { data, error } = await supabase
+    .from("clases")
+    .select("*")
+    .or(
+      `profesor_db_id.eq.${usuarioProfesor.id},profesor_id.eq.${usuarioProfesor.id}`
+    )
+    .order("fecha", { ascending: false });
+
+  if (error) {
+    console.error("Error refrescando clases:", error);
+    return;
+  }
+
+  setClasesProfesor(data || []);
+};
+
+const iniciarClase = async (clase) => {
+  const { error } = await supabase
+    .from("clases")
+    .update({
+      estado: "en_curso",
+      inicio_en: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", clase.id);
+
+  if (error) {
+    console.error("Error iniciando clase:", error);
+    alert("No se pudo iniciar la clase.");
+    return;
+  }
+
+  await refrescarClasesProfesor();
+};
+
+const finalizarClase = async (clase, finalizadaPor = "profesor") => {
+  const { error } = await supabase
+    .from("clases")
+    .update({
+      estado: "finalizada",
+      finalizo_en: new Date().toISOString(),
+      finalizada_por: finalizadaPor,
+      profesor_finalizo_id: usuarioProfesor?.id || null,
+      profesor_finalizo_nombre: usuarioProfesor?.nombre || null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", clase.id);
+
+  if (error) {
+    console.error("Error finalizando clase:", error);
+    alert("No se pudo finalizar la clase.");
+    return;
+  }
+
+  await refrescarClasesProfesor();
+};
+
   const profesoresFiltrados = useMemo(() => {
     const term = busqueda.trim().toLowerCase();
 
@@ -298,6 +461,149 @@ if (error) {
           </div>
         </div>
 
+        <div className="tabla-container" style={{ marginBottom: "24px" }}>
+  <h2>Mis clases asignadas</h2>
+
+  {cargandoClases && <p>Cargando clases...</p>}
+
+  {!cargandoClases && clasesProfesor.length === 0 && (
+    <p>No tienes clases asignadas todavía.</p>
+  )}
+
+ {!cargandoClases && clasesProfesor.length > 0 && (
+  <>
+    <table className="tabla-profesores">
+      <thead>
+        <tr>
+          <th>Clase</th>
+          <th>Fecha</th>
+          <th>Horario</th>
+          <th>Alumno</th>
+          <th>Estado</th>
+          <th>Acción</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {clasesProfesor.map((clase) => (
+          <tr key={clase.id}>
+            <td>
+              <div className="celda-principal">
+                <strong>{clase.curso}</strong>
+                <span>{clase.formato_clase}</span>
+              </div>
+            </td>
+
+            <td>{clase.fecha}</td>
+
+            <td>
+              {clase.hora} - {clase.hora_fin || "Sin hora fin"}
+            </td>
+
+            <td>{clase.alumno_nombre}</td>
+
+            <td>
+              <span className={`estado-chip ${clase.estado}`}>
+                {clase.estado}
+              </span>
+            </td>
+
+            <td>
+              {clase.estado === "programada" && (
+                <button
+                  type="button"
+                  className="btn-editar"
+                  onClick={() => iniciarClase(clase)}
+                >
+                  Iniciar clase
+                </button>
+              )}
+
+              {clase.estado === "en_curso" && (
+                <button
+                  type="button"
+                  className="btn-eliminar"
+                  onClick={() => finalizarClase(clase, "profesor")}
+                >
+                  Finalizar clase
+                </button>
+              )}
+
+              {clase.estado === "finalizada" && (
+                <span>Finalizada</span>
+              )}
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+
+
+  <div className="clases-profesor-mobile">
+  {clasesProfesor.map((clase) => (
+    <div key={clase.id} className="clase-profesor-card">
+      <div className="clase-profesor-card-head">
+        <div>
+          <h3>{clase.curso}</h3>
+          <span>{clase.formato_clase || "Clase"}</span>
+        </div>
+
+        <span className={`estado-chip ${clase.estado}`}>
+          {clase.estado}
+        </span>
+      </div>
+
+      <div className="clase-profesor-grid">
+        <div>
+          <span>Fecha</span>
+          <strong>{clase.fecha}</strong>
+        </div>
+
+        <div>
+          <span>Horario</span>
+          <strong>
+            {clase.hora} - {clase.hora_fin || "Sin hora fin"}
+          </strong>
+        </div>
+
+        <div>
+          <span>Alumno</span>
+          <strong>{clase.alumno_nombre}</strong>
+        </div>
+      </div>
+
+      <div className="clase-profesor-actions">
+        {clase.estado === "programada" && (
+          <button
+            type="button"
+            className="btn-editar"
+            onClick={() => iniciarClase(clase)}
+          >
+            Iniciar clase
+          </button>
+        )}
+
+        {clase.estado === "en_curso" && (
+          <button
+            type="button"
+            className="btn-eliminar"
+            onClick={() => finalizarClase(clase, "profesor")}
+          >
+            Finalizar clase
+          </button>
+        )}
+
+        {clase.estado === "finalizada" && (
+          <span className="clase-finalizada-text">Clase finalizada</span>
+        )}
+      </div>
+    </div>
+  ))}
+</div>
+  </>
+)}
+</div>
+
         <div className="profesores-toolbar">
           <input
             type="text"
@@ -338,6 +644,23 @@ if (error) {
             value={numeroDocumento}
             onChange={(e) => setNumeroDocumento(e.target.value)}
           />
+
+          {!editandoId && (
+            <>
+              <input
+                type="password"
+                placeholder="Contraseña de acceso"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+              <input
+                type="password"
+                placeholder="Confirmar contraseña"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+              />
+            </>
+          )}
 
           <input
             placeholder="Teléfono"

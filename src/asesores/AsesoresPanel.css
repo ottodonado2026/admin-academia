@@ -1201,3 +1201,294 @@ body {
 .asesores-empty-actions {
   margin-top: 26px;
 }
+
+.asesores-admin-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.btn-secondary.active {
+  background: rgba(239, 68, 68, 0.16);
+  border-color: rgba(239, 68, 68, 0.35);
+  color: #fecaca;
+}
+
+@media (max-width: 768px) {
+  .asesores-admin-topbar {
+    align-items: stretch;
+  }
+
+  .asesores-admin-topbar button {
+    width: 100%;
+  }
+}
+
+
+.asesores-list-section {
+  margin-top: 24px;
+}
+
+.asesores-admin-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.asesor-admin-item {
+  padding: 18px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.asesor-admin-main {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.asesor-admin-main h3 {
+  margin: 0;
+  color: #fff;
+}
+
+.asesor-admin-main p {
+  margin: 5px 0 0;
+  color: #94a3b8;
+  font-size: 13px;
+}
+
+.asesor-admin-details {
+  display: grid;
+  gap: 6px;
+  color: #cbd5e1;
+  font-size: 13px;
+}
+
+.asesor-admin-details p {
+  margin: 0;
+}
+
+.estado-badge {
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  background: rgba(148, 163, 184, 0.15);
+  color: #cbd5e1;
+}
+
+.estado-activo {
+  background: rgba(34, 197, 94, 0.15);
+  color: #86efac;
+}
+
+.estado-inactivo {
+  background: rgba(148, 163, 184, 0.15);
+  color: #cbd5e1;
+}
+
+.estado-vacaciones {
+  background: rgba(234, 179, 8, 0.15);
+  color: #fde68a;
+}
+
+.estado-eliminado {
+  background: rgba(239, 68, 68, 0.15);
+  color: #fecaca;
+}
+
+.asesor-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+
+.asesor-actions select {
+  min-height: 40px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: #111827;
+  color: #fff;
+  padding: 0 12px;
+}
+
+.asesor-deleted-info {
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 14px;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.22);
+  color: #f8fafc;
+  font-size: 13px;
+}
+
+.asesor-deleted-info p {
+  margin: 4px 0;
+  line-height: 1.4;
+}
+
+.btn-success {
+  border: none;
+  border-radius: 999px;
+  padding: 10px 16px;
+  background: #22c55e;
+  color: #06130a;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-success:hover {
+  filter: brightness(1.05);
+}
+
+@media (max-width: 768px) {
+  .asesores-admin-list {
+    grid-template-columns: 1fr;
+  }
+
+  .asesor-admin-main {
+    flex-direction: column;
+  }
+
+  .asesor-actions {
+    flex-direction: column;
+  }
+
+  .asesor-actions button,
+  .asesor-actions select {
+    width: 100%;
+  }
+
+  .asesor-deleted-info {
+    font-size: 12px;
+    padding: 10px;
+  }
+}
+
+/* =========================================
+   BOTÓN PROFESIONAL: ASESORES ELIMINADOS
+========================================= */
+
+.asesores-directorio-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  flex-wrap: nowrap;
+}
+
+.asesores-directorio-topbar > div {
+  flex: 1;
+  min-width: 0;
+}
+
+.asesores-toggle-deleted {
+  min-height: 48px;
+  padding: 0 20px;
+  border-radius: 16px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.035)),
+    rgba(15, 23, 42, 0.92);
+
+  color: #e5e7eb;
+  font-size: 13px;
+  font-weight: 850;
+  letter-spacing: 0.01em;
+
+  cursor: pointer;
+  white-space: nowrap;
+
+  box-shadow:
+    0 14px 30px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.09);
+
+  transition:
+    transform 0.18s ease,
+    border-color 0.18s ease,
+    background 0.18s ease,
+    box-shadow 0.18s ease,
+    color 0.18s ease;
+}
+
+.asesores-toggle-deleted::before {
+  content: "🗂";
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  background: rgba(148, 163, 184, 0.12);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+
+  font-size: 13px;
+  line-height: 1;
+}
+
+.asesores-toggle-deleted:hover {
+  transform: translateY(-1px);
+  border-color: rgba(203, 213, 225, 0.42);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.115), rgba(255, 255, 255, 0.045)),
+    rgba(30, 41, 59, 0.96);
+
+  box-shadow:
+    0 18px 38px rgba(0, 0, 0, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.asesores-toggle-deleted:active {
+  transform: translateY(0);
+}
+
+.asesores-toggle-deleted.active {
+  border-color: rgba(248, 113, 113, 0.4);
+  background:
+    linear-gradient(180deg, rgba(127, 29, 29, 0.42), rgba(69, 10, 10, 0.28)),
+    rgba(15, 23, 42, 0.94);
+
+  color: #fecaca;
+}
+
+.asesores-toggle-deleted.active::before {
+  content: "↩";
+  background: rgba(248, 113, 113, 0.15);
+  border-color: rgba(248, 113, 113, 0.28);
+  color: #fecaca;
+}
+
+/* Evita que el estilo global de .asesores-admin-topbar button dañe este botón */
+.asesores-directorio-topbar .asesores-toggle-deleted {
+  width: auto;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .asesores-directorio-topbar {
+    flex-direction: column;
+    align-items: stretch;
+    flex-wrap: nowrap;
+  }
+
+  .asesores-directorio-topbar .asesores-toggle-deleted {
+    width: 100%;
+    min-height: 50px;
+  }
+}

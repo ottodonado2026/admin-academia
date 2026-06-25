@@ -2,12 +2,12 @@ import { useEffect, useMemo, useState } from "react";
 
 export default function ProfesorSidebar({ activeView, setActiveView }) {
   const [user, setUser] = useState(null);
+  const [open, setOpen] = useState(false);
  
-  useEffect(() => {
-    const userData = JSON.parse(localStorage.getItem("user"));
-
-
-  }, []);
+ useEffect(() => {
+  const userData = JSON.parse(localStorage.getItem("user"));
+  setUser(userData);
+}, []);
 
   const menu = useMemo(
     () => [
@@ -34,17 +34,33 @@ const profesorId =
   user?.email?.split("@")[0] ||
   "N/A";
 
-  return (
-    <aside className="profesor-sidebar">
+ return (
+  <>
+    {/* TOPBAR MOBILE */}
+    <div className="profesor-mobile-topbar">
+      <button onClick={() => setOpen(true)}>☰</button>
+      <h3>Profesor</h3>
+    </div>
+
+    {/* OVERLAY */}
+    {open && (
+      <div
+        className="profesor-sidebar-overlay"
+        onClick={() => setOpen(false)}
+      />
+    )}
+
+    <aside className={`profesor-sidebar ${open ? "open" : ""}`}>
       <div className="profesor-sidebar-top">
-       
-          <div className="profesor-sidebar-academy">
-  <span className="academy-kicker">Academia</span>
-  <div className="profesor-sidebar-academy-text">
-    <h1 className="academy-line-one">CARIBBEAN</h1>
-    <h2 className="academy-line-two">Studio Academy</h2>
-  </div>
-</div>
+
+        <div className="profesor-sidebar-academy">
+          <span className="academy-kicker">Academia</span>
+
+          <div className="profesor-sidebar-academy-text">
+            <h1 className="academy-line-one">CARIBBEAN</h1>
+            <h2 className="academy-line-two">Studio Academy</h2>
+          </div>
+        </div>
 
         <div className="profesor-sidebar-brand">
           <h2>{nombreProfesor}</h2>
@@ -59,7 +75,10 @@ const profesorId =
               className={`profesor-sidebar-link ${
                 activeView === item.id ? "active" : ""
               }`}
-              onClick={() => setActiveView(item.id)}
+              onClick={() => {
+                setActiveView(item.id);
+                setOpen(false);
+              }}
             >
               {item.label}
             </button>
@@ -77,5 +96,6 @@ const profesorId =
         </button>
       </div>
     </aside>
-  );
+  </>
+);
 }

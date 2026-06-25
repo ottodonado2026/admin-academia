@@ -28,7 +28,7 @@ export default function ClaseCard({
       <div className="clase-card-middle">
         <div className="clase-meta-item">
           <span>Módulo</span>
-          <strong>{clase.modulo || "-"}</strong>
+          <strong>{clase.modulo || "No definido"}</strong>
         </div>
 
         <div className="clase-meta-item">

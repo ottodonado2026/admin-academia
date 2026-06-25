@@ -16,6 +16,18 @@ const roleLabels = {
 
 function Sidebar({ onLogout }) {
   const [open, setOpen] = useState(false);
+useEffect(() => {
+  if (open) {
+    document.body.classList.add("sidebar-open");
+  } else {
+    document.body.classList.remove("sidebar-open");
+  }
+
+  return () => {
+    document.body.classList.remove("sidebar-open");
+  };
+}, [open]);
+
   const [pendientes, setPendientes] = useState(0);
 
   const [nombre, setNombre] = useState(

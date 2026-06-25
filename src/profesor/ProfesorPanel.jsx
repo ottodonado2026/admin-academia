@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { supabase } from "../services/supabaseClient";
 import "./ProfesorPanel.css";
 
 function ProfesorPanel() {
@@ -393,16 +394,48 @@ function ProfesorPanel() {
     };
   }, [clases]);
 
+  const solicitarCambioClave = async () => {
+    const nuevaClave = window.prompt("Ingresa la nueva contraseña que deseas (mínimo 6 caracteres):");
+    if (!nuevaClave || nuevaClave.length < 6) {
+      if (nuevaClave !== null) alert("La contraseña debe tener al menos 6 caracteres.");
+      return;
+    }
+    
+    try {
+      const payload = {
+        tipo: 'cambio_clave',
+        estado: 'pendiente',
+        solicitante_tipo: 'profesor',
+        solicitante_id: String(user.id),
+        solicitante_nombre: user.nombre || user.email,
+        nueva_clave: nuevaClave
+      };
+
+      const { error } = await supabase.from('solicitudes').insert([payload]);
+      
+      if (error) throw error;
+      alert("Solicitud de cambio de contraseña enviada. Un administrador la aprobará pronto.");
+    } catch (err) {
+      console.error(err);
+      alert("Error enviando solicitud.");
+    }
+  };
+
   return (
     <div className="panel-profesor">
       <header className="panel-header">
-        <div>
+        <div style={{ flex: 1 }}>
           <h1>Caribbean Studio Academy</h1>
           <p>Panel del profesor - Gestión de clases</p>
         </div>
 
-        <div className="panel-badge">
-          {profesorActual?.nombre || "Profesor"}
+        <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+          <button className="btn-secundario" onClick={solicitarCambioClave}>
+            🔑 Cambiar Contraseña
+          </button>
+          <div className="panel-badge">
+            {profesorActual?.nombre || "Profesor"}
+          </div>
         </div>
       </header>
 

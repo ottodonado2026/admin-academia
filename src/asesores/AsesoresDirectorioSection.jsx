@@ -23,11 +23,14 @@ function AsesoresDirectorioSection() {
   const navigate = useNavigate();
 
   const [asesores, setAsesores] = useState([]);
+  const [vistaAsesores, setVistaAsesores] = useState("activos");
   const [leads, setLeads] = useState([]);
   const [selectedAsesor, setSelectedAsesor] = useState(null);
   
   const [nuevoEmail, setNuevoEmail] = useState("");
 const [refresh, setRefresh] = useState(0);
+
+const [usuarioActual, setUsuarioActual] = useState(null);
 
   const handleLogout = () => {
     localStorage.removeItem("auth");
@@ -35,14 +38,82 @@ const [refresh, setRefresh] = useState(0);
     navigate("/");
   };
 
+  useEffect(() => {
+  const fetchUsuarioActual = async () => {
+    try {
+      const { data: authData, error: authError } = await supabase.auth.getUser();
+
+      if (authError) {
+        console.error("Error obteniendo usuario Auth:", authError);
+        return;
+      }
+
+      const authUser = authData?.user;
+
+      if (!authUser) return;
+
+      const { data, error } = await supabase
+        .from("usuarios")
+        .select("*")
+        .eq("auth_uid", authUser.id)
+        .maybeSingle();
+
+      if (error) {
+        console.error("Error cargando usuario actual:", error);
+        return;
+      }
+
+      setUsuarioActual(data);
+    } catch (error) {
+      console.error("Error inesperado cargando usuario actual:", error);
+    }
+  };
+
+  fetchUsuarioActual();
+}, []);
+
   // 🔹 Cargar asesores
   useEffect(() => {
   const fetchAsesores = async () => {
 
-   const { data, error } = await supabase
+        if (!usuarioActual) return;
+
+let asesoresQuery = supabase
   .from("asesores")
-  .select("*")
-  .order("created_at", { ascending: false });
+  .select("*");
+
+if (vistaAsesores === "eliminados") {
+  asesoresQuery = asesoresQuery.in("estado", ["eliminado", "inactivo"]);
+} else {
+  asesoresQuery = asesoresQuery.neq("estado", "eliminado");
+}
+
+/* 🔐 Permisos:
+   - admin / owner / contador / coordinador principal ven todos
+   - coordinador secundario solo ve los que creó
+*/
+const esAdministrador =
+  usuarioActual?.role === "admin" ||
+  usuarioActual?.role === "owner" ||
+  usuarioActual?.role === "contador";
+
+const esCoordinadorPrincipal =
+  usuarioActual?.role === "coordinador_academico" &&
+  (
+    usuarioActual?.puede_registrar_coordinadores === true ||
+    usuarioActual?.coordinador_nivel === "principal"
+  );
+
+const puedeVerTodos =
+  usuarioActual?.puede_ver_todos_leads === true;
+
+if (!esAdministrador && !esCoordinadorPrincipal && !puedeVerTodos) {
+  asesoresQuery = asesoresQuery.eq("creado_por", usuarioActual?.id);
+}
+
+const { data, error } = await asesoresQuery.order("created_at", {
+  ascending: false,
+});
 
 if (error) {
   console.error(error);
@@ -66,7 +137,7 @@ setAsesores(adaptados);
   
   };
   fetchAsesores();
-}, [refresh]);
+}, [refresh, vistaAsesores, usuarioActual]);
 
   // 🔹 Cargar leads
   useEffect(() => {
@@ -159,18 +230,54 @@ return {
 }, [asesores, leads]);
 
   // 🔹 eliminar
-  const eliminarAsesor = async (id) => {
-    await supabase
-  .from("asesores")
-  .delete()
-  .eq("id", id);
-    setAsesores((prev) => prev.filter((a) => a.id !== id));
-  };
+const eliminarAsesor = async (asesor) => {
+  if (!asesor?.id) {
+    alert("No se encontró el asesor seleccionado.");
+    return;
+  }
 
-  const updateEstadoAsesor = async (id, nuevoEstado) => {
+  const confirmar = window.confirm(
+    `¿Seguro que deseas desvincular a ${asesor?.nombre || "este asesor"}?\n\nNo se borrará su historial. Solo quedará oculto como eliminado.`
+  );
+
+  if (!confirmar) return;
+
   const { error } = await supabase
     .from("asesores")
-    .update({ estado: nuevoEstado })
+    .update({
+      estado: "eliminado",
+      eliminado_at: new Date().toISOString(),
+      eliminado_por: usuarioActual?.id ? String(usuarioActual.id) : null,
+      eliminado_por_nombre:
+        usuarioActual?.nombre ||
+        usuarioActual?.nombre_completo ||
+        usuarioActual?.email ||
+        "Usuario",
+      actualizado_at: new Date().toISOString(),
+    })
+    .eq("id", asesor.id);
+
+  if (error) {
+    console.error("Error desvinculando asesor:", error);
+    alert(error.message || "No se pudo desvincular el asesor.");
+    return;
+  }
+
+  setAsesores((prev) =>
+    prev.filter((item) => String(item.id) !== String(asesor.id))
+  );
+
+  setSelectedAsesor(null);
+  setRefresh((prev) => prev + 1);
+};
+
+ const updateEstadoAsesor = async (id, nuevoEstado) => {
+  const { error } = await supabase
+    .from("asesores")
+    .update({
+      estado: nuevoEstado,
+      actualizado_at: new Date().toISOString(),
+    })
     .eq("id", id);
 
   if (error) {
@@ -181,13 +288,73 @@ return {
 
   setAsesores((prev) =>
     prev.map((asesor) =>
-      asesor.id === id
+      String(asesor.id) === String(id)
         ? { ...asesor, estado: nuevoEstado }
         : asesor
     )
   );
 };
 
+const restaurarAsesor = async (asesor) => {
+  if (!asesor?.id) {
+    alert("No se encontró el asesor seleccionado.");
+    return;
+  }
+
+  const confirmar = window.confirm(
+    `¿Seguro que deseas restaurar a ${asesor?.nombre || "este asesor"}?`
+  );
+
+  if (!confirmar) return;
+
+  const { error } = await supabase
+    .from("asesores")
+    .update({
+      estado: "activo",
+      eliminado_at: null,
+      eliminado_por: null,
+      eliminado_por_nombre: null,
+      actualizado_at: new Date().toISOString(),
+    })
+    .eq("id", asesor.id);
+
+  if (error) {
+    console.error("Error restaurando asesor:", error);
+
+   alert(error.message || "No se pudo restaurar el asesor.");
+    return;
+  }
+
+ alert("Asesor restaurado correctamente.");
+  setRefresh((prev) => prev + 1);
+};
+
+const activarAsesor = async (asesor) => {
+  if (!asesor?.id) {
+    alert("No se encontró el asesor seleccionado.");
+    return;
+  }
+
+  const { error } = await supabase
+    .from("asesores")
+    .update({
+      estado: "activo",
+      actualizado_at: new Date().toISOString(),
+    })
+    .eq("id", asesor.id);
+
+  if (error) {
+    console.error("Error activando asesor:", error);
+
+    alert(error.message || "No se pudo activar el asesor.");
+
+    return;
+  }
+
+ alert("Asesor activado correctamente.");
+
+  setRefresh((prev) => prev + 1);
+};
 
   // 🔹 reset password
  const resetPassword = async (email) => {
@@ -210,12 +377,39 @@ return {
 
       <main className="dashboard-main">
 
-        <header className="asesores-admin-topbar">
-          <div>
-            <p className="asesores-admin-kicker">Gestión comercial avanzada</p>
-            <h1>Asesores</h1>
-          </div>
-        </header>
+<header className="asesores-admin-topbar asesores-directorio-topbar">
+  <div>
+    <p className="asesores-admin-kicker">Gestión comercial avanzada</p>
+    <h1>
+      {vistaAsesores === "eliminados"
+        ? "Asesores eliminados e inactivos"
+        : "Asesores"}
+    </h1>
+    <span>
+      {vistaAsesores === "eliminados"
+        ? "Consulta asesores eliminados o inactivos y restáuralos cuando corresponda."
+        : "Administra asesores comerciales, estados, métricas y desempeño."}
+    </span>
+  </div>
+
+  <button
+    type="button"
+    className={
+      vistaAsesores === "eliminados"
+        ? "asesores-toggle-deleted active"
+        : "asesores-toggle-deleted"
+    }
+    onClick={() =>
+      setVistaAsesores((prev) =>
+        prev === "eliminados" ? "activos" : "eliminados"
+      )
+    }
+  >
+    {vistaAsesores === "eliminados"
+      ? "Volver a asesores"
+      : "Asesores eliminados"}
+  </button>
+</header>
 
         <section className="asesor-card-block">
 
@@ -225,22 +419,31 @@ return {
   <div className="asesores-empty-state">
     <div className="asesores-empty-icon">👥</div>
 
-    <h2>No hay asesores registrados</h2>
+  <h2>
+  {vistaAsesores === "eliminados"
+    ? "No hay asesores eliminados o inactivos"
+    : "No hay asesores registrados"}
+</h2>
 
-    <p>
-      Cuando registres asesores comerciales, aparecerán aquí con sus métricas,
-      estado, ventas, comisiones y acciones rápidas.
-    </p>
+   <p>
+  {vistaAsesores === "eliminados"
+    ? "Cuando elimines o desactives asesores, aparecerán aquí para poder restaurarlos o activarlos nuevamente."
+    : "Cuando registres asesores comerciales, aparecerán aquí con sus métricas, estado, ventas, comisiones y acciones rápidas."}
+</p>
 
-    <div className="asesores-empty-actions">
-     <button
-  type="button"
-  className="btn-ver"
- onClick={() => navigate("/asesores-admin")}
->
-  Registrar primer asesor
-</button>
-    </div>
+    {vistaAsesores !== "eliminados" && (
+  <div className="asesores-empty-actions">
+    <button
+      type="button"
+      className="btn-ver"
+      onClick={() => navigate("/asesores-admin")}
+    >
+      Registrar primer asesor
+    </button>
+  </div>
+)}
+
+
   </div>
 ) : (
   asesoresConMetricas.map((asesor) => (
@@ -273,35 +476,60 @@ return {
 
       </div>
 
-      <div className="asesor-actions">
+<div className="asesor-actions">
 
-        <select
-          className={`status-select status-${asesor.estado || "activo"}`}
-          value={asesor.estado || "activo"}
-          onChange={(e) =>
-            updateEstadoAsesor(asesor.id, e.target.value)
-          }
-        >
-          <option value="activo">Activo</option>
-          <option value="inactivo">Inactivo</option>
-          <option value="vacaciones">Vacaciones</option>
-        </select>
+  {vistaAsesores !== "eliminados" && (
+    <>
+      <select
+        className={`status-select status-${asesor.estado || "activo"}`}
+        value={asesor.estado || "activo"}
+        onChange={(e) =>
+          updateEstadoAsesor(asesor.id, e.target.value)
+        }
+      >
+        <option value="activo">Activo</option>
+        <option value="inactivo">Inactivo</option>
+        <option value="vacaciones">Vacaciones</option>
+      </select>
 
-        <button
-          className="btn-ver"
-          onClick={() => setSelectedAsesor(asesor.id)}
-        >
-          Ver
-        </button>
+      <button
+        className="btn-ver"
+        onClick={() => setSelectedAsesor(asesor.id)}
+      >
+        Ver
+      </button>
 
-        <button
-          className="btn-delete"
-          onClick={() => eliminarAsesor(asesor.id)}
-        >
-          🗑
-        </button>
+      <button
+        className="btn-delete"
+        onClick={() => eliminarAsesor(asesor)}
+        title="Desvincular asesor"
+      >
+        🗑
+      </button>
+    </>
+  )}
 
-      </div>
+  {vistaAsesores === "eliminados" && asesor.estado === "eliminado" && (
+    <button
+      type="button"
+      className="table-btn restore-btn"
+      onClick={() => restaurarAsesor(asesor)}
+    >
+      Restaurar asesor
+    </button>
+  )}
+
+  {vistaAsesores === "eliminados" && asesor.estado === "inactivo" && (
+    <button
+      type="button"
+      className="table-btn activate-btn"
+      onClick={() => activarAsesor(asesor)}
+    >
+      Activar asesor
+    </button>
+  )}
+
+</div>
 
     </div>
   ))

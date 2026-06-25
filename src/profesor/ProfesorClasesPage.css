@@ -379,8 +379,8 @@
 
 .clase-card-middle {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
   margin-bottom: 14px;
 }
 
@@ -514,7 +514,7 @@
 
 .modal-grid-pro {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
 }
 
@@ -618,16 +618,36 @@
 }
 
 @media (max-width: 900px) {
-  .modal-grid-pro,
+  .modal-grid-pro {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .clase-card-middle {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(3, 1fr);
   }
 }
 
 @media (max-width: 640px) {
-  .modal-grid-pro,
+  .modal-grid-pro {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
   .clase-card-middle {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+
+  .clase-meta-item {
+    padding: 10px;
+  }
+
+  .clase-meta-item span {
+    font-size: 10px;
+  }
+
+  .clase-meta-item strong {
+    font-size: 13px;
   }
 
   .modal-actions-pro {
@@ -638,4 +658,4 @@
     flex-direction: column;
     align-items: flex-start;
   }
-}
+

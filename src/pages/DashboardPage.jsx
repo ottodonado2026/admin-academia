@@ -7,6 +7,8 @@ import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
 import { supabase } from "../services/supabaseClient";
 import { METODOS_PAGO } from "../constants/metodosPago";
+import { useAuth } from "../context/AuthContext";
+import { useDashboard } from "../hooks/useDashboard";
 
 const meses = [
   "Enero",
@@ -35,13 +37,9 @@ function DashboardPage() {
   const [mesSeleccionado, setMesSeleccionado] = useState(hoy.getMonth());
   const [anioSeleccionado, setAnioSeleccionado] = useState(hoy.getFullYear());
 
-  const [ingresos, setIngresos] = useState([]);
-  const [egresos, setEgresos] = useState([]);
-  const [alumnos, setAlumnos] = useState([]);
-  const [pagos, setPagos] = useState([]);
-  const [historialPagos, setHistorialPagos] = useState([]);
+  const { ingresos, egresos, alumnos, pagos, historialPagos, loading: loadingData } = useDashboard();
+  const { user, role, userData } = useAuth();
 
- 
   const [busqueda, setBusqueda] = useState("");
   const [filtroFecha, setFiltroFecha] = useState("mes");
   const [filtroMetodo, setFiltroMetodo] = useState("todos");
@@ -51,7 +49,12 @@ function DashboardPage() {
   const [fechaInicioCustom, setFechaInicioCustom] = useState("");
   const [fechaFinCustom, setFechaFinCustom] = useState("");
   const [fechaExacta, setFechaExacta] = useState("");
-  const [usuarioActual, setUsuarioActual] = useState(null);
+
+  const usuarioActual = {
+    ...user,
+    nombre: userData?.nombre || user?.email,
+    rol: role === "owner" ? "Gerente" : role === "contador" ? "Contador" : role === "coordinador" ? "Coordinador" : "Usuario"
+  };
 
   const filtrosActivos = {
     busqueda,
@@ -69,83 +72,8 @@ function DashboardPage() {
 
 
 
-const fetchDashboard = async () => {
-  try {
-    // 🔹 PAGOS (planes)
-    const { data: pagosData } = await supabase
-      .from("pagos")
-      .select("*");
-
-    // 🔹 HISTORIAL (abonos)
-    const { data: historialData } = await supabase
-      .from("historial_pagos")
-      .select("*");
-
-    // 🔹 ALUMNOS
-    const { data: alumnosData } = await supabase
-      .from("alumnos")
-      .select("*");
-
-    // 🔹 INGRESOS
-    const { data: ingresosData } = await supabase
-      .from("ingresos")
-      .select("*");
-
-    // 🔹 EGRESOS
-    const { data: egresosData } = await supabase
-      .from("egresos")
-      .select("*");
-
-    setPagos(pagosData || []);
-    setHistorialPagos(historialData || []);
-    setAlumnos(alumnosData || []);
-    setIngresos(ingresosData || []);
-    setEgresos(egresosData || []);
-
-  } catch (error) {
-    console.error("Error cargando dashboard:", error);
-  }
-};
-
-useEffect(() => {
-  fetchDashboard();
-
-  const obtenerUsuario = async () => {
-    const { data } = await supabase.auth.getSession();
-    const user = data?.session?.user;
-
-    if (!user) {
-      console.warn("No hay sesión activa");
-      return;
-    }
-
-    const { data: usuarioDB, error } = await supabase
-      .from("usuarios")
-      .select("*")
-      .eq("auth_uid", user.id)
-      .single();
-
-    if (error) {
-      console.error("Error obteniendo usuario DB:", error);
-    }
-
-    const roleMap = {
-      owner: "Gerente",
-      contador: "Contador",
-      coordinador: "Coordinador",
-      gerente: "Gerente",
-    };
-
-    const rolNormalizado = usuarioDB?.role?.toLowerCase();
-
-    setUsuarioActual({
-      ...user,
-      nombre: usuarioDB?.nombre || user.email,
-      rol: roleMap[rolNormalizado] || usuarioDB?.role || "Usuario",
-    });
-  };
-
-  obtenerUsuario();
+  useEffect(() => {
+    // Escuchar eventos en tiempo real (mantendremos esto para actualizar UI si algo cambia)
 
   const channel = supabase
     .channel("realtime-dashboard")

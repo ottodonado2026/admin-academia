@@ -137,7 +137,8 @@ const [confirmacion, setConfirmacion] = useState({
   });
 
  const [asesores, setAsesores] = useState([]);
- const [leads, setLeads] = useState([]);
+const [leads, setLeads] = useState([]);
+
 
  
 
@@ -208,55 +209,7 @@ useEffect(() => {
   fetchUsuarioActual();
 }, []);
 
-// 🔹 cargar asesores
-useEffect(() => {
-  if (!usuarioActual) return;
 
-  const fetchAsesores = async () => {
-    try {
-      const esAdministrador =
-        usuarioActual?.role === "admin" ||
-        usuarioActual?.role === "owner" ||
-        usuarioActual?.role === "contador";
-
-      const esCoordinadorPrincipal =
-        usuarioActual?.role === "coordinador_academico" &&
-        (usuarioActual?.puede_registrar_coordinadores === true ||
-          usuarioActual?.coordinador_nivel === "principal");
-
-      const puedeVerTodos =
-        usuarioActual?.puede_ver_todos_leads === true;
-
-      let asesoresQuery = supabase.from("asesores").select("*");
-
-      if (!esAdministrador && !esCoordinadorPrincipal && !puedeVerTodos) {
-        asesoresQuery = asesoresQuery.eq("creado_por", usuarioActual.id);
-      }
-
-      const { data, error } = await asesoresQuery.order("created_at", {
-        ascending: false,
-      });
-
-      if (error) {
-        console.error("Error cargando asesores:", error);
-        setAsesores([]);
-        return;
-      }
-
-      const adaptados = (data || []).map((a) => ({
-        ...a,
-        createdAt: a.created_at,
-      }));
-
-      setAsesores(adaptados);
-    } catch (error) {
-      console.error("Error cargando asesores:", error);
-      setAsesores([]);
-    }
-  };
-
-  fetchAsesores();
-}, [refresh, usuarioActual]);
 
 const asesoresConMetricas = useMemo(() => {
   return (asesores || []).map((asesor) => {
@@ -447,6 +400,37 @@ if (cedulaExiste) {
     return;
   }
 
+  const { data: asesorExistenteDB, error: errorBuscandoAsesor } = await supabase
+  .from("asesores")
+  .select("id, nombre, email, estado")
+  .eq("email", form.email.trim().toLowerCase())
+  .maybeSingle();
+
+if (errorBuscandoAsesor) {
+  console.error("Error validando correo del asesor:", errorBuscandoAsesor);
+
+  setAlerta({
+    visible: true,
+    tipo: "error",
+    mensaje: "No se pudo validar si el correo ya existe.",
+  });
+
+  return;
+}
+
+if (asesorExistenteDB) {
+  setAlerta({
+    visible: true,
+    tipo: "warning",
+    mensaje:
+      asesorExistenteDB.estado === "eliminado"
+        ? "Este correo pertenece a un asesor eliminado. Ve a 'Ver asesores eliminados' y restáuralo."
+        : "Ya existe un asesor registrado con ese correo.",
+  });
+
+  return;
+}
+
 
   const nuevoAsesorId = generarIdAsesor(form.nombre, asesores);
 
@@ -478,9 +462,8 @@ console.log("EMAIL ENVIADO:", nuevo.email);
 // 🔥 llamar a la función de Supabase
 const { data: response, error: functionError } =
   await supabase.functions.invoke("create-asesor", {
-    body: JSON.stringify({ email: nuevo.email }),
-    headers: {
-      "Content-Type": "application/json",
+    body: {
+      email: nuevo.email.trim().toLowerCase(),
     },
   });
 console.log("RESPONSE FUNCTION:", response);
@@ -489,13 +472,29 @@ if (functionError || !response) {
   console.error("Error en función create-asesor:", functionError);
   console.error("Respuesta función create-asesor:", response);
 
+  let mensajeReal =
+    response?.error ||
+    response?.message ||
+    functionError?.message ||
+    "No se pudo crear el usuario Auth del asesor.";
+
+  try {
+    if (functionError?.context) {
+      const errorText = await functionError.context.text();
+      console.error("ERROR REAL EDGE FUNCTION:", errorText);
+
+      if (errorText) {
+        mensajeReal = errorText;
+      }
+    }
+  } catch (errorLectura) {
+    console.error("No se pudo leer el detalle del error:", errorLectura);
+  }
+
   setAlerta({
     visible: true,
     tipo: "error",
-    mensaje:
-      response?.error ||
-      functionError?.message ||
-      "No se pudo crear el usuario Auth del asesor.",
+    mensaje: mensajeReal,
   });
 
   return;
@@ -577,26 +576,6 @@ setAlerta({
   }
 };
 
-const updateEstado = async (id, estado) => {
-  try {
-
-    await supabase
-  .from("asesores")
-  .update({ estado })
-  .eq("id", id);
-  
-    setRefresh((v) => v + 1);
-
-    if (selectedAsesor?.id === id) {
-      setSelectedAsesor((prev) =>
-        prev ? { ...prev, estado } : null
-      );
-    }
-  } catch (error) {
-    console.error("Error actualizando estado del asesor:", error);
-    alert("No se pudo actualizar el estado.");
-  }
-};
 
 
 
@@ -614,48 +593,18 @@ const updateEstado = async (id, estado) => {
       <Sidebar onLogout={handleLogout} />
 
       <main className="dashboard-main">
-        <header className="asesores-admin-topbar">
-          <div>
-            <p className="asesores-admin-kicker">Gestión comercial avanzada</p>
-            <h1>Equipo de asesores</h1>
-            <span>
-              Crea asesores con ID único, controla comisiones, revisa embudo comercial,
-              link de registro, ventas pagadas y productividad por asesor.
-            </span>
-          </div>
-        </header>
+      <header className="asesores-admin-topbar">
+  <div>
+    <p className="asesores-admin-kicker">Gestión comercial avanzada</p>
 
-        <section className="asesores-kpi-grid">
-          <div className="asesor-kpi-card">
-            <small>Total asesores</small>
-            <strong>{resumenGeneral.totalAsesores}</strong>
-          </div>
+    <h1>Crear asesor</h1>
+<span>
+  Crea asesores comerciales con ID único, usuario de acceso, comisiones y link de registro.
+</span>
+  </div>
 
-          <div className="asesor-kpi-card">
-            <small>Activos</small>
-            <strong>{resumenGeneral.activos}</strong>
-          </div>
-
-          <div className="asesor-kpi-card">
-            <small>Vacaciones</small>
-            <strong>{resumenGeneral.vacaciones}</strong>
-          </div>
-
-          <div className="asesor-kpi-card">
-            <small>Leads totales</small>
-            <strong>{resumenGeneral.totalRegistros}</strong>
-          </div>
-
-          <div className="asesor-kpi-card">
-            <small>Ventas pagadas</small>
-            <strong>{formatearPesos(resumenGeneral.totalVentas)}</strong>
-          </div>
-
-          <div className="asesor-kpi-card kpi-highlight">
-            <small>Comisiones generadas</small>
-            <strong>{formatearPesos(resumenGeneral.totalComisiones)}</strong>
-          </div>
-        </section>
+  
+</header>
 
         <section className="asesores-admin-grid">
           <div className="asesor-card-block">
@@ -903,11 +852,7 @@ const updateEstado = async (id, estado) => {
         </section>
     
 
-
-      </main>
-      
-
-
+           </main>
                  {alerta.visible && (
         <div className="alerta-overlay">
           <div className="alerta-box">

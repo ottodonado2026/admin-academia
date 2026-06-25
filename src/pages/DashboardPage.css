@@ -572,3 +572,100 @@
   content: "⚠";
   color: #f59e0b;
 }
+
+/* ======================================================
+   💎 MENÚ DESPLEGABLE DE EXPORTACIÓN (DROPDOWN)
+====================================================== */
+.export-menu-container {
+  position: relative;
+  display: inline-block;
+}
+
+.export-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: linear-gradient(135deg, rgba(17, 22, 37, 0.98) 0%, rgba(10, 13, 24, 0.99) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  width: 280px;
+  padding: 8px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5),
+              0 0 15px rgba(255, 255, 255, 0.02);
+  z-index: 500;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  animation: dropdownFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes dropdownFadeIn {
+  from {
+    transform: translateY(-5px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.export-dropdown-menu button {
+  width: 100%;
+  background: transparent;
+  border: none;
+  padding: 10px 12px;
+  border-radius: 10px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s ease;
+  color: #e5e7eb;
+}
+
+.export-dropdown-menu button:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.export-dropdown-menu button:active {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.export-dropdown-menu .menu-icon {
+  font-size: 18px;
+  padding: 6px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 2px;
+}
+
+.export-dropdown-menu button:hover .menu-icon {
+  border-color: rgba(34, 197, 94, 0.3);
+  background: rgba(34, 197, 94, 0.05);
+}
+
+.export-dropdown-menu .menu-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.export-dropdown-menu .menu-title {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.export-dropdown-menu .menu-desc {
+  font-size: 11px;
+  color: #9ca3af;
+  line-height: 1.3;
+}

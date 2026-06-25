@@ -5,6 +5,8 @@ import "./DashboardPage.css";
 
 import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
+import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
 import { supabase } from "../services/supabaseClient";
 import { METODOS_PAGO } from "../constants/metodosPago";
 import { useAuth } from "../context/AuthContext";
@@ -53,6 +55,7 @@ function DashboardPage() {
   // Estados para la exportación profesional de Excel
   const [isExporting, setIsExporting] = useState(false);
   const [exportStep, setExportStep] = useState(0);
+  const [showExportMenu, setShowExportMenu] = useState(false);
 
   const usuarioActual = {
     ...user,
@@ -101,6 +104,21 @@ function DashboardPage() {
     supabase.removeChannel(channel);
   };
 }, []);
+
+  useEffect(() => {
+    if (!showExportMenu) return;
+
+    const handleOutsideClick = (e) => {
+      if (!e.target.closest(".export-menu-container")) {
+        setShowExportMenu(false);
+      }
+    };
+
+    document.addEventListener("click", handleOutsideClick);
+    return () => {
+      document.removeEventListener("click", handleOutsideClick);
+    };
+  }, [showExportMenu]);
 
 
   const formatearPesos = (valor) =>
@@ -993,6 +1011,237 @@ rol: usuarioActual?.rol || "sin-rol",
     }
   };
 
+  const generarPDF = async () => {
+    setIsExporting(true);
+    setExportStep(1); // Paso 1: Analizando filtros y registros activos
+    const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+    try {
+      await delay(600);
+      await registrarDescarga();
+
+      setExportStep(2); // Paso 2: Estructurando balance contable
+      await delay(600);
+
+      // Determinar texto del periodo según filtros activos
+      let periodoTexto = `${meses[mesSeleccionado]} ${anioSeleccionado}`;
+      if (filtroFecha === "hoy") {
+        periodoTexto = `Hoy (${normalizarFecha(new Date())})`;
+      } else if (filtroFecha === "fecha" && fechaExacta) {
+        periodoTexto = `Día ${fechaExacta}`;
+      } else if (filtroFecha === "rango" && fechaInicioCustom && fechaFinCustom) {
+        periodoTexto = `Rango (${fechaInicioCustom} al ${fechaFinCustom})`;
+      }
+
+      // Obtener datos filtrados
+      const dataExport = [...historialFiltrado];
+
+      if (!dataExport.length) {
+        alert("No hay datos para exportar con los filtros actuales.");
+        setIsExporting(false);
+        setExportStep(0);
+        return;
+      }
+
+      setExportStep(3); // Paso 3: Generando tablas de detalle en formato PDF
+      await delay(600);
+
+      // Crear instancia de jsPDF
+      const doc = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4"
+      });
+
+      // --- CONFIGURACIÓN DE COLORES Y FUENTES ---
+      const colorNavy = [30, 41, 59]; // #1e293b
+      const colorGreen = [34, 197, 94]; // #22c55e
+      const colorGray = [107, 114, 128]; // #6b7280
+
+      // --- 1. CABECERA CORPORATIVA ---
+      // Logo o nombre de empresa
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(20);
+      doc.setTextColor(colorNavy[0], colorNavy[1], colorNavy[2]);
+      doc.text("CARIBBEAN STUDIO ACADEMY", 15, 20);
+
+      // Línea decorativa verde
+      doc.setDrawColor(colorGreen[0], colorGreen[1], colorGreen[2]);
+      doc.setLineWidth(1.5);
+      doc.line(15, 23, 195, 23);
+
+      // Info del emisor (columna izquierda)
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      doc.setTextColor(colorGray[0], colorGray[1], colorGray[2]);
+      doc.text([
+        "Caribbean Studio Academy",
+        "Nit: 123.456.789-0",
+        "Email: contacto@caribbeanstudio.com",
+        "Reportes Contables y de Recaudo"
+      ], 15, 29);
+
+      // Info de documento (columna derecha)
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
+      doc.setTextColor(colorNavy[0], colorNavy[1], colorNavy[2]);
+      doc.text("ESTADO DE RENDIMIENTO Y RECAUDO", 195, 29, { align: "right" });
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      doc.setTextColor(colorNavy[0], colorNavy[1], colorNavy[2]);
+      doc.text(`Generado el: ${new Date().toLocaleString()}`, 195, 34, { align: "right" });
+      doc.text(`Periodo del informe: ${periodoTexto}`, 195, 39, { align: "right" });
+      doc.text(`Usuario: ${usuarioActual?.nombre || usuarioActual?.email} (${usuarioActual?.rol || "Usuario"})`, 195, 44, { align: "right" });
+
+      // --- 2. SECCIÓN DE BALANCE GENERAL (KPIs) ---
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(12);
+      doc.setTextColor(colorNavy[0], colorNavy[1], colorNavy[2]);
+      doc.text("1. RESUMEN CONTABLE DEL PERIODO", 15, 54);
+
+      // Formateador de moneda en PDF
+      const formatPDFMoneda = (val) => {
+        return new Intl.NumberFormat("es-CO", {
+          style: "currency",
+          currency: "COP",
+          minimumFractionDigits: 0
+        }).format(val || 0);
+      };
+
+      // Auto-table para el balance general (KPIs)
+      autoTable(doc, {
+        startY: 57,
+        theme: "plain",
+        head: [["Indicador", "Monto / Valor", "Margen / Estado"]],
+        body: [
+          ["Total Ingresos del Periodo", formatPDFMoneda(totalIngresosMes), "100.0%"],
+          ["Recaudo Alumnos (Real)", formatPDFMoneda(totalPagosMes), `${((totalPagosMes / (totalIngresosMes || 1)) * 100).toFixed(1)}% del total`],
+          ["Otros Ingresos Manuales", formatPDFMoneda(totalIngresosManual), `${((totalIngresosManual / (totalIngresosMes || 1)) * 100).toFixed(1)}% del total`],
+          ["Total Egresos (Costos + Gastos)", formatPDFMoneda(totalEgresosMes), `${((totalEgresosMes / (totalIngresosMes || 1)) * 100).toFixed(1)}% del total`],
+          ["Utilidad Neta General", formatPDFMoneda(utilidadReal), `${margen.toFixed(1)}% Margen`],
+        ],
+        headStyles: {
+          fillColor: [243, 244, 246], // Gris muy claro
+          textColor: colorNavy,
+          fontStyle: "bold",
+          fontSize: 9,
+          halign: "left"
+        },
+        bodyStyles: {
+          fontSize: 9,
+          textColor: [31, 41, 55],
+        },
+        columnStyles: {
+          1: { fontStyle: "bold", halign: "right" },
+          2: { halign: "right" }
+        },
+        didParseCell: (data) => {
+          if (data.row.index === 4 && data.column.index === 1) {
+            // Pintar verde si la utilidad es positiva, rojo si es negativa
+            data.cell.styles.textColor = utilidadReal >= 0 ? [22, 163, 74] : [220, 38, 38];
+          }
+        },
+        styles: {
+          cellPadding: 3,
+          lineColor: [229, 231, 235],
+          lineWidth: 0.1
+        }
+      });
+
+      // --- 3. SECCIÓN DE DETALLE DE MOVIMIENTOS ---
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(12);
+      doc.setTextColor(colorNavy[0], colorNavy[1], colorNavy[2]);
+      doc.text("2. DETALLE DE TRANSACCIONES Y PAGOS", 15, doc.lastAutoTable.finalY + 12);
+
+      // Preparar filas para la tabla de transacciones
+      const tableRows = dataExport.map((item) => [
+        normalizarFecha(item.fecha),
+        item.alumno,
+        item.alumnoId,
+        item.curso,
+        item.metodo,
+        item.referencia,
+        formatPDFMoneda(item.monto)
+      ]);
+
+      // Agregar fila de total general
+      const totalGeneral = dataExport.reduce((acc, i) => acc + i.monto, 0);
+      tableRows.push([
+        "",
+        "",
+        "",
+        "",
+        "",
+        "TOTAL GENERAL",
+        formatPDFMoneda(totalGeneral)
+      ]);
+
+      setExportStep(4); // Paso 4: Compilando documento A4
+      await delay(500);
+
+      autoTable(doc, {
+        startY: doc.lastAutoTable.finalY + 15,
+        head: [["Fecha", "Alumno", "ID Alumno", "Curso", "Método", "Referencia", "Monto (COP)"]],
+        body: tableRows,
+        theme: "striped",
+        headStyles: {
+          fillColor: colorNavy,
+          textColor: [255, 255, 255],
+          fontStyle: "bold",
+          fontSize: 8.5,
+          halign: "left"
+        },
+        bodyStyles: {
+          fontSize: 8,
+          textColor: [55, 65, 81],
+        },
+        columnStyles: {
+          6: { halign: "right", fontStyle: "bold" }
+        },
+        didParseCell: (data) => {
+          // Destacar la última fila (el TOTAL GENERAL)
+          if (data.row.index === tableRows.length - 1) {
+            data.cell.styles.fillColor = [226, 239, 218]; // Verde suave
+            data.cell.styles.fontStyle = "bold";
+            data.cell.styles.textColor = [0, 0, 0];
+          }
+        },
+        styles: {
+          cellPadding: 2.5,
+          lineColor: [243, 244, 246],
+          lineWidth: 0.1
+        }
+      });
+
+      // --- 4. PIE DE PÁGINA (PAGINACIÓN) ---
+      const totalPages = doc.internal.getNumberOfPages();
+      for (let i = 1; i <= totalPages; i++) {
+        doc.setPage(i);
+        doc.setFont("helvetica", "italic");
+        doc.setFontSize(8);
+        doc.setTextColor(colorGray[0], colorGray[1], colorGray[2]);
+        
+        // Texto de pie de página
+        doc.text("Este documento es un reporte financiero oficial generado por el sistema de Caribbean Studio Academy.", 15, 287);
+        doc.text(`Página ${i} de ${totalPages}`, 195, 287, { align: "right" });
+      }
+
+      setExportStep(5); // Paso 5: ¡Descarga iniciada!
+      await delay(400);
+
+      // Guardar PDF
+      doc.save(`reporte_dashboard_${normalizarFecha(new Date())}.pdf`);
+    } catch (error) {
+      console.error("Error exportando PDF:", error);
+      alert("Hubo un error al generar el PDF. Por favor intenta de nuevo.");
+    } finally {
+      setIsExporting(false);
+      setExportStep(0);
+    }
+  };
+
   return (
     <div className="dashboard-layout">
       <Sidebar onLogout={handleLogout} />
@@ -1011,9 +1260,44 @@ rol: usuarioActual?.rol || "sin-rol",
       Alumnos activos: {alumnosActivos}
     </div>
 
-    <button onClick={generarExcel} className="btn-exportar">
-      Exportar Excel
-    </button>
+    <div className="export-menu-container">
+      <button 
+        onClick={() => setShowExportMenu(!showExportMenu)} 
+        className="btn-exportar"
+        style={{ display: "flex", alignItems: "center", gap: "8px" }}
+      >
+        <span>Exportar Informe</span>
+        <span style={{ fontSize: "10px" }}>▼</span>
+      </button>
+      {showExportMenu && (
+        <div className="export-dropdown-menu">
+          <button 
+            onClick={() => { 
+              setShowExportMenu(false); 
+              generarExcel(); 
+            }}
+          >
+            <span className="menu-icon">📊</span>
+            <div className="menu-text">
+              <span className="menu-title">Excel (.xlsx)</span>
+              <span className="menu-desc">Tablas detalladas y gráficos de comparación</span>
+            </div>
+          </button>
+          <button 
+            onClick={() => { 
+              setShowExportMenu(false); 
+              generarPDF(); 
+            }}
+          >
+            <span className="menu-icon">📄</span>
+            <div className="menu-text">
+              <span className="menu-title">PDF (.pdf)</span>
+              <span className="menu-desc">Formato estado de cuenta estilo factura contable</span>
+            </div>
+          </button>
+        </div>
+      )}
+    </div>
 
   </div>
 </header>

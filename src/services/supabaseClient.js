@@ -25,5 +25,8 @@ try {
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     storageKey: "academia-v2-auth-token",
+    lock: async (name, acquireTimeout, fn) => {
+      return await fn();
+    }
   }
 })

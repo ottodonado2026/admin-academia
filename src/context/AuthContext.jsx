@@ -73,14 +73,17 @@ export const AuthProvider = ({ children }) => {
           }
           if (manualSession && manualSession.user) {
             console.log("Sesión rescatada manualmente.");
+            isFetching.current = false; // Forzar semáforo a verde
             // Usar la sesión manual y pasar el token para destrabar el fetch
             loadSessionAndRole({ user: manualSession.user }, manualSession.access_token);
           } else {
             console.log("No se encontró sesión rescatable.");
+            isFetching.current = false; // Forzar semáforo a verde
             loadSessionAndRole(null);
           }
         } catch (e) {
           console.error("Error en rescate manual:", e);
+          isFetching.current = false; // Forzar semáforo a verde
           loadSessionAndRole(null);
         }
       }

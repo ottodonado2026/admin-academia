@@ -6,8 +6,8 @@ import { supabase } from "../services/supabaseClient";
 // Importaciones para exportación
 import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
-import jsPDF from "jspdf";
-import "jspdf-autotable";
+import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
 
 import { registrarAuditoria } from "../services/auditoriaService";
 
@@ -357,7 +357,7 @@ function EgresosPage() {
       tableData.push(["", "", "", "Total Costos:", `$${totalCosto.toLocaleString("es-CO")}`]);
       tableData.push(["", "", "", "Total Egresos:", `$${(totalGasto + totalCosto).toLocaleString("es-CO")}`]);
 
-      doc.autoTable({
+      autoTable(doc, {
         startY: 55,
         head: [["Fecha", "Tipo", "Categoría", "Descripción", "Monto"]],
         body: tableData,

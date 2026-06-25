@@ -131,75 +131,98 @@ function DashboardPage() {
 
   // 🔥 FILTROS
   const ingresosFiltrados = useMemo(() => {
-  return ingresos.filter((item) => {
-    if (!item.fecha) return false;
+    return ingresos.filter((item) => {
+      if (!item.fecha) return false;
+      const fechaMatch = chequearFiltroFecha(new Date(item.fecha));
 
-    const fecha = new Date(item.fecha);
+      // 🔹 FILTRO POR MÉTODO
+      const metodoItem = (item.metodo || "").trim().toLowerCase();
+      const metodoFiltro = (filtroMetodo || "").trim().toLowerCase();
+      const metodoMatch = metodoFiltro === "todos" || metodoItem === metodoFiltro;
 
-    // 🔹 FILTRO POR MES/AÑO
-    const fechaMatch =
-      fecha.getMonth() === mesSeleccionado &&
-      fecha.getFullYear() === anioSeleccionado;
+      // 🔹 FILTRO POR BÚSQUEDA
+      const textoBusqueda = busqueda.trim().toLowerCase();
+      const busquedaMatch =
+        !textoBusqueda ||
+        (item.descripcion || "").toLowerCase().includes(textoBusqueda) ||
+        (item.referencia || "").toLowerCase().includes(textoBusqueda);
 
-    // 🔹 FILTRO POR MÉTODO
-    const metodoItem = (item.metodo || "").trim().toLowerCase();
-    const metodoFiltro = (filtroMetodo || "").trim().toLowerCase();
-
-    const metodoMatch =
-      metodoFiltro === "todos" || metodoItem === metodoFiltro;
-
-    // 🔹 FILTRO POR BÚSQUEDA
-    const textoBusqueda = busqueda.trim().toLowerCase();
-
-    const busquedaMatch =
-      !textoBusqueda ||
-      (item.descripcion || "").toLowerCase().includes(textoBusqueda) ||
-      (item.referencia || "").toLowerCase().includes(textoBusqueda);
-
-    return fechaMatch && metodoMatch && busquedaMatch;
-  });
-}, [ingresos, mesSeleccionado, anioSeleccionado, filtroMetodo, busqueda]);
+      return fechaMatch && metodoMatch && busquedaMatch;
+    });
+  }, [ingresos, filtroFecha, mesSeleccionado, anioSeleccionado, fechaExacta, fechaInicioCustom, fechaFinCustom, filtroMetodo, busqueda]);
 
 
 
-const egresosFiltrados = useMemo(() => {
-  return egresos.filter((item) => {
-    if (!item.fecha) return false;
+  const egresosFiltrados = useMemo(() => {
+    return egresos.filter((item) => {
+      if (!item.fecha) return false;
+      const fechaMatch = chequearFiltroFecha(new Date(item.fecha));
 
-    const fecha = new Date(item.fecha);
+      // 🔹 FILTRO MÉTODO
+      const metodoItem = (item.metodo || "").trim().toLowerCase();
+      const metodoFiltro = (filtroMetodo || "").trim().toLowerCase();
+      const metodoMatch = metodoFiltro === "todos" || metodoItem === metodoFiltro;
 
-    // 🔹 FILTRO FECHA
-    const fechaMatch =
-      fecha.getMonth() === mesSeleccionado &&
-      fecha.getFullYear() === anioSeleccionado;
+      // 🔹 FILTRO BÚSQUEDA
+      const textoBusqueda = busqueda.trim().toLowerCase();
+      const busquedaMatch =
+        !textoBusqueda ||
+        (item.descripcion || "").toLowerCase().includes(textoBusqueda) ||
+        (item.categoria || "").toLowerCase().includes(textoBusqueda);
 
-    // 🔹 FILTRO MÉTODO (NORMALIZADO)
-    const metodoItem = (item.metodo || "").trim().toLowerCase();
-    const metodoFiltro = (filtroMetodo || "").trim().toLowerCase();
-
-    const metodoMatch =
-      metodoFiltro === "todos" || metodoItem === metodoFiltro;
-
-    // 🔹 FILTRO BÚSQUEDA
-    const textoBusqueda = busqueda.trim().toLowerCase();
-
-    const busquedaMatch =
-      !textoBusqueda ||
-      (item.descripcion || "").toLowerCase().includes(textoBusqueda) ||
-      (item.categoria || "").toLowerCase().includes(textoBusqueda);
-
-    return fechaMatch && metodoMatch && busquedaMatch;
-  });
-}, [egresos, mesSeleccionado, anioSeleccionado, filtroMetodo, busqueda]);
+      return fechaMatch && metodoMatch && busquedaMatch;
+    });
+  }, [egresos, filtroFecha, mesSeleccionado, anioSeleccionado, fechaExacta, fechaInicioCustom, fechaFinCustom, filtroMetodo, busqueda]);
 
 
   const normalizarFecha = (fecha) => {
-  const d = new Date(fecha);
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-};
+    const d = new Date(fecha);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
+  const chequearFiltroFecha = (fechaObj) => {
+    if (!fechaObj || Number.isNaN(fechaObj.getTime())) return false;
+    const itemFecha = normalizarFecha(fechaObj);
+    const hoyFecha = normalizarFecha(new Date());
+
+    if (filtroFecha === "hoy") return itemFecha === hoyFecha;
+
+    if (filtroFecha === "semana") {
+      const d = new Date(fechaObj);
+      const hoy = new Date();
+      // Obtener el lunes de la semana actual
+      const diaSemana = hoy.getDay() === 0 ? 6 : hoy.getDay() - 1; 
+      const primerDia = new Date(hoy.setDate(hoy.getDate() - diaSemana));
+      primerDia.setHours(0, 0, 0, 0);
+      
+      const ultimoDia = new Date(primerDia);
+      ultimoDia.setDate(ultimoDia.getDate() + 6);
+      ultimoDia.setHours(23, 59, 59, 999);
+      
+      return d >= primerDia && d <= ultimoDia;
+    }
+
+    if (filtroFecha === "mes") {
+      return fechaObj.getMonth() === mesSeleccionado && fechaObj.getFullYear() === anioSeleccionado;
+    }
+
+    if (filtroFecha === "anio") {
+      return fechaObj.getFullYear() === anioSeleccionado;
+    }
+
+    if (filtroFecha === "fecha" && fechaExacta) {
+      return itemFecha === fechaExacta;
+    }
+
+    if (filtroFecha === "rango" && fechaInicioCustom && fechaFinCustom) {
+      return itemFecha >= fechaInicioCustom && itemFecha <= fechaFinCustom;
+    }
+
+    return true;
+  };
 
 const historialBase = useMemo(() => {
   return historialPagos.map((item) => {
@@ -257,46 +280,13 @@ const cursoMatch =
   cursoFiltro === "todos" || cursoItem === cursoFiltro;
 
    
-          let fechaMatch = true;
-
-const itemFecha = normalizarFecha(item.fecha);
-const hoyFecha = normalizarFecha(new Date());
-
-// 🔹 HOY
-if (filtroFecha === "hoy") {
-  fechaMatch = itemFecha === hoyFecha;
-}
-
-// 🔹 MES (basado en selector, no en hoy)
-if (filtroFecha === "mes") {
-  fechaMatch =
-    item.fecha.getMonth() === mesSeleccionado &&
-    item.fecha.getFullYear() === anioSeleccionado;
-}
-
-// 🔹 FECHA EXACTA
-if (filtroFecha === "fecha" && fechaExacta) {
-  fechaMatch = itemFecha === fechaExacta;
-}
-
-// 🔹 RANGO PERSONALIZADO
-if (
-  filtroFecha === "rango" &&
-  fechaInicioCustom &&
-  fechaFinCustom
-) {
-  fechaMatch =
-    itemFecha >= fechaInicioCustom &&
-    itemFecha <= fechaFinCustom;
-}
-
-
+    const fechaMatch = chequearFiltroFecha(item.fecha);
 
     return nombreMatch && metodoMatch && cursoMatch && fechaMatch;
   });
 
   return lista;
-}, [historialBase, busqueda, filtroFecha, filtroMetodo, filtroCurso]);
+}, [historialBase, busqueda, filtroFecha, mesSeleccionado, anioSeleccionado, fechaExacta, fechaInicioCustom, fechaFinCustom, filtroMetodo, filtroCurso]);
 
 
 const ingresosCombinados = useMemo(() => {
@@ -473,6 +463,10 @@ const alumnosConPagos = new Set(
   return data;
 }, [ingresos, historialBase, anioSeleccionado]);
 
+  const maxVenta = Math.max(...ventasPorMes, 1);
+  const ventasValidas = ventasPorMes.filter(v => v > 0);
+  const promedioVentas = ventasValidas.length ? ventasValidas.reduce((a, b) => a + b, 0) / ventasValidas.length : 0;
+
   // 🔥 NUEVO: EGRESOS POR MES (BIEN UBICADO)
   const egresosPorMes = useMemo(() => {
     const data = Array(12).fill(0);
@@ -489,6 +483,8 @@ const alumnosConPagos = new Set(
     return data;
   }, [egresos, anioSeleccionado]);
   const maxEgreso = Math.max(...egresosPorMes, 1);
+  const egresosValidos = egresosPorMes.filter(v => v > 0);
+  const promedioEgresos = egresosValidos.length ? egresosValidos.reduce((a, b) => a + b, 0) / egresosValidos.length : 0;
 
 
 
@@ -590,6 +586,7 @@ rol: usuarioActual?.rol || "sin-rol",
 };
 
   const generarExcel = async () => {
+    if (isExporting) return;
     setIsExporting(true);
     setExportStep(1); // Paso 1: Analizando filtros y registros
     const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -1027,8 +1024,8 @@ rol: usuarioActual?.rol || "sin-rol",
         saveAs(blob, "dashboard_financiero.xlsx");
       }
     } catch (error) {
-      console.error("Error exportando:", error);
-      alert("Hubo un error al generar el archivo. Por favor intenta de nuevo.");
+      console.error("Error exportando Excel:", error);
+      setTimeout(() => alert("Hubo un error al generar el Excel. Por favor intenta de nuevo."), 100);
     } finally {
       setIsExporting(false);
       setExportStep(0);
@@ -1036,6 +1033,7 @@ rol: usuarioActual?.rol || "sin-rol",
   };
 
   const generarPDF = async () => {
+    if (isExporting) return;
     setIsExporting(true);
     setExportStep(1); // Paso 1: Analizando filtros y registros activos
     const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -1259,7 +1257,7 @@ rol: usuarioActual?.rol || "sin-rol",
       doc.save(`reporte_dashboard_${normalizarFecha(new Date())}.pdf`);
     } catch (error) {
       console.error("Error exportando PDF:", error);
-      alert("Hubo un error al generar el PDF. Por favor intenta de nuevo.");
+      setTimeout(() => alert("Hubo un error al generar el PDF. Por favor intenta de nuevo."), 100);
     } finally {
       setIsExporting(false);
       setExportStep(0);
@@ -1327,46 +1325,90 @@ rol: usuarioActual?.rol || "sin-rol",
 </header>
 
         {/* FILTROS */}
-        <section className="dashboard-filtros">
-          <input
-  type="text"
-  placeholder="Buscar alumno, curso o referencia"
-  value={busqueda}
-  onChange={(e) => setBusqueda(e.target.value)}
-/>
+        {/* FILTROS AVANZADOS */}
+        <section className="dashboard-filtros" style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+          
+          <div className="filtros-busqueda-avanzada" style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center' }}>
+            <input
+              type="text"
+              placeholder="Buscar alumno, curso o referencia"
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+              style={{ flex: 1, minWidth: '250px' }}
+            />
+            <select value={filtroMetodo} onChange={(e) => setFiltroMetodo(e.target.value)}>
+              <option value="todos">Todos los métodos</option>
+              {METODOS_PAGO.map((metodo) => (
+                <option key={metodo} value={metodo}>{metodo}</option>
+              ))}
+            </select>
+            <select value={filtroCurso} onChange={(e) => setFiltroCurso(e.target.value)}>
+              <option value="todos">Todos los cursos</option>
+              {[...new Set(historialBase.map(i => i.curso))].map((curso) => (
+                <option key={curso} value={curso}>{curso}</option>
+              ))}
+            </select>
+          </div>
 
-<select value={filtroMetodo} onChange={(e) => setFiltroMetodo(e.target.value)}>
-  <option value="todos">Todos los métodos</option>
+          <div className="filtros-fechas-botones" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
+            <span style={{ fontWeight: '600', color: '#64748b', fontSize: '14px', marginRight: '5px' }}>Periodo:</span>
+            <button className={`btn-filtro ${filtroFecha === "hoy" ? "active" : ""}`} onClick={() => setFiltroFecha("hoy")}>Hoy</button>
+            <button className={`btn-filtro ${filtroFecha === "semana" ? "active" : ""}`} onClick={() => setFiltroFecha("semana")}>Semana</button>
+            <button className={`btn-filtro ${filtroFecha === "mes" ? "active" : ""}`} onClick={() => setFiltroFecha("mes")}>Mes</button>
+            <button className={`btn-filtro ${filtroFecha === "anio" ? "active" : ""}`} onClick={() => setFiltroFecha("anio")}>Año</button>
+            
+            <input 
+              type="date" 
+              className={`btn-filtro input-fecha ${filtroFecha === "fecha" ? "active" : ""}`}
+              value={fechaExacta}
+              onChange={(e) => {
+                setFechaExacta(e.target.value);
+                if(e.target.value) setFiltroFecha("fecha");
+              }}
+              title="Fecha Exacta"
+            />
 
-  {METODOS_PAGO.map((metodo) => (
-    <option key={metodo} value={metodo}>
-      {metodo}
-    </option>
-  ))}
-</select>
-<select value={filtroCurso} onChange={(e) => setFiltroCurso(e.target.value)}>
-  <option value="todos">Todos los cursos</option>
+            <button className={`btn-filtro ${filtroFecha === "rango" ? "active" : ""}`} onClick={() => setFiltroFecha("rango")}>Rango</button>
 
-  {[...new Set(historialBase.map(i => i.curso))].map((curso) => (
-    <option key={curso} value={curso}>
-      {curso}
-    </option>
-  ))}
-</select>
-          <select value={mesSeleccionado} onChange={(e) => setMesSeleccionado(Number(e.target.value))}>
-            {meses.map((m, i) => (
-              <option key={i} value={i}>{m}</option>
-            ))}
-          </select>
+            {filtroFecha === "rango" && (
+              <div style={{ display: 'flex', gap: '5px', alignItems: 'center' }}>
+                <input 
+                  type="date" 
+                  className="btn-filtro input-fecha"
+                  value={fechaInicioCustom}
+                  onChange={(e) => setFechaInicioCustom(e.target.value)}
+                />
+                <span style={{ color: '#94a3b8' }}>-</span>
+                <input 
+                  type="date" 
+                  className="btn-filtro input-fecha"
+                  value={fechaFinCustom}
+                  onChange={(e) => setFechaFinCustom(e.target.value)}
+                />
+              </div>
+            )}
 
-        <select value={anioSeleccionado} onChange={(e) => setAnioSeleccionado(Number(e.target.value))}>
-  {aniosDisponibles.map((anio) => (
-    <option key={anio} value={anio}>
-      {anio}
-    </option>
-  ))}
-</select>
+            {filtroFecha === "mes" && (
+              <div style={{ display: "flex", gap: "5px" }}>
+                <select value={mesSeleccionado} onChange={(e) => setMesSeleccionado(Number(e.target.value))} className="btn-filtro">
+                  {meses.map((m, i) => <option key={i} value={i}>{m}</option>)}
+                </select>
+                <select value={anioSeleccionado} onChange={(e) => setAnioSeleccionado(Number(e.target.value))} className="btn-filtro">
+                  {aniosDisponibles.map((anio) => (
+                    <option key={anio} value={anio}>{anio}</option>
+                  ))}
+                </select>
+              </div>
+            )}
 
+            {filtroFecha === "anio" && (
+              <select value={anioSeleccionado} onChange={(e) => setAnioSeleccionado(Number(e.target.value))} className="btn-filtro">
+                {aniosDisponibles.map((anio) => (
+                  <option key={anio} value={anio}>{anio}</option>
+                ))}
+              </select>
+            )}
+          </div>
         </section>
 
         {/* TARJETAS */}
@@ -1474,12 +1516,21 @@ rol: usuarioActual?.rol || "sin-rol",
 
         {/* GRÁFICO INGRESOS */}
         <section className="panel-card">
-          <h2>Ventas por mes</h2>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h2>Ventas por mes</h2>
+            <span style={{ fontSize: '12px', color: '#64748b' }}>Promedio: {formatearPesos(promedioVentas)}</span>
+          </div>
 
           <div className="grafico-barras">
             {ventasPorMes.map((valor, i) => (
-              <div key={i} className="barra-item">
-                <div className="barra" style={{ height: `${valor / 10000}px` }} />
+              <div key={i} className="barra-item" title={formatearPesos(valor)}>
+                <div 
+                  className="barra" 
+                  style={{ 
+                    height: `${(valor / maxVenta) * 180}px`,
+                    backgroundColor: valor > 0 && valor >= promedioVentas ? '#39ff14' : valor > 0 ? '#f59e0b' : '#334155'
+                  }} 
+                />
                 <span>{meses[i].slice(0, 3)}</span>
               </div>
             ))}
@@ -1488,14 +1539,21 @@ rol: usuarioActual?.rol || "sin-rol",
 
         {/* 🔥 NUEVO: GRÁFICO EGRESOS */}
         <section className="panel-card">
-          <h2>Egresos por mes</h2>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h2>Egresos por mes</h2>
+            <span style={{ fontSize: '12px', color: '#64748b' }}>Promedio: {formatearPesos(promedioEgresos)}</span>
+          </div>
 
           <div className="grafico-barras">
             {egresosPorMes.map((valor, i) => (
-              <div key={i} className="barra-item">
+              <div key={i} className="barra-item" title={formatearPesos(valor)}>
                 <div
                   className="barra egreso"
-style={{ height: `${(valor / maxEgreso) * 180}px` }}                />
+                  style={{ 
+                    height: `${(valor / maxEgreso) * 180}px`,
+                    backgroundColor: valor > 0 && valor >= promedioEgresos ? '#ef4444' : valor > 0 ? '#94a3b8' : '#334155'
+                  }}                
+                />
                 <span>{meses[i].slice(0, 3)}</span>
               </div>
             ))}

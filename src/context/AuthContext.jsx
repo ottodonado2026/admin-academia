@@ -41,6 +41,29 @@ export const AuthProvider = ({ children }) => {
     let isMounted = true;
     let initialLoadDone = false;
 
+    // Timeout de seguridad: Si la inicialización tarda más de 2.5 segundos, destrabamos y autolimpiamos localStorage
+    const safetyTimeout = setTimeout(() => {
+      if (isMounted && !initialLoadDone) {
+        console.warn("Safety timeout triggered: Destrabando pantalla de carga de sesión y limpiando localStorage...");
+        try {
+          // Remover todas las llaves de Supabase de localStorage
+          for (let i = localStorage.length - 1; i >= 0; i--) {
+            const key = localStorage.key(i);
+            if (key && (key.includes("supabase") || key.includes("sb-"))) {
+              localStorage.removeItem(key);
+            }
+          }
+        } catch (e) {
+          console.error("Error limpiando localStorage:", e);
+        }
+        setUser(null);
+        setRole(null);
+        setUserData(null);
+        setLoading(false);
+        initialLoadDone = true;
+      }
+    }, 2500);
+
     const loadSessionAndRole = async (session) => {
       if (!isMounted) return;
 
@@ -59,6 +82,7 @@ export const AuthProvider = ({ children }) => {
         if (isMounted) {
           setLoading(false);
           initialLoadDone = true;
+          clearTimeout(safetyTimeout);
         }
       }
     };
@@ -82,6 +106,7 @@ export const AuthProvider = ({ children }) => {
         setRole(null);
         setUserData(null);
         setLoading(false);
+        clearTimeout(safetyTimeout);
       } else if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
         await loadSessionAndRole(session);
       }
@@ -89,6 +114,7 @@ export const AuthProvider = ({ children }) => {
 
     return () => {
       isMounted = false;
+      clearTimeout(safetyTimeout);
       subscription?.unsubscribe();
     };
   }, []);

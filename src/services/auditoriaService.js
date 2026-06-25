@@ -1,5 +1,7 @@
 import { supabase } from "./supabaseClient";
 
+let cachedIp = null;
+
 // Detectar sistema operativo y navegador para la auditoría
 const detectarDispositivo = () => {
   if (typeof window === "undefined" || !window.navigator) {
@@ -39,13 +41,22 @@ export const registrarAuditoria = async (accion, tabla, registroId, detalles = {
     // Obtener IP aproximada (puedes usar un endpoint público si lo deseas, pero por rendimiento 
     // y privacidad localizamos lo disponible en cabeceras o registramos el contexto de red)
     let ip = "Cliente local";
-    try {
-      // Intento rápido de fetch a servicio ip (opcional, sin bloquear)
-      const res = await fetch("https://api.ipify.org?format=json");
-      const ipData = await res.json();
-      if (ipData?.ip) ip = ipData.ip;
-    } catch (e) {
-      // Fallback silencioso si hay bloqueador o sin internet
+    if (cachedIp) {
+      ip = cachedIp;
+    } else {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 2000);
+        const res = await fetch("https://api.ipify.org?format=json", { signal: controller.signal });
+        clearTimeout(timeoutId);
+        const ipData = await res.json();
+        if (ipData?.ip) {
+          ip = ipData.ip;
+          cachedIp = ip;
+        }
+      } catch (e) {
+        // Fallback silencioso si hay bloqueador o sin internet
+      }
     }
 
     const payload = {

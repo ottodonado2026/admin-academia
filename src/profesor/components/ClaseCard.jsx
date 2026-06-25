@@ -1,3 +1,15 @@
+function formatAMPM(timeStr) {
+  if (!timeStr) return "--:--";
+  const [hoursStr, minutesStr] = timeStr.split(':');
+  if (!hoursStr || !minutesStr) return timeStr;
+  let hours = parseInt(hoursStr, 10);
+  const minutes = parseInt(minutesStr, 10);
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  hours = hours % 12;
+  hours = hours ? hours : 12; 
+  return `${hours}:${minutes.toString().padStart(2, '0')} ${ampm}`;
+}
+
 export default function ClaseCard({
   clase,
   onOpen,
@@ -17,8 +29,8 @@ export default function ClaseCard({
         <div>
           <h3>{clase.curso}</h3>
           <p>
-            {clase.fecha} · {clase.horaInicio || clase.hora_inicio}
-            {clase.horaFin || clase.hora_fin ? ` - ${clase.horaFin || clase.hora_fin}` : ""} · {clase.modalidad}
+            {clase.fecha} · {formatAMPM(clase.horaInicio || clase.hora_inicio || clase.hora)}
+            {clase.horaFin || clase.hora_fin ? ` - ${formatAMPM(clase.horaFin || clase.hora_fin)}` : ""} · {clase.modalidad}
           </p>
         </div>
 

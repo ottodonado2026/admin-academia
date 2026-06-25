@@ -11,9 +11,24 @@ import { useProfesorData } from "./hooks/useProfesorData";
 
 const ESTADOS_EDITABLES = ["programada", "reprogramada", "completada"];
 
+import { supabase } from "../../services/supabaseClient";
+import { CURSOS_BASE } from "../../data/cursosBase";
+
+function formatAMPM(timeStr) {
+  if (!timeStr) return "--:--";
+  const [hoursStr, minutesStr] = timeStr.split(':');
+  if (!hoursStr || !minutesStr) return timeStr;
+  let hours = parseInt(hoursStr, 10);
+  const minutes = parseInt(minutesStr, 10);
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  hours = hours % 12;
+  hours = hours ? hours : 12; 
+  return `${hours}:${minutes.toString().padStart(2, '0')} ${ampm}`;
+}
+
 export default function ProfesorAsistenciaPage() {
   const [user, setUser] = useState(null);
-  const { clases: misClasesRaw, loading } = useProfesorData();
+  const { clases: misClasesRaw, loading, recargarDatos } = useProfesorData();
   const [cursos, setCursos] = useState([]);
   const [claseSeleccionadaId, setClaseSeleccionadaId] = useState(null);
 
@@ -67,10 +82,16 @@ export default function ProfesorAsistenciaPage() {
     });
   }, [misClases, busqueda, filtroEstado]);
 
-  const claseSeleccionada = useMemo(() => {
+  const claseBase = useMemo(() => {
     if (!claseSeleccionadaId) return null;
     return misClases.find((clase) => String(clase.id) === String(claseSeleccionadaId)) || null;
   }, [misClases, claseSeleccionadaId]);
+
+  const [claseEdicion, setClaseEdicion] = useState(null);
+
+  useEffect(() => {
+    setClaseEdicion(claseBase);
+  }, [claseBase]);
 
   useEffect(() => {
     if (!claseSeleccionadaId && clasesFiltradas.length > 0) {
@@ -103,7 +124,7 @@ export default function ProfesorAsistenciaPage() {
 
       (clase.alumnos || []).forEach((alumno) => {
         const horasAlumno = calcularHorasAcumuladasAlumno(alumno.id, misClases);
-        const horasObjetivo = getHorasObjetivoCurso(clase, cursos, alumno);
+        const horasObjetivo = getHorasObjetivoCurso(clase, CURSOS_BASE, alumno);
         const progreso = calcularPorcentaje(horasAlumno, horasObjetivo);
 
         if (!alumnosUnicos.has(alumno.id)) {
@@ -139,66 +160,61 @@ export default function ProfesorAsistenciaPage() {
       horasHoy: round2(horasHoy),
       promedioAvance,
     };
-  }, [misClases, cursos]);
+  }, [misClases]);
 
-  const actualizarClaseLocal = (claseId, updater) => {
-    const clasesActualizadas = clases.map((claseOriginal) => {
-      if (String(claseOriginal.id) !== String(claseId)) return claseOriginal;
+  const actualizarAlumno = async (claseId, alumnoId, cambios) => {
+    if (!claseEdicion || claseEdicion.id !== claseId) return;
 
-      const claseNormalizada = normalizarClaseLegacy(claseOriginal);
-      const claseFinal = updater(claseNormalizada);
+    const alumnosActualizados = (claseEdicion.alumnos || []).map((alumno) => {
+      if (String(alumno.id) !== String(alumnoId)) return alumno;
 
-      return {
-        ...claseOriginal,
-        ...claseFinal,
+      const updated = {
+        ...alumno,
+        ...cambios,
       };
+
+      if (Object.prototype.hasOwnProperty.call(cambios, "asistio") && !cambios.asistio) {
+        updated.sumaHoras = false;
+      }
+
+      return updated;
     });
 
-    setClases(clasesActualizadas);
+    setClaseEdicion((prev) => ({
+      ...prev,
+      alumnos: alumnosActualizados,
+      updatedAt: new Date().toISOString(),
+    }));
+
+    // Optimistic background save
+    await supabase.from("clases").update({ alumnos: alumnosActualizados }).eq("id", claseId);
   };
 
-  const actualizarAlumno = (claseId, alumnoId, cambios) => {
-    actualizarClaseLocal(claseId, (clase) => {
-      const alumnosActualizados = (clase.alumnos || []).map((alumno) => {
-        if (String(alumno.id) !== String(alumnoId)) return alumno;
+  const actualizarClase = async (claseId, cambios) => {
+    if (!claseEdicion || claseEdicion.id !== claseId) return;
 
-        const updated = {
-          ...alumno,
-          ...cambios,
-        };
-
-        if (Object.prototype.hasOwnProperty.call(cambios, "asistio") && !cambios.asistio) {
-          updated.sumaHoras = false;
-        }
-
-        return updated;
-      });
-
-      return {
-        ...clase,
-        alumnos: alumnosActualizados,
-        updatedAt: new Date().toISOString(),
-      };
-    });
-  };
-
-  const actualizarClase = (claseId, cambios) => {
-    actualizarClaseLocal(claseId, (clase) => ({
-      ...clase,
+    setClaseEdicion((prev) => ({
+      ...prev,
       ...cambios,
       updatedAt: new Date().toISOString(),
     }));
+
+    await supabase.from("clases").update(cambios).eq("id", claseId);
   };
 
-  const guardarAsistencia = () => {
-    localStorage.setItem(STORAGE_KEYS.clases, JSON.stringify(clases));
+  const guardarAsistencia = async () => {
+    if (!claseEdicion) return;
+    await supabase.from("clases").update({
+      alumnos: claseEdicion.alumnos,
+    }).eq("id", claseEdicion.id);
+    await recargarDatos();
     alert("Asistencia guardada correctamente");
   };
 
-  const cerrarAsistencia = () => {
-    if (!claseSeleccionada) return;
+  const cerrarAsistencia = async () => {
+    if (!claseEdicion) return;
 
-    const tieneAsistenciaRegistrada = (claseSeleccionada.alumnos || []).some(
+    const tieneAsistenciaRegistrada = (claseEdicion.alumnos || []).some(
       (alumno) => alumno.asistio || alumno.sumaHoras || Number(alumno.horasManual || 0) > 0
     );
 
@@ -209,61 +225,34 @@ export default function ProfesorAsistenciaPage() {
       if (!confirmar) return;
     }
 
-    actualizarClase(claseSeleccionada.id, {
+    const estadoFinal =
+      claseEdicion.estado === "programada" || claseEdicion.estado === "reprogramada"
+        ? "completada"
+        : claseEdicion.estado;
+
+    await supabase.from("clases").update({
       asistenciaCerrada: true,
-      estado:
-        claseSeleccionada.estado === "programada" ||
-        claseSeleccionada.estado === "reprogramada"
-          ? "completada"
-          : claseSeleccionada.estado,
-    });
+      estado: estadoFinal,
+      alumnos: claseEdicion.alumnos,
+    }).eq("id", claseEdicion.id);
 
-    const clasesActualizadas = clases.map((claseOriginal) => {
-      if (String(claseOriginal.id) !== String(claseSeleccionada.id)) return claseOriginal;
-
-      const claseNormalizada = normalizarClaseLegacy(claseOriginal);
-
-      return {
-        ...claseOriginal,
-        ...claseNormalizada,
-        asistenciaCerrada: true,
-        estado:
-          claseNormalizada.estado === "programada" ||
-          claseNormalizada.estado === "reprogramada"
-            ? "completada"
-            : claseNormalizada.estado,
-        updatedAt: new Date().toISOString(),
-      };
-    });
-
-    setClases(clasesActualizadas);
-    localStorage.setItem(STORAGE_KEYS.clases, JSON.stringify(clasesActualizadas));
+    await recargarDatos();
     alert("Asistencia cerrada y horas consolidadas");
   };
 
-  const reabrirAsistencia = () => {
-    if (!claseSeleccionada) return;
+  const reabrirAsistencia = async () => {
+    if (!claseEdicion) return;
 
     const confirmar = window.confirm(
       "¿Deseas reabrir esta asistencia para seguir editándola?"
     );
     if (!confirmar) return;
 
-    const clasesActualizadas = clases.map((claseOriginal) => {
-      if (String(claseOriginal.id) !== String(claseSeleccionada.id)) return claseOriginal;
+    await supabase.from("clases").update({
+      asistenciaCerrada: false,
+    }).eq("id", claseEdicion.id);
 
-      const claseNormalizada = normalizarClaseLegacy(claseOriginal);
-
-      return {
-        ...claseOriginal,
-        ...claseNormalizada,
-        asistenciaCerrada: false,
-        updatedAt: new Date().toISOString(),
-      };
-    });
-
-    setClases(clasesActualizadas);
-    localStorage.setItem(STORAGE_KEYS.clases, JSON.stringify(clasesActualizadas));
+    await recargarDatos();
     alert("Asistencia reabierta");
   };
 
@@ -387,7 +376,7 @@ export default function ProfesorAsistenciaPage() {
         </aside>
 
         <main className="asistencia-detail">
-          {!claseSeleccionada && (
+          {!claseEdicion && (
             <div className="asistencia-detail-card empty-big">
               <h2>Selecciona una clase</h2>
               <p>
@@ -397,28 +386,28 @@ export default function ProfesorAsistenciaPage() {
             </div>
           )}
 
-          {claseSeleccionada && (
+          {claseEdicion && (
             <div className="asistencia-detail-card">
               <div className="section-head detail-head">
                 <div>
-                  <h2>{claseSeleccionada.curso || "Clase sin curso"}</h2>
+                  <h2>{claseEdicion.curso || "Clase sin curso"}</h2>
                   <p>
-                    {claseSeleccionada.tema || "Sin tema definido"} ·{" "}
-                    {claseSeleccionada.modalidad || "Sin modalidad"}
+                    {claseEdicion.tema || "Sin tema definido"} ·{" "}
+                    {claseEdicion.modalidad || "Sin modalidad"}
                   </p>
                 </div>
 
                 <div className="detail-status-group">
-                  <span className={`badge-estado estado-${claseSeleccionada.estado}`}>
-                    {claseSeleccionada.estado}
+                  <span className={`badge-estado estado-${claseEdicion.estado}`}>
+                    {claseEdicion.estado}
                   </span>
 
                   <span
                     className={`badge-status ${
-                      claseSeleccionada.asistenciaCerrada ? "closed" : "open"
+                      claseEdicion.asistenciaCerrada ? "closed" : "open"
                     }`}
                   >
-                    {claseSeleccionada.asistenciaCerrada
+                    {claseEdicion.asistenciaCerrada
                       ? "Asistencia cerrada"
                       : "Asistencia editable"}
                   </span>
@@ -428,26 +417,26 @@ export default function ProfesorAsistenciaPage() {
               <div className="detalle-grid">
                 <div className="detalle-box">
                   <span>Fecha</span>
-                  <strong>{claseSeleccionada.fecha}</strong>
+                  <strong>{claseEdicion.fecha}</strong>
                 </div>
 
                 <div className="detalle-box">
                   <span>Horario</span>
                   <strong>
-                    {claseSeleccionada.horaInicio || claseSeleccionada.hora || "--:--"}
+                    {formatAMPM(claseEdicion.horaInicio || claseEdicion.hora)}
                     {" - "}
-                    {claseSeleccionada.horaFin || "--:--"}
+                    {claseEdicion.horaFin ? formatAMPM(claseEdicion.horaFin) : "--:--"}
                   </strong>
                 </div>
 
                 <div className="detalle-box">
                   <span>Duración</span>
-                  <strong>{round2(Number(claseSeleccionada.duracionHoras || 0))}h</strong>
+                  <strong>{round2(Number(claseEdicion.duracionHoras || 0))}h</strong>
                 </div>
 
                 <div className="detalle-box">
                   <span>Alumnos</span>
-                  <strong>{claseSeleccionada.alumnos?.length || 0}</strong>
+                  <strong>{claseEdicion.alumnos?.length || 0}</strong>
                 </div>
               </div>
 
@@ -460,7 +449,7 @@ export default function ProfesorAsistenciaPage() {
                   Guardar cambios
                 </button>
 
-                {!claseSeleccionada.asistenciaCerrada ? (
+                {!claseEdicion.asistenciaCerrada ? (
                   <button
                     type="button"
                     className="btn-principal-pro"
@@ -480,20 +469,20 @@ export default function ProfesorAsistenciaPage() {
               </div>
 
               <div className="alumnos-asistencia-list">
-                {(claseSeleccionada.alumnos || []).length === 0 && (
+                {(claseEdicion.alumnos || []).length === 0 && (
                   <div className="empty-state">
                     Esta clase no tiene alumnos registrados.
                   </div>
                 )}
 
-                {(claseSeleccionada.alumnos || []).map((alumno) => {
+                {(claseEdicion.alumnos || []).map((alumno) => {
                   const horasAcumuladas = calcularHorasAcumuladasAlumno(
                     alumno.id,
-                    misClases
+                    misClasesRaw
                   );
                   const horasObjetivo = getHorasObjetivoCurso(
-                    claseSeleccionada,
-                    cursos,
+                    claseEdicion,
+                    CURSOS_BASE,
                     alumno
                   );
                   const porcentaje = calcularPorcentaje(
@@ -501,10 +490,10 @@ export default function ProfesorAsistenciaPage() {
                     horasObjetivo
                   );
                   const horasClase = calcularHorasGanadasEnClase(
-                    claseSeleccionada,
+                    claseEdicion,
                     alumno
                   );
-                  const editable = ESTADOS_EDITABLES.includes(claseSeleccionada.estado);
+                  const editable = ESTADOS_EDITABLES.includes(claseEdicion.estado);
 
                   return (
                     <article key={alumno.id} className="alumno-progress-card">
@@ -512,7 +501,7 @@ export default function ProfesorAsistenciaPage() {
                         <div>
                           <h3>{alumno.nombre}</h3>
                           <p>
-                            Curso: {renderNombreCurso(claseSeleccionada, cursos, alumno)}
+                            Curso: {renderNombreCurso(claseEdicion, CURSOS_BASE, alumno)}
                           </p>
                         </div>
 
@@ -572,9 +561,9 @@ export default function ProfesorAsistenciaPage() {
                           <input
                             type="checkbox"
                             checked={!!alumno.asistio}
-                            disabled={!editable || claseSeleccionada.asistenciaCerrada}
+                            disabled={!editable || claseEdicion.asistenciaCerrada}
                             onChange={(e) =>
-                              actualizarAlumno(claseSeleccionada.id, alumno.id, {
+                              actualizarAlumno(claseEdicion.id, alumno.id, {
                                 asistio: e.target.checked,
                               })
                             }
@@ -588,11 +577,11 @@ export default function ProfesorAsistenciaPage() {
                             checked={!!alumno.sumaHoras}
                             disabled={
                               !editable ||
-                              claseSeleccionada.asistenciaCerrada ||
+                              claseEdicion.asistenciaCerrada ||
                               !alumno.asistio
                             }
                             onChange={(e) =>
-                              actualizarAlumno(claseSeleccionada.id, alumno.id, {
+                              actualizarAlumno(claseEdicion.id, alumno.id, {
                                 sumaHoras: e.target.checked,
                               })
                             }
@@ -600,38 +589,36 @@ export default function ProfesorAsistenciaPage() {
                           <span>Sumar horas automáticas</span>
                         </label>
 
-                        <label className="input-card">
-                          <span>Ajuste manual (h)</span>
+                        <div className="input-group-mini">
+                          <label>Ajuste manual (h)</label>
                           <input
                             type="number"
-                            min="0"
+                            min="-10"
+                            max="10"
                             step="0.5"
-                            value={alumno.horasManual ?? 0}
-                            disabled={!editable || claseSeleccionada.asistenciaCerrada}
+                            value={alumno.horasManual || ""}
+                            disabled={!editable || claseEdicion.asistenciaCerrada}
                             onChange={(e) =>
-                              actualizarAlumno(claseSeleccionada.id, alumno.id, {
-                                horasManual: Number(e.target.value || 0),
+                              actualizarAlumno(claseEdicion.id, alumno.id, {
+                                horasManual: Number(e.target.value) || 0,
                               })
                             }
                           />
-                        </label>
+                        </div>
                       </div>
 
-                      <div className="observacion-block">
-                        <label>
-                          <span>Observación del alumno</span>
-                          <textarea
-                            rows="3"
-                            placeholder="Ej: llegó tarde, repaso módulo 2, excelente avance..."
-                            value={alumno.observacion || ""}
-                            disabled={!editable || claseSeleccionada.asistenciaCerrada}
-                            onChange={(e) =>
-                              actualizarAlumno(claseSeleccionada.id, alumno.id, {
-                                observacion: e.target.value,
-                              })
-                            }
-                          />
-                        </label>
+                      <div className="alumno-observacion">
+                        <label>Observación del alumno</label>
+                        <textarea
+                          placeholder="Ej: llegó tarde, repaso módulo 2, excelente avance..."
+                          value={alumno.observacion || ""}
+                          disabled={!editable || claseEdicion.asistenciaCerrada}
+                          onChange={(e) =>
+                            actualizarAlumno(claseEdicion.id, alumno.id, {
+                              observacion: e.target.value,
+                            })
+                          }
+                        />
                       </div>
                     </article>
                   );
@@ -697,18 +684,20 @@ function getHorasObjetivoCurso(clase, cursos, alumno) {
     (curso) => String(curso.id) === String(clase.cursoId || alumno?.cursoId)
   );
 
-  const posiblesCampos = [
-    cursoById?.horasTotales,
-    cursoById?.duracionHoras,
-    cursoById?.totalHoras,
-    cursoById?.horas,
-  ];
+  let horasBase = cursoById?.horasTotales || 24;
 
-  const encontrada = posiblesCampos.find(
-    (valor) => valor !== undefined && valor !== null && Number(valor) > 0
-  );
+  if (alumno?.duracion && !isNaN(Number(alumno.duracion))) {
+    const meses = Number(alumno.duracion);
+    const modalidad = (alumno.modalidad || "regular").toLowerCase();
+    const clasesPorMes = cursoById?.modalidades?.[modalidad] || 4;
+    const horasPorClase = (cursoById?.horasPorModulo / cursoById?.clasesPorModulo) || 2;
+    const horasCalculadas = meses * clasesPorMes * horasPorClase;
+    if (horasCalculadas > 0) {
+      horasBase = horasCalculadas;
+    }
+  }
 
-  return Number(encontrada || 24);
+  return horasBase;
 }
 
 function renderNombreCurso(clase, cursos, alumno) {

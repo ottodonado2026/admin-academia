@@ -30,7 +30,7 @@ const ESTADOS_CLASE = {
 };
 
 function ProfesorClasesPage() {
-  const { clases, pagos, loading } = useProfesorData();
+  const { clases, pagos, loading, recargarDatos } = useProfesorData();
   
   const [busqueda, setBusqueda] = useState("");
   const [filtroEstado, setFiltroEstado] = useState("todos");
@@ -132,6 +132,7 @@ const misClases = useMemo(() => {
         return;
       }
       setClaseSeleccionada(null);
+      await recargarDatos();
       alert("Clase actualizada correctamente");
     } catch (err) {
       console.error("Error guardando clase:", err);
@@ -145,6 +146,7 @@ const misClases = useMemo(() => {
         .update({ estado: "en progreso", updated_at: new Date().toISOString() })
         .eq("id", claseId);
       if (error) throw error;
+      await recargarDatos();
     } catch (err) {
       console.error(err);
       alert("Error al iniciar la clase");
@@ -158,6 +160,7 @@ const misClases = useMemo(() => {
         .update({ estado: "completada", updated_at: new Date().toISOString() })
         .eq("id", claseId);
       if (error) throw error;
+      await recargarDatos();
     } catch (err) {
       console.error(err);
       alert("Error al finalizar la clase");

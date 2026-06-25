@@ -6,6 +6,7 @@ export function useProfesorData() {
   const [pagos, setPagos] = useState([]);
   const [alumnos, setAlumnos] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   useEffect(() => {
     let activo = true;
@@ -111,7 +112,12 @@ export function useProfesorData() {
       activo = false;
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [refreshTrigger]);
 
-  return { clases, pagos, alumnos, loading };
+  const recargarDatos = async () => {
+    setLoading(true);
+    setRefreshTrigger((prev) => prev + 1);
+  };
+
+  return { clases, pagos, alumnos, loading, recargarDatos };
 }

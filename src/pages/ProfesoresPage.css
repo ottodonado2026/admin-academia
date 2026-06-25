@@ -126,25 +126,31 @@
 .form-profesores {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 12px;
   margin-bottom: 20px;
 }
 
 .form-profesores input,
-.form-profesores select,
-.form-profesores textarea {
+.form-profesores select {
+  flex: 1 1 220px;
   height: 42px;
   border-radius: 10px;
   border: 1px solid var(--border);
   background: rgba(255,255,255,0.03);
   color: white;
-  padding: 0 10px;
+  padding: 0 12px;
+  font-size: 14px;
 }
 
 .form-profesores textarea {
-  height: 70px;
   width: 100%;
-  padding-top: 8px;
+  height: 70px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.03);
+  color: white;
+  padding: 8px 12px;
+  font-size: 14px;
 }
 
 .btn-principal {
@@ -155,6 +161,88 @@
   padding: 10px 16px;
   border-radius: 10px;
   cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.btn-principal:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(57, 255, 20, 0.3);
+}
+
+.form-profesores .btn-principal {
+  width: 100%;
+  margin-top: 10px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* =========================================
+   CONTENEDOR DE ESPECIALIDADES (PÍLDORAS)
+========================================= */
+.especialidades-container {
+  width: 100%;
+  margin-top: 10px;
+  margin-bottom: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.especialidades-container label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-soft, #a9b0c3);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.especialidades-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.especialidad-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #cfd7e6;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.especialidad-chip:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.especialidad-chip.active {
+  background: rgba(57, 255, 20, 0.1);
+  border-color: rgba(57, 255, 20, 0.5);
+  color: #39ff14;
+  box-shadow: 0 0 10px rgba(57, 255, 20, 0.15);
+}
+
+.especialidad-chip.active:hover {
+  background: rgba(57, 255, 20, 0.18);
+  border-color: #39ff14;
+  box-shadow: 0 0 14px rgba(57, 255, 20, 0.25);
+}
+
+.chip-icon {
+  font-size: 11px;
+  font-weight: bold;
 }
 
 /* =========================

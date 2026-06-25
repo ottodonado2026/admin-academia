@@ -853,33 +853,36 @@ const finalizarClase = async (clase, finalizadaPor = "profesor") => {
               style={{ gridColumn: "span 2", minHeight: "80px" }}
             />
 
-            <div className="especialidades-container" style={{ gridColumn: "span 2" }}>
+            <div className="especialidades-container">
               <label>Especialidades (materias que dicta):</label>
               <div className="especialidades-grid">
-                {ESPECIALIDADES.map((esp) => (
-                  <label key={esp} className="chk-label">
-                    <input
-                      type="checkbox"
-                      checked={especialidades.includes(esp)}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setEspecialidades([...especialidades, esp]);
-                        } else {
+                {ESPECIALIDADES.map((esp) => {
+                  const isChecked = especialidades.includes(esp);
+                  return (
+                    <button
+                      key={esp}
+                      type="button"
+                      className={`especialidad-chip ${isChecked ? "active" : ""}`}
+                      onClick={() => {
+                        if (isChecked) {
                           setEspecialidades(especialidades.filter((item) => item !== esp));
+                        } else {
+                          setEspecialidades([...especialidades, esp]);
                         }
                       }}
-                    />
-                    {esp.toUpperCase()}
-                  </label>
-                ))}
+                    >
+                      <span className="chip-icon">{isChecked ? "✓" : "+"}</span>
+                      {esp.toUpperCase()}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
             <button
               type="button"
               onClick={agregarProfesor}
-              className="btn-guardar"
-              style={{ gridColumn: "span 2" }}
+              className="btn-principal"
             >
               {editandoId ? "Guardar cambios" : "Agregar profesor"}
             </button>

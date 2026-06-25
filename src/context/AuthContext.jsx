@@ -16,7 +16,22 @@ export const AuthProvider = ({ children }) => {
   const [role, setRole] = useState(null);
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [timeoutWarning, setTimeoutWarning] = useState(false);
   const isFetching = useRef(false);
+
+  const repairSession = () => {
+    try {
+      for (let i = localStorage.length - 1; i >= 0; i--) {
+        const key = localStorage.key(i);
+        if (key && (key.includes("supabase") || key.includes("sb-"))) {
+          localStorage.removeItem(key);
+        }
+      }
+    } catch (e) {
+      console.error("Error limpiando localStorage:", e);
+    }
+    window.location.href = "/";
+  };
 
   const fetchUserRole = async (userId) => {
     try {
@@ -41,28 +56,13 @@ export const AuthProvider = ({ children }) => {
     let isMounted = true;
     let initialLoadDone = false;
 
-    // Timeout de seguridad: Si la inicialización tarda más de 2.5 segundos, destrabamos y autolimpiamos localStorage
+    // Timeout amigable: Si la inicialización tarda más de 8 segundos, mostramos un botón para reparar la sesión.
     const safetyTimeout = setTimeout(() => {
       if (isMounted && !initialLoadDone) {
-        console.warn("Safety timeout triggered: Destrabando pantalla de carga de sesión y limpiando localStorage...");
-        try {
-          // Remover todas las llaves de Supabase de localStorage
-          for (let i = localStorage.length - 1; i >= 0; i--) {
-            const key = localStorage.key(i);
-            if (key && (key.includes("supabase") || key.includes("sb-"))) {
-              localStorage.removeItem(key);
-            }
-          }
-        } catch (e) {
-          console.error("Error limpiando localStorage:", e);
-        }
-        setUser(null);
-        setRole(null);
-        setUserData(null);
-        setLoading(false);
-        initialLoadDone = true;
+        console.warn("Safety timeout triggered: La carga está demorando. Activando opción manual de reparación.");
+        setTimeoutWarning(true);
       }
-    }, 2500);
+    }, 8000);
 
     const loadSessionAndRole = async (session) => {
       if (!isMounted) return;
@@ -145,7 +145,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, role, userData, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, role, userData, loading, timeoutWarning, repairSession, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

@@ -16,26 +16,7 @@ export const AuthProvider = ({ children }) => {
   const [role, setRole] = useState(null);
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [timeoutWarning, setTimeoutWarning] = useState(false);
   const isFetching = useRef(false);
-
-  const repairSession = () => {
-    try {
-      for (let i = localStorage.length - 1; i >= 0; i--) {
-        const key = localStorage.key(i);
-        // Borrar candados o basura de supabase, pero preservar el token principal de sesión
-        if (key && (key.includes("supabase") || key.includes("sb-"))) {
-          if (!key.endsWith("-auth-token")) {
-            localStorage.removeItem(key);
-          }
-        }
-      }
-    } catch (e) {
-      console.error("Error limpiando localStorage parcial:", e);
-    }
-    // Recargar la página actual para reintentar la entrada silenciosamente
-    window.location.reload();
-  };
 
   const fetchUserRole = async (userId) => {
     try {
@@ -60,13 +41,33 @@ export const AuthProvider = ({ children }) => {
     let isMounted = true;
     let initialLoadDone = false;
 
-    // Timeout amigable: Si la inicialización tarda más de 8 segundos, mostramos un botón para reparar la sesión.
-    const safetyTimeout = setTimeout(() => {
+    // Timeout de rescate: Si Supabase se queda congelado por un bug de Web Locks, lo saltamos a los 3 segundos.
+    const rescueTimeout = setTimeout(() => {
       if (isMounted && !initialLoadDone) {
-        console.warn("Safety timeout triggered: La carga está demorando. Activando opción manual de reparación.");
-        setTimeoutWarning(true);
+        console.warn("Rescue timeout triggered: Supabase está congelado. Forzando lectura manual de sesión.");
+        try {
+          let manualSession = null;
+          for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && key.endsWith("-auth-token")) {
+              manualSession = JSON.parse(localStorage.getItem(key));
+              break;
+            }
+          }
+          if (manualSession && manualSession.user) {
+            console.log("Sesión rescatada manualmente.");
+            // Usar la sesión manual para destrabar
+            loadSessionAndRole({ user: manualSession.user });
+          } else {
+            console.log("No se encontró sesión rescatable.");
+            loadSessionAndRole(null);
+          }
+        } catch (e) {
+          console.error("Error en rescate manual:", e);
+          loadSessionAndRole(null);
+        }
       }
-    }, 8000);
+    }, 3000);
 
     const loadSessionAndRole = async (session) => {
       if (!isMounted) return;
@@ -86,7 +87,7 @@ export const AuthProvider = ({ children }) => {
         if (isMounted) {
           setLoading(false);
           initialLoadDone = true;
-          clearTimeout(safetyTimeout);
+          clearTimeout(rescueTimeout);
         }
       }
     };
@@ -116,7 +117,7 @@ export const AuthProvider = ({ children }) => {
         setRole(null);
         setUserData(null);
         setLoading(false);
-        clearTimeout(safetyTimeout);
+        clearTimeout(rescueTimeout);
       } else if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED" || event === "INITIAL_SESSION") {
         // Si es INITIAL_SESSION pero ya cargó por getSession(), lo ignoramos
         if (event === "INITIAL_SESSION" && initialLoadDone) return;
@@ -126,7 +127,7 @@ export const AuthProvider = ({ children }) => {
 
     return () => {
       isMounted = false;
-      clearTimeout(safetyTimeout);
+      clearTimeout(rescueTimeout);
       subscription?.unsubscribe();
     };
   }, []);
@@ -157,7 +158,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, role, userData, loading, timeoutWarning, repairSession, login, logout }}>
+    <AuthContext.Provider value={{ user, role, userData, loading, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

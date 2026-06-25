@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState, useRef } from "react";
 import { supabase } from "../services/supabaseClient";
 
 const AuthContext = createContext();
@@ -16,57 +16,9 @@ export const AuthProvider = ({ children }) => {
   const [role, setRole] = useState(null);
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const isFetching = useRef(false);
 
-  useEffect(() => {
-    let isMounted = true;
-
-    const getSession = async () => {
-      try {
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        if (sessionError) throw sessionError;
-        
-        if (session?.user) {
-          if (isMounted) setUser(session.user);
-          await fetchUserRole(session.user.id, isMounted);
-        } else {
-          if (isMounted) {
-            setUser(null);
-            setRole(null);
-          }
-        }
-      } catch (error) {
-        console.error("Error obteniendo la sesión:", error);
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    };
-
-    getSession();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      if (session?.user) {
-        if (isMounted) {
-          setUser(session.user);
-        }
-        await fetchUserRole(session.user.id, isMounted);
-        if (isMounted) setLoading(false);
-      } else {
-        if (isMounted) {
-          setUser(null);
-          setRole(null);
-          setUserData(null);
-          setLoading(false);
-        }
-      }
-    });
-
-    return () => {
-      isMounted = false;
-      subscription?.unsubscribe();
-    };
-  }, []);
-
-  const fetchUserRole = async (userId, isMounted) => {
+  const fetchUserRole = async (userId) => {
     try {
       const { data, error } = await supabase
         .from("usuarios")
@@ -75,39 +27,88 @@ export const AuthProvider = ({ children }) => {
         .maybeSingle();
 
       if (error) throw error;
-      
-      if (isMounted) {
-        setRole(data?.role?.toLowerCase() || null);
-        setUserData(data || null);
-      }
+
+      setRole(data?.role?.toLowerCase() || null);
+      setUserData(data || null);
     } catch (error) {
       console.error("Error fetching user role:", error);
-      if (isMounted) {
-        setRole(null);
-        setUserData(null);
-      }
+      setRole(null);
+      setUserData(null);
     }
   };
+
+  useEffect(() => {
+    // Obtener sesión inicial al cargar la app
+    const initializeAuth = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          setUser(session.user);
+          await fetchUserRole(session.user.id);
+        } else {
+          setUser(null);
+          setRole(null);
+        }
+      } catch (error) {
+        console.error("Error inicializando auth:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initializeAuth();
+
+    // Escuchar cambios de sesión (login, logout, refresh de token)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      // Ignorar eventos duplicados mientras ya estamos procesando uno
+      if (isFetching.current) return;
+      isFetching.current = true;
+
+      try {
+        if (event === "SIGNED_OUT") {
+          setUser(null);
+          setRole(null);
+          setUserData(null);
+        } else if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
+          if (session?.user) {
+            setUser(session.user);
+            await fetchUserRole(session.user.id);
+          }
+        }
+        // Para TOKEN_REFRESHED en background, no mostramos loading
+      } finally {
+        isFetching.current = false;
+      }
+    });
+
+    return () => {
+      subscription?.unsubscribe();
+    };
+  }, []);
 
   const login = async (email, password) => {
     setLoading(true);
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        return { error };
+      }
+      // El onAuthStateChange SIGNED_IN actualizará el estado automáticamente
+      return { user: data.user };
+    } finally {
       setLoading(false);
-      return { error };
     }
-    
-    // Forzar actualización de estado por si onAuthStateChange no dispara (ej. si ya estaba logueado)
-    setUser(data.user);
-    await fetchUserRole(data.user.id, true);
-    setLoading(false);
-    
-    return { user: data.user };
   };
 
   const logout = async () => {
-    await supabase.auth.signOut();
-    localStorage.removeItem("auth"); // Manteniendo compatibilidad si se usaba
+    setLoading(true);
+    try {
+      await supabase.auth.signOut();
+    } finally {
+      // El onAuthStateChange SIGNED_OUT limpiará el estado
+      setLoading(false);
+      localStorage.removeItem("auth");
+    }
   };
 
   return (

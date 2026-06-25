@@ -18,23 +18,16 @@ const [roleLabel, setRoleLabel] = useState("");
 
   const { user, role, login, loading } = useAuth();
 
+  // Redirigir según el rol cuando el usuario ya está autenticado
   useEffect(() => {
-    if (loading) return; // Esperar a que termine de consultar el rol en la base de datos
+    if (loading || !user || !role) return;
 
-    if (user && role) {
-      if (role === "coordinador_academico" || role === "coordinador") {
-        navigate("/coordinador");
-      } else if (
-        ["owner", "admin", "contador", "gerente"].includes(role)
-      ) {
-        navigate("/dashboard");
-      } else {
-        // Otros roles usarán sus respectivos logins (profesor, asesor)
-      }
-    } else if (user && role === null) {
-      alert("Error: Has iniciado sesión, pero tu usuario no tiene un rol asignado en la base de datos (tabla 'usuarios'). Por favor contacta a soporte.");
+    if (role === "coordinador_academico" || role === "coordinador") {
+      navigate("/coordinador");
+    } else if (["owner", "admin", "contador", "gerente"].includes(role)) {
+      navigate("/dashboard");
     }
-  }, [user, role, navigate, loading]);
+  }, [user, role, loading, navigate]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -48,7 +41,7 @@ const [roleLabel, setRoleLabel] = useState("");
 
     if (error) {
       console.error("Error login:", error);
-      alert(error.message);
+      alert("Correo o contraseña incorrectos");
     }
   };
 

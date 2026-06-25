@@ -103,7 +103,7 @@ const [cargandoClases, setCargandoClases] = useState(false);
 
       const { data: clasesData, error: clasesError } = await supabase
         .from("clases")
-        .select("*")
+        .select("*, alumnos:alumno_id(estado_pago)")
         .or(
           `profesor_db_id.eq.${profesorActual.id},profesor_id.eq.${profesorActual.id}`
         )
@@ -124,6 +124,18 @@ const [cargandoClases, setCargandoClases] = useState(false);
   };
 
   cargarClasesDelProfesor();
+
+  // Sincronización en tiempo real para las clases
+  const channel = supabase
+    .channel("profesor-clases-realtime")
+    .on("postgres_changes", { event: "*", schema: "public", table: "clases" }, () => {
+      cargarClasesDelProfesor();
+    })
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(channel);
+  };
 }, []);
 
 useEffect(() => {
@@ -503,7 +515,7 @@ useEffect(() => {
 
   const { data, error } = await supabase
     .from("clases")
-    .select("*")
+    .select("*, alumnos:alumno_id(estado_pago)")
     .or(
       `profesor_db_id.eq.${usuarioProfesor.id},profesor_id.eq.${usuarioProfesor.id}`
     )
@@ -556,6 +568,38 @@ const finalizarClase = async (clase, finalizadaPor = "profesor") => {
   }
 
   await refrescarClasesProfesor();
+};
+
+const marcarInasistencia = async (clase) => {
+  const confirmar = window.confirm("¿Estás seguro de marcar Inasistencia? Esta clase no se le descontará al alumno.");
+  if (!confirmar) return;
+
+  const { error } = await supabase
+    .from("clases")
+    .update({
+      estado: "cancelada",
+      observaciones: "Inasistencia del alumno. " + (clase.observaciones || ""),
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", clase.id);
+
+  if (error) {
+    console.error("Error marcando inasistencia:", error);
+    alert("No se pudo registrar la inasistencia.");
+    return;
+  }
+
+  await refrescarClasesProfesor();
+};
+
+const abrirWhatsApp = (telefono) => {
+  if (!telefono) {
+    alert("El alumno no tiene teléfono registrado.");
+    return;
+  }
+  const numeroLimpio = telefono.replace(/\D/g, "");
+  const url = `https://wa.me/57${numeroLimpio}?text=Hola,%20te%20escribo%20para%20recordarte%20nuestra%20clase%20programada.`;
+  window.open(url, "_blank");
 };
 
   const profesoresFiltrados = useMemo(() => {
@@ -640,7 +684,16 @@ const finalizarClase = async (clase, finalizadaPor = "profesor") => {
               {clase.hora} - {clase.hora_fin || "Sin hora fin"}
             </td>
 
-            <td>{clase.alumno_nombre}</td>
+            <td>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {clase.alumno_nombre}
+                {clase.alumnos?.estado_pago === "mora" && (
+                  <span style={{ backgroundColor: '#ef4444', color: 'white', fontSize: '10px', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>
+                    EN MORA
+                  </span>
+                )}
+              </div>
+            </td>
 
             <td>
               <span className={`estado-chip ${clase.estado}`}>
@@ -650,13 +703,32 @@ const finalizarClase = async (clase, finalizadaPor = "profesor") => {
 
             <td>
               {clase.estado === "programada" && (
-                <button
-                  type="button"
-                  className="btn-editar"
-                  onClick={() => iniciarClase(clase)}
-                >
-                  Iniciar clase
-                </button>
+                <>
+                  <button
+                    type="button"
+                    className="btn-editar"
+                    onClick={() => iniciarClase(clase)}
+                    style={{ marginRight: '5px' }}
+                  >
+                    Iniciar clase
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-eliminar"
+                    onClick={() => marcarInasistencia(clase)}
+                    style={{ backgroundColor: '#f59e0b', marginRight: '5px' }}
+                  >
+                    Faltó (Inasistencia)
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-editar"
+                    onClick={() => abrirWhatsApp(clase.alumno_telefono || clase.alumno?.telefono)}
+                    style={{ backgroundColor: '#25D366' }}
+                  >
+                    WhatsApp
+                  </button>
+                </>
               )}
 
               {clase.estado === "en_curso" && (
@@ -671,6 +743,9 @@ const finalizarClase = async (clase, finalizadaPor = "profesor") => {
 
               {clase.estado === "finalizada" && (
                 <span>Finalizada</span>
+              )}
+              {clase.estado === "cancelada" && (
+                <span style={{ color: '#ef4444' }}>Cancelada / Inasistencia</span>
               )}
             </td>
           </tr>
@@ -708,19 +783,44 @@ const finalizarClase = async (clase, finalizadaPor = "profesor") => {
 
         <div>
           <span>Alumno</span>
-          <strong>{clase.alumno_nombre}</strong>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <strong>{clase.alumno_nombre}</strong>
+            {clase.alumnos?.estado_pago === "mora" && (
+              <span style={{ backgroundColor: '#ef4444', color: 'white', fontSize: '10px', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>
+                MORA
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
       <div className="clase-profesor-actions">
         {clase.estado === "programada" && (
-          <button
-            type="button"
-            className="btn-editar"
-            onClick={() => iniciarClase(clase)}
-          >
-            Iniciar clase
-          </button>
+          <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              className="btn-editar"
+              onClick={() => iniciarClase(clase)}
+            >
+              Iniciar clase
+            </button>
+            <button
+              type="button"
+              className="btn-eliminar"
+              onClick={() => marcarInasistencia(clase)}
+              style={{ backgroundColor: '#f59e0b' }}
+            >
+              Faltó (Inasistencia)
+            </button>
+            <button
+              type="button"
+              className="btn-editar"
+              onClick={() => abrirWhatsApp(clase.alumno_telefono || clase.alumno?.telefono)}
+              style={{ backgroundColor: '#25D366' }}
+            >
+              WhatsApp
+            </button>
+          </div>
         )}
 
         {clase.estado === "en_curso" && (
@@ -735,6 +835,9 @@ const finalizarClase = async (clase, finalizadaPor = "profesor") => {
 
         {clase.estado === "finalizada" && (
           <span className="clase-finalizada-text">Clase finalizada</span>
+        )}
+        {clase.estado === "cancelada" && (
+          <span className="clase-finalizada-text" style={{ color: '#ef4444' }}>Cancelada / Inasistencia</span>
         )}
       </div>
     </div>

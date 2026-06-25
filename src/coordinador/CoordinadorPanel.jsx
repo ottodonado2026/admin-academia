@@ -311,6 +311,30 @@ const CLASES_GRATIS_POR_PAGINA = 10;
   };
 
   useEffect(() => {
+    const fetchSession = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (!data.session) {
+        navigate("/login");
+        return;
+      }
+      setUsuario(data.session.user);
+    };
+
+    fetchSession();
+
+    const channel = supabase
+      .channel("coordinador-clases-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "clases" }, () => {
+        setRefresh((prev) => prev + 1);
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [navigate]);
+
+  useEffect(() => {
     let activo = true;
 
     const cargarDatos = async () => {
@@ -1739,6 +1763,7 @@ await registrarAuditoriaClase({
 
 
 const iniciarEdicionClase = (clase) => {
+  setVistaActiva("dashboard");
   setEditandoClaseId(clase.id);
   setClaseSeleccionada(null);
 
@@ -1808,11 +1833,11 @@ const alumno = alumnosPorId.get(String(formClase.alumnoId)) || null;
 const profesor = profesoresPorId.get(String(formClase.profesorId)) || null;
 
   if (!formClase.tema || !limpiarTexto(formClase.tema)) {
-  mostrarAlerta("warning", "El tema de la clase es obligatorio.");
-  return;
-}
+      mostrarAlerta("warning", "El tema de la clase es obligatorio.");
+      return;
+    }
 
-  setGuardandoClase(true);
+    setGuardandoClase(true);
 
   const alumnosActualizadosEdicion =
   alumnosClaseSeleccionados.length > 0
@@ -1986,6 +2011,37 @@ mostrarAlerta("success", "Clase actualizada correctamente.");
 const cancelarEdicionClase = () => {
   setEditandoClaseId(null);
   setFormClase(formClaseInicial);
+};
+
+const cancelarClase = async (claseId) => {
+  const confirmar = window.confirm("¿Estás seguro de que deseas cancelar esta clase? Los alumnos serán notificados si están sincronizados.");
+  if (!confirmar) return;
+
+  try {
+    const { data: claseCancelada, error } = await supabase
+      .from("clases")
+      .update({ estado: "cancelada", updated_at: new Date().toISOString() })
+      .eq("id", claseId)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    await registrarAuditoriaClase({
+      claseId: claseId,
+      accion: "cancelar_clase",
+      descripcion: "El coordinador canceló la clase",
+      estadoNuevo: "cancelada",
+      coordinador: usuario,
+    });
+
+    setClases((prev) => prev.map((c) => (c.id === claseId ? claseCancelada : c)));
+    setRefresh((prev) => prev + 1);
+    mostrarAlerta("success", "La clase ha sido cancelada exitosamente.");
+  } catch (error) {
+    console.error("Error cancelando clase:", error);
+    mostrarAlerta("error", "No se pudo cancelar la clase.");
+  }
 };
 
 const registrarAuditoriaClase = async ({
@@ -3275,17 +3331,36 @@ const claseSeleccionadaSegura = claseSeleccionada || {
                     </span>
                   </td>
 
-                 <td data-label="Acciones">
-  <div className="coordinador-row-actions">
-    <button
-      type="button"
-      className="mini-action-btn cyan"
-      onClick={() => abrirDetalleClase(clase)}
-    >
-      Ver
-    </button>
-  </div>
-</td>
+                  <td data-label="Acciones">
+                    <div className="coordinador-row-actions">
+                      <button
+                        type="button"
+                        className="mini-action-btn cyan"
+                        onClick={() => abrirDetalleClase(clase)}
+                        title="Ver detalles"
+                      >
+                        Ver
+                      </button>
+                      <button
+                        type="button"
+                        className="mini-action-btn warning"
+                        onClick={() => iniciarEdicionClase(clase)}
+                        title="Reprogramar / Editar"
+                        disabled={clase.estado === "finalizada" || clase.estado === "cancelada"}
+                      >
+                        Editar
+                      </button>
+                      <button
+                        type="button"
+                        className="mini-action-btn danger"
+                        onClick={() => cancelarClase(clase.id)}
+                        title="Cancelar clase"
+                        disabled={clase.estado === "finalizada" || clase.estado === "cancelada"}
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  </td>
                 </tr>
               ))
             )}

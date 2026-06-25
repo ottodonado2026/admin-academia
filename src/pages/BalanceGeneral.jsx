@@ -22,6 +22,10 @@ export default function BalanceGeneral() {
   const [emailDestino, setEmailDestino] = useState("");
   const [enviando, setEnviando] = useState(false);
 
+  // Estados de animación de descarga
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportPhase, setExportPhase] = useState("Iniciando...");
+
   const usuario = JSON.parse(localStorage.getItem("user") || "{}");
 
   useEffect(() => {
@@ -104,17 +108,36 @@ export default function BalanceGeneral() {
     : 0;
 
   const handleExportar = async (formato) => {
+    setIsExporting(true);
+    setExportPhase("Autenticando auditoría...");
+
     // Registrar auditoría
     await registrarAuditoria("descargar", "balance_general", `formato_${formato}`, {
       filtros: { periodo: filtroPeriodo },
       totales
     }, usuario);
 
-    if (formato === "excel") {
-      exportBalanceToExcel(ingresosF, egresosF, totales, { periodo: filtroPeriodo });
-    } else {
-      exportBalanceToPDF(ingresosF, egresosF, totales, { periodo: filtroPeriodo });
-    }
+    setExportPhase("Recopilando datos financieros...");
+    
+    setTimeout(() => {
+      setExportPhase(formato === "pdf" ? "Renderizando páginas del PDF..." : "Generando hojas de cálculo...");
+      
+      setTimeout(() => {
+        try {
+          if (formato === "excel") {
+            exportBalanceToExcel(ingresosF, egresosF, totales, { periodo: filtroPeriodo });
+          } else {
+            exportBalanceToPDF(ingresosF, egresosF, totales, { periodo: filtroPeriodo });
+          }
+          setExportPhase("¡Descarga Completada!");
+        } catch (error) {
+          console.error(error);
+          setExportPhase("Error al generar el archivo.");
+        }
+        
+        setTimeout(() => setIsExporting(false), 1000);
+      }, 1500);
+    }, 1000);
   };
 
   const handleEnviarCorreo = async (e) => {
@@ -294,6 +317,17 @@ export default function BalanceGeneral() {
                 {enviando ? "Enviando e inyectando auditoría..." : "Enviar Correo Seguro"}
               </button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Pantalla de Animación Dinámica */}
+      {isExporting && (
+        <div className="export-animation-overlay">
+          <div className="export-animation-box">
+            <div className="export-spinner"></div>
+            <h3>Generando Reporte Profesional</h3>
+            <p>{exportPhase}</p>
           </div>
         </div>
       )}

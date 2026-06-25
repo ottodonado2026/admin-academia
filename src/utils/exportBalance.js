@@ -1,6 +1,6 @@
 import * as XLSX from "xlsx";
 import { jsPDF } from "jspdf";
-import "jspdf-autotable";
+import autoTable from "jspdf-autotable";
 
 /**
  * Exporta el balance a Excel
@@ -65,7 +65,7 @@ export const exportBalanceToPDF = (ingresos, egresos, totales, filtros, empresa 
   doc.text(`Fecha de emisión: ${new Date().toLocaleString()}`, 14, 46);
 
   // Resumen Financiero
-  doc.autoTable({
+  autoTable(doc, {
     startY: 55,
     head: [["Métrica Financiera", "Valor (USD/Local)"]],
     body: [
@@ -93,7 +93,7 @@ export const exportBalanceToPDF = (ingresos, egresos, totales, filtros, empresa 
     `$${i.monto.toLocaleString()}`,
   ]);
 
-  doc.autoTable({
+  autoTable(doc, {
     startY: finalY + 5,
     head: [["Fecha", "Concepto", "Categoría", "Monto"]],
     body: topIngresos.length ? topIngresos : [["-", "No hay datos", "-", "-"]],
@@ -119,7 +119,7 @@ export const exportBalanceToPDF = (ingresos, egresos, totales, filtros, empresa 
     `$${e.monto.toLocaleString()}`,
   ]);
 
-  doc.autoTable({
+  autoTable(doc, {
     startY: finalY + 5,
     head: [["Fecha", "Concepto", "Categoría", "Monto"]],
     body: topEgresos.length ? topEgresos : [["-", "No hay datos", "-", "-"]],

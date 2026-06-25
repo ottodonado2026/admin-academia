@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../services/supabaseClient";
-import { useAuth } from "../context/AuthContext";
+import { useProfesorData } from "./hooks/useProfesorData";
 import "./ProfesorClasesPage.css";
 import ClaseCard from "./components/ClaseCard";
 import ModalClase from "./components/ModalClase";
@@ -29,121 +29,13 @@ const ESTADOS_CLASE = {
   REPROGRAMADA: "reprogramada",
 };
 
-
-
 function ProfesorClasesPage() {
-  const { user: authUser, loading: loadingAuth } = useAuth();
+  const { clases, pagos, loading } = useProfesorData();
   
-  const [pagos, setPagos] = useState([]);
-  const [alumnosData, setAlumnosData] = useState({});
-  const [clases, setClases] = useState([]);
-
   const [busqueda, setBusqueda] = useState("");
   const [filtroEstado, setFiltroEstado] = useState("todos");
   const [filtroFecha, setFiltroFecha] = useState("todos");
-
-
   const [claseSeleccionada, setClaseSeleccionada] = useState(null);
-
- 
-useEffect(() => {
-  if (loadingAuth) return;
-  if (!authUser?.id) return;
-
-  let activo = true;
-
-  const cargarDatos = async () => {
-    const userDataStr = localStorage.getItem("user");
-    const userData = userDataStr ? JSON.parse(userDataStr) : null;
-    const profeId = userData?.id || authUser?.id;
-
-    if (!profeId) return;
-
-    const [{ data: clasesData, error: clasesError }, { data: clasesGratisData, error: gratisError }, { data: pagosData }, { data: alumnosResp }] =
-      await Promise.all([
-        supabase
-          .from("clases")
-          .select("*")
-          .or(`profesor_id.eq.${profeId},profesor_db_id.eq.${profeId}`)
-          .order("fecha", { ascending: false }),
-
-        supabase
-          .from("clases_gratis")
-          .select("*")
-          .or(`profesor_id.eq.${profeId}`)
-          .order("fecha", { ascending: false }),
-
-        supabase.from("pagos").select("*"),
-        supabase.from("alumnos").select("*"),
-      ]);
-
-    if (!activo) return;
-
-    if (clasesError) {
-      console.error("Error cargando clases del profesor:", clasesError);
-      setClases([]);
-    } else {
-      // Cruzar alumnos en memoria para no depender del foreign key en supabase
-      const alumnosMap = {};
-      (alumnosResp || []).forEach(a => {
-        alumnosMap[a.id] = a;
-        if (a.alumno_id) alumnosMap[a.alumno_id] = a;
-      });
-      setAlumnosData(alumnosMap);
-
-      // Unir clases normales y gratis
-      const clasesNormales = (clasesData || []).map(c => {
-        const alumnoDB = alumnosMap[c.alumno_db_id] || alumnosMap[c.alumno_id];
-        if (alumnoDB && c.alumnos && c.alumnos.length > 0) {
-           c.alumnos[0] = { ...c.alumnos[0], horas_acumuladas: alumnoDB.horas_acumuladas, modalidad: alumnoDB.modalidad };
-        }
-        return c;
-      });
-
-      const clasesGratisMerge = (clasesGratisData || []).map(cg => ({
-        ...cg,
-        esGratis: true,
-        alumnos: [{ nombre: cg.nombre, telefono: cg.telefono, id: cg.id }]
-      }));
-
-      const todas = [...clasesNormales, ...clasesGratisMerge].sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
-
-      setClases(todas);
-    }
-
-    setPagos(pagosData || []);
-  };
-
-  cargarDatos();
-
-  const channel = supabase
-  .channel("profesor-clases-sync")
-  .on(
-    "postgres_changes",
-    {
-      event: "*",
-      schema: "public",
-      table: "clases",
-    },
-    () => {
-      if (activo) cargarDatos();
-    }
-  )
-  .subscribe();
-
-  // Forzar recarga si la sesión de Supabase apenas se inicializa
-  const { data: authListener } = supabase.auth.onAuthStateChange((event) => {
-    if (event === "SIGNED_IN" || event === "INITIAL_SESSION") {
-      if (activo) cargarDatos();
-    }
-  });
-
-  return () => {
-    activo = false;
-    supabase.removeChannel(channel);
-    authListener?.subscription?.unsubscribe();
-  };
-}, [authUser, loadingAuth]);
   
 
 
@@ -225,34 +117,52 @@ const misClases = useMemo(() => {
   };
 
   const handleGuardarClase = async (claseActualizada) => {
-  try {
-    const { data, error } = await supabase
-      .from("clases")
-      .update({
-        alumnos: claseActualizada.alumnos,
-        observaciones: claseActualizada.observaciones || null,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", claseActualizada.id)
-      .select()
-      .single();
+    try {
+      const { error } = await supabase
+        .from("clases")
+        .update({
+          alumnos: claseActualizada.alumnos,
+          observaciones: claseActualizada.observaciones || null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", claseActualizada.id);
 
-    if (error) {
-      console.error("Error actualizando clase:", error);
-      return;
+      if (error) {
+        console.error("Error actualizando clase:", error);
+        return;
+      }
+      setClaseSeleccionada(null);
+      alert("Clase actualizada correctamente");
+    } catch (err) {
+      console.error("Error guardando clase:", err);
     }
+  };
 
-   setClases((prev) =>
-  prev.map((c) => (c.id === data.id ? data : c))
-);
+  const handleIniciarClase = async (claseId) => {
+    try {
+      const { error } = await supabase
+        .from("clases")
+        .update({ estado: "en progreso", updated_at: new Date().toISOString() })
+        .eq("id", claseId);
+      if (error) throw error;
+    } catch (err) {
+      console.error(err);
+      alert("Error al iniciar la clase");
+    }
+  };
 
-setClaseSeleccionada(null);
-
-alert("Clase actualizada correctamente");
-  } catch (err) {
-    console.error("Error guardando clase:", err);
-  }
-};
+  const handleFinalizarClase = async (claseId) => {
+    try {
+      const { error } = await supabase
+        .from("clases")
+        .update({ estado: "completada", updated_at: new Date().toISOString() })
+        .eq("id", claseId);
+      if (error) throw error;
+    } catch (err) {
+      console.error(err);
+      alert("Error al finalizar la clase");
+    }
+  };
 
   const cerrarModal = () => {
     setClaseSeleccionada(null);
@@ -344,6 +254,8 @@ alert("Clase actualizada correctamente");
                 key={clase.id}
                 clase={clase}
                 onOpen={abrirModal}
+                onStart={handleIniciarClase}
+                onFinish={handleFinalizarClase}
               />
             ))}
           </div>

@@ -1,6 +1,8 @@
 export default function ClaseCard({
   clase,
   onOpen,
+  onStart,
+  onFinish,
   onEdit,
   onComplete,
   onCancel,
@@ -15,12 +17,12 @@ export default function ClaseCard({
         <div>
           <h3>{clase.curso}</h3>
           <p>
-            {clase.fecha} · {clase.horaInicio}
-            {clase.horaFin ? ` - ${clase.horaFin}` : ""} · {clase.modalidad}
+            {clase.fecha} · {clase.horaInicio || clase.hora_inicio}
+            {clase.horaFin || clase.hora_fin ? ` - ${clase.horaFin || clase.hora_fin}` : ""} · {clase.modalidad}
           </p>
         </div>
 
-        <span className={`estado-chip estado-${clase.estado}`}>
+        <span className={`estado-chip estado-${clase.estado?.replace(" ", "-")}`}>
           {clase.estado}
         </span>
       </div>
@@ -33,7 +35,7 @@ export default function ClaseCard({
 
         <div className="clase-meta-item">
           <span>Duración</span>
-          <strong>{clase.duracionHoras || 0}h</strong>
+          <strong>{clase.duracionHoras || clase.duracion_horas || 0}h</strong>
         </div>
 
         <div className="clase-meta-item">
@@ -60,12 +62,21 @@ export default function ClaseCard({
         </div>
       </div>
 
-<div className="clase-card-actions">
-  <button type="button" onClick={() => onOpen(clase)}>
-    Ver clase
-  </button>
-</div>
-      
+      <div className="clase-card-actions" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+        <button type="button" onClick={() => onOpen(clase)}>
+          Ver clase
+        </button>
+        {clase.estado === "programada" && onStart && (
+          <button type="button" className="btn-success" onClick={() => onStart(clase.id)}>
+            Iniciar clase
+          </button>
+        )}
+        {clase.estado === "en progreso" && onFinish && (
+          <button type="button" className="btn-warning" onClick={() => onFinish(clase.id)}>
+            Finalizar clase
+          </button>
+        )}
+      </div>
     </article>
   );
 }

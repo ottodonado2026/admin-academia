@@ -7,11 +7,13 @@ const STORAGE_KEYS = {
   cursos: "planesCursos",
 };
 
+import { useProfesorData } from "./hooks/useProfesorData";
+
 const ESTADOS_EDITABLES = ["programada", "reprogramada", "completada"];
 
 export default function ProfesorAsistenciaPage() {
   const [user, setUser] = useState(null);
-  const [clases, setClases] = useState([]);
+  const { clases: misClasesRaw, loading } = useProfesorData();
   const [cursos, setCursos] = useState([]);
   const [claseSeleccionadaId, setClaseSeleccionadaId] = useState(null);
 
@@ -19,27 +21,25 @@ export default function ProfesorAsistenciaPage() {
   const [filtroEstado, setFiltroEstado] = useState("pendientes");
 
   useEffect(() => {
-    const userData = safeParse(localStorage.getItem(STORAGE_KEYS.user), null);
-    const clasesData = safeParse(localStorage.getItem(STORAGE_KEYS.clases), []);
-    const cursosData = safeParse(localStorage.getItem(STORAGE_KEYS.cursos), []);
-
-    setUser(userData);
-    setClases(Array.isArray(clasesData) ? clasesData : []);
-    setCursos(Array.isArray(cursosData) ? cursosData : []);
+    const userDataStr = localStorage.getItem("user");
+    setUser(userDataStr ? JSON.parse(userDataStr) : null);
+    
+    // Cursos from local storage since they are just a static list
+    const cursosData = localStorage.getItem("planesCursos");
+    setCursos(cursosData ? JSON.parse(cursosData) : []);
   }, []);
 
   const misClases = useMemo(() => {
-    if (!user?.id) return [];
+    if (!user?.id || loading) return [];
 
-    return clases
-      .filter((clase) => String(clase.profesorId) === String(user.id))
+    return misClasesRaw
       .map(normalizarClaseLegacy)
       .sort((a, b) => {
         const aDate = new Date(`${a.fecha}T${a.horaInicio || a.hora || "00:00"}`).getTime();
         const bDate = new Date(`${b.fecha}T${b.horaInicio || b.hora || "00:00"}`).getTime();
         return bDate - aDate;
       });
-  }, [clases, user]);
+  }, [misClasesRaw, user, loading]);
 
   const clasesFiltradas = useMemo(() => {
     const term = normalizeText(busqueda);

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import "./ProfesorDashboardPage.css";
+import { useProfesorData } from "./hooks/useProfesorData";
 
 export default function ProfesorDashboardPage() {
   const [stats, setStats] = useState({
@@ -9,15 +10,10 @@ export default function ProfesorDashboardPage() {
     horasTotales: 0,
   });
 
-  useEffect(() => {
-    const user = JSON.parse(localStorage.getItem("user"));
-    const alumnos = JSON.parse(localStorage.getItem("alumnos")) || [];
-    const pagos = JSON.parse(localStorage.getItem("pagos")) || [];
-    const clases = JSON.parse(localStorage.getItem("clases")) || [];
+  const { clases: misClases, pagos, loading } = useProfesorData();
 
-    const misClases = clases.filter(
-      (c) => String(c.profesorId) === String(user?.id)
-    );
+  useEffect(() => {
+    if (loading) return;
 
     const hoy = new Date().toISOString().split("T")[0];
 
@@ -36,12 +32,12 @@ export default function ProfesorDashboardPage() {
     const totalAlumnos = alumnosIds.size;
 
     const enMora = Array.from(alumnosIds).filter((id) => {
-      const pagosAlumno = pagos.filter((p) => p.alumnoId === id);
-      return pagosAlumno.some((p) => p.estado === "pendiente");
+      const pagosAlumno = pagos.filter((p) => p.alumnoId === id || p.alumno_id === id);
+      return pagosAlumno.some((p) => String(p.estado).toLowerCase() === "pendiente");
     }).length;
 
     const horasTotales = misClases.reduce(
-      (acc, c) => acc + (c.duracionHoras || 0),
+      (acc, c) => acc + (c.duracionHoras || c.duracion_horas || 0),
       0
     );
 
@@ -51,7 +47,7 @@ export default function ProfesorDashboardPage() {
       clasesHoy,
       horasTotales,
     });
-  }, []);
+  }, [misClases, pagos, loading]);
 
   return (
     <div className="dashboard-page">

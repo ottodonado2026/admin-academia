@@ -298,13 +298,16 @@ const agregarEgreso = async (e) => {
         {editandoId === e.id ? (
          <input
   className="input-edit"
-  value={editData.descripcion}
-  onChange={(ev) =>
-    setEditData({ ...editData, descripcion: ev.target.value })
-  }
+  value={editData.descripcion ? editData.descripcion.replace(/\(Abono ID: [a-f0-9-]+\)/i, "").trim() : ""}
+  onChange={(ev) => {
+    const oldDesc = e.descripcion || "";
+    const match = oldDesc.match(/\(Abono ID: [a-f0-9-]+\)/i);
+    const newDesc = match ? `${ev.target.value} ${match[0]}` : ev.target.value;
+    setEditData({ ...editData, descripcion: newDesc });
+  }}
 />
         ) : (
-          e.descripcion || "-"
+          e.descripcion ? e.descripcion.replace(/\(Abono ID: [a-f0-9-]+\)/i, "").trim() : "-"
         )}
       </td>
 

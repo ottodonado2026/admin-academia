@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, useRef } from "react";
-import { supabase } from "../services/supabaseClient";
+import { supabase, supabaseUrl, supabaseAnonKey } from "../services/supabaseClient";
 
 const AuthContext = createContext();
 
@@ -18,15 +18,32 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const isFetching = useRef(false);
 
-  const fetchUserRole = async (userId) => {
+  const fetchUserRole = async (userId, accessToken = null) => {
     try {
-      const { data, error } = await supabase
-        .from("usuarios")
-        .select("role, nombre")
-        .eq("auth_uid", userId)
-        .maybeSingle();
+      let data, error;
 
-      if (error) throw error;
+      if (accessToken) {
+        // Fallback: Si estamos en modo rescate por congelamiento, usamos fetch directo para no tocar los Web Locks
+        const res = await fetch(`${supabaseUrl}/rest/v1/usuarios?select=role,nombre&auth_uid=eq.${userId}`, {
+          headers: {
+            'apikey': supabaseAnonKey,
+            'Authorization': `Bearer ${accessToken}`
+          }
+        });
+        const result = await res.json();
+        if (!res.ok) throw new Error(result.message || "Error en fetch manual");
+        data = result.length > 0 ? result[0] : null;
+      } else {
+        // Modo normal
+        const response = await supabase
+          .from("usuarios")
+          .select("role, nombre")
+          .eq("auth_uid", userId)
+          .maybeSingle();
+        data = response.data;
+        error = response.error;
+        if (error) throw error;
+      }
 
       setRole(data?.role?.toLowerCase() || null);
       setUserData(data || null);
@@ -56,8 +73,8 @@ export const AuthProvider = ({ children }) => {
           }
           if (manualSession && manualSession.user) {
             console.log("Sesión rescatada manualmente.");
-            // Usar la sesión manual para destrabar
-            loadSessionAndRole({ user: manualSession.user });
+            // Usar la sesión manual y pasar el token para destrabar el fetch
+            loadSessionAndRole({ user: manualSession.user }, manualSession.access_token);
           } else {
             console.log("No se encontró sesión rescatable.");
             loadSessionAndRole(null);
@@ -69,7 +86,7 @@ export const AuthProvider = ({ children }) => {
       }
     }, 3000);
 
-    const loadSessionAndRole = async (session) => {
+    const loadSessionAndRole = async (session, manualToken = null) => {
       if (!isMounted) return;
 
       // Control de semáforo para evitar peticiones concurrentes y robo de Web Locks
@@ -81,7 +98,7 @@ export const AuthProvider = ({ children }) => {
           setUser(session.user);
           // Micro-pausa para permitir que Supabase suelte los Web Locks de inicio de sesión
           await new Promise(resolve => setTimeout(resolve, 50));
-          await fetchUserRole(session.user.id);
+          await fetchUserRole(session.user.id, manualToken);
         } else {
           setUser(null);
           setRole(null);

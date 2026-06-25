@@ -29,6 +29,8 @@ const [roleLabel, setRoleLabel] = useState("");
       } else {
         // Otros roles usarán sus respectivos logins (profesor, asesor)
       }
+    } else if (user && role === null) {
+      alert("Error: Has iniciado sesión, pero tu usuario no tiene un rol asignado en la base de datos (tabla 'usuarios'). Por favor contacta a soporte.");
     }
   }, [user, role, navigate]);
 

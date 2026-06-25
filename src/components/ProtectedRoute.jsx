@@ -32,9 +32,12 @@ function ProtectedRoute({ children, role }) {
   // Verificación de roles (si se especificó un rol en la ruta)
   if (role) {
     const allowedRoles = Array.isArray(role) ? role : [role];
-    if (!allowedRoles.includes(userRole)) {
+    
+    // Los administradores y dueños deberían tener acceso a casi todo lo protegido
+    const isSuperUser = userRole === "admin" || userRole === "owner";
+
+    if (!allowedRoles.includes(userRole) && !isSuperUser) {
       console.warn(`Acceso denegado. Se requiere: ${allowedRoles}, Tienes: ${userRole}`);
-      // Redirigir al inicio o a su panel correspondiente (simplificado a inicio por seguridad)
       return <Navigate to="/" replace />;
     }
   }

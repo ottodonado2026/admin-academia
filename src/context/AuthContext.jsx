@@ -47,7 +47,6 @@ export const AuthProvider = ({ children }) => {
       if (session?.user) {
         if (isMounted) {
           setUser(session.user);
-          setLoading(true);
         }
         await fetchUserRole(session.user.id, isMounted);
         if (isMounted) setLoading(false);

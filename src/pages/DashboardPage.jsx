@@ -11,6 +11,7 @@ import { supabase } from "../services/supabaseClient";
 import { METODOS_PAGO } from "../constants/metodosPago";
 import { useAuth } from "../context/AuthContext";
 import { useDashboard } from "../hooks/useDashboard";
+import { registrarAuditoria } from "../services/auditoriaService";
 
 const meses = [
   "Enero",
@@ -524,7 +525,7 @@ const detectarDispositivo = () => {
 
 
 
-const registrarDescarga = async () => {
+const registrarDescarga = async (tipo = "excel_dashboard", archivoNombre = "dashboard_financiero.xlsx") => {
   try {
     const { sistema, navegador } = detectarDispositivo();
 
@@ -538,8 +539,8 @@ usuario_nombre: usuarioActual?.nombre || usuarioActual?.email,
 rol: usuarioActual?.rol || "sin-rol",
 
 
-        archivo_nombre: "dashboard_financiero.xlsx",
-        tipo: "excel_dashboard",
+        archivo_nombre: archivoNombre,
+        tipo: tipo,
 
         mes: mesSeleccionado,
         anio: anioSeleccionado,
@@ -560,6 +561,29 @@ rol: usuarioActual?.rol || "sin-rol",
         navegador: navegador,
       },
     ]);
+
+    // Registrar en auditoría
+    await registrarAuditoria(
+      "descargar",
+      "dashboard",
+      tipo,
+      {
+        archivo_nombre: archivoNombre,
+        tipo: tipo,
+        mes: mesSeleccionado,
+        anio: anioSeleccionado,
+        filtros: {
+          busqueda,
+          metodo: filtroMetodo,
+          curso: filtroCurso,
+        },
+        total_ingresos: totalIngresos,
+        total_egresos: totalEgresosMes,
+        utilidad: utilidad,
+        total_movimientos: totalMovimientos,
+      },
+      usuarioActual
+    );
   } catch (error) {
     console.error("Error guardando descarga:", error);
   }
@@ -572,7 +596,7 @@ rol: usuarioActual?.rol || "sin-rol",
 
     try {
       await delay(600);
-      await registrarDescarga();
+      await registrarDescarga("excel_dashboard", "dashboard_financiero.xlsx");
 
       setExportStep(2); // Paso 2: Procesando información financiera
       await delay(600);
@@ -1018,7 +1042,7 @@ rol: usuarioActual?.rol || "sin-rol",
 
     try {
       await delay(600);
-      await registrarDescarga();
+      await registrarDescarga("pdf_dashboard", `reporte_dashboard_${normalizarFecha(new Date())}.pdf`);
 
       setExportStep(2); // Paso 2: Estructurando balance contable
       await delay(600);

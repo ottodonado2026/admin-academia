@@ -7,6 +7,8 @@ import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
 
 import { supabase } from "../services/supabaseClient";
+import { useAuth } from "../context/AuthContext";
+import { registrarAuditoria } from "../services/auditoriaService";
 
 
 const EXPORTACIONES_COLLECTION = "historial_descargas";
@@ -22,7 +24,12 @@ function HistorialDePagos() {
 const [fechaFinCustom, setFechaFinCustom] = useState("");
 const [fechaExacta, setFechaExacta] = useState("");
 
-const user = JSON.parse(localStorage.getItem("asesorAuth") || "null");
+  const { user, role, userData } = useAuth();
+  const usuarioActual = {
+    ...user,
+    nombre: userData?.nombre || user?.email,
+    rol: role === "owner" ? "Gerente" : role === "contador" ? "Contador" : role === "coordinador" ? "Coordinador" : "Usuario"
+  };
 
 useEffect(() => {
   const fetchData = async () => {
@@ -253,7 +260,7 @@ const historial = useMemo(() => {
       return;
     }
 
-    const user = auth.currentUser;
+    const userActualEmail = usuarioActual?.email || "Usuario";
     const fechaDescarga = normalizarFecha(new Date());
    const nombreArchivo = `reporte_pagos_${fechaDescarga}.xlsx`;
    
@@ -274,7 +281,7 @@ const historial = useMemo(() => {
     worksheet.getCell("A3").value = `Generado el: ${fechaDescarga}`;
 
     worksheet.mergeCells("A4:G4");
-    worksheet.getCell("A4").value = `Reporte creado por: ${user?.email || "Usuario"}`;
+    worksheet.getCell("A4").value = `Reporte creado por: ${usuarioActual?.nombre || userActualEmail}`;
 
     // Fila en blanco
     worksheet.addRow([]);
@@ -447,28 +454,41 @@ const historial = useMemo(() => {
       nombreArchivo
     );
 
-    // Auditoría en Firebase
-   // 🔥 GUARDAR AUDITORÍA EN SUPABASE
-const { error: errorExport } = await supabase
-  .from("historial_descargas")
-  .insert([
-    {
-      usuario: user?.email || "desconocido",
-      uid: user?.uid || null,
-      fecha_descarga: new Date().toISOString(),
-      cantidad_registros: historial.length,
-      filtro_fecha: filtroFecha,
-      filtro_metodo: filtroMetodo,
-      filtro_curso: filtroCurso,
-    },
-  ]);
+    // 🔥 GUARDAR AUDITORÍA EN SUPABASE
+    const { error: errorExport } = await supabase
+      .from("historial_descargas")
+      .insert([
+        {
+          usuario: usuarioActual?.email || "desconocido",
+          uid: usuarioActual?.id || null,
+          fecha_descarga: new Date().toISOString(),
+          cantidad_registros: historial.length,
+          filtro_fecha: filtroFecha,
+          filtro_metodo: filtroMetodo,
+          filtro_curso: filtroCurso,
+        },
+      ]);
 
-if (errorExport) {
-  console.error("Error guardando auditoría en Supabase:", errorExport);
-  alert("Error guardando auditoría: " + errorExport.message);
-} else {
-  console.log("✅ Auditoría guardada en Supabase");
-}
+    if (errorExport) {
+      console.error("Error guardando auditoría en Supabase:", errorExport);
+    } else {
+      console.log("✅ Auditoría guardada en Supabase");
+    }
+
+    // Registrar en auditoría general
+    await registrarAuditoria(
+      "descargar",
+      "historial_pagos",
+      "excel",
+      {
+        archivo_nombre: nombreArchivo,
+        cantidad_registros: historial.length,
+        filtro_fecha: filtroFecha,
+        filtro_metodo: filtroMetodo,
+        filtro_curso: filtroCurso,
+      },
+      usuarioActual
+    );
   } catch (error) {
     console.error("Error exportando Excel:", error);
     alert("Error al generar el archivo Excel");

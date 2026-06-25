@@ -38,6 +38,14 @@ z-index: 10;
   border-bottom: 1px solid rgba(148, 163, 184, 0.12);
 }
 
+.profesor-sidebar-logo {
+  width: 100%;
+  max-width: 220px;
+  height: auto;
+  display: block;
+  margin-bottom: 8px;
+}
+
 .academy-kicker {
   font-size: 10px;
   text-transform: uppercase;

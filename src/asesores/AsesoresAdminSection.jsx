@@ -9,6 +9,7 @@ import "./AsesoresPanel.css";
 import { CURSOS_BASE } from "../data/cursosBase";
 import { supabase } from "../services/supabaseClient";
 import { generarIdCurso } from "../utils/idGenerator";
+import { registrarAuditoria } from "../services/auditoriaService";
 
 
 
@@ -332,10 +333,19 @@ const activos = leadsAsesor.filter(
   );
 
   const handleChange = (e) => {
-    setForm((prev) => ({
-      ...prev,
-      [e.target.name]: e.target.value,
-    }));
+    const { name, value } = e.target;
+    setForm((prev) => {
+      const updated = { ...prev, [name]: value };
+      if (name === "nombre") {
+        const normalized = String(value)
+          .toLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/[^a-z0-9]/g, "");
+        updated.email = value.trim() ? `${normalized}@caribbeanacademy.com` : "";
+      }
+      return updated;
+    });
   };
 
   const resetForm = () => {
@@ -558,6 +568,11 @@ if (error) {
 }
 
 // 🔥 generar link con ID real de Supabase
+await registrarAuditoria("crear", "asesores", asesorIdReal, {
+  nombre: nuevo.nombre,
+  email: nuevo.email,
+  estado: nuevo.estado,
+}, usuarioActual);
 
 setAlerta({
   visible: true,
@@ -637,8 +652,9 @@ setAlerta({
                   type="email"
                   value={form.email}
                   onChange={handleChange}
-                  placeholder="asesor@academia.com"
+                  placeholder="Generado automáticamente"
                   required
+                  readOnly
                 />
               </div>
               <div className="asesor-field asesor-col-3">

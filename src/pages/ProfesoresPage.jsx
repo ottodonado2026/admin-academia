@@ -3,18 +3,24 @@ import { useNavigate } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import "./ProfesoresPage.css";
 import { supabase } from "../services/supabaseClient";
+import { useAuth } from "../context/AuthContext";
+import { registrarAuditoria } from "../services/auditoriaService";
 
-function generarIdProfesor(nombreCompleto) {
-  return String(nombreCompleto || "")
-    .trim()
-    .split(/\s+/)
-    .map((parte) => parte[0])
-    .join("")
-    .toUpperCase();
+function generarIdProfesorAleatorio(profesoresExistentes) {
+  let idCandidate = "";
+  let isUnique = false;
+  let attempts = 0;
+  while (!isUnique && attempts < 1000) {
+    idCandidate = String(Math.floor(1000 + Math.random() * 9000));
+    isUnique = !profesoresExistentes.some(p => String(p.id) === idCandidate);
+    attempts++;
+  }
+  return idCandidate || String(Date.now()).slice(-4);
 }
 
 function ProfesoresPage() {
   const navigate = useNavigate();
+  const { user: usuarioActual, role: userRole } = useAuth();
   const STORAGE_KEY = "profesores";
  const ESPECIALIDADES = [
   "produccion",
@@ -295,6 +301,12 @@ useEffect(() => {
   };
 
   const agregarProfesor = async () => {
+    const puedeEditarProf = ["owner", "admin", "coordinador_academico"].includes(userRole);
+    if (!puedeEditarProf) {
+      alert("No tienes permiso para agregar o editar profesores.");
+      return;
+    }
+
     if (!validarFormulario()) return;
 
     const payload = {
@@ -335,6 +347,10 @@ useEffect(() => {
           alert("Error al actualizar profesor en la base de datos");
           return;
         }
+
+        await registrarAuditoria("editar", "profesores", editandoId, {
+          cambios: payload
+        }, usuarioActual);
       }
 
       setProfesores(actualizados);
@@ -344,7 +360,12 @@ useEffect(() => {
 
     // Iniciar creación del profesor en Supabase Auth y public.usuarios
     const passwordTemporal = password || payload.numeroDocumento;
-    const emailProfe = `${payload.numeroDocumento}@profe.com`;
+    const normalizedName = String(payload.nombre)
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]/g, "");
+    const emailProfe = `${normalizedName}@caribbeanacademy.com`;
 
     // Invocar la Edge Function para registrar la cuenta de Auth
     const { data: funcData, error: funcError } = await supabase.functions.invoke(
@@ -371,9 +392,11 @@ useEffect(() => {
     }
 
     const authUserId = funcData.user.id;
+    const randomId = generarIdProfesorAleatorio(profesores);
 
     const nuevoProfesor = {
-      id: authUserId, // Usamos el ID del usuario creado en Auth
+      id: randomId, // 4 dígitos aleatorios
+      auth_uid: authUserId, // ID de Auth vinculado
       createdAt: new Date().toISOString(),
       clasesAsignadas: 0,
       alumnosActivos: 0,
@@ -400,6 +423,12 @@ useEffect(() => {
       return;
     }
 
+    await registrarAuditoria("crear", "profesores", randomId, {
+      nombre: nuevoProfesor.nombre,
+      email: nuevoProfesor.email,
+      estado: nuevoProfesor.estado
+    }, usuarioActual);
+
     setProfesores([nuevoProfesor, ...profesores]);
     limpiarFormulario();
   };
@@ -423,6 +452,12 @@ useEffect(() => {
   };
 
   const eliminarProfesor = async (id) => {
+    const puedeEliminarProf = ["owner", "coordinador_academico"].includes(userRole);
+    if (!puedeEliminarProf) {
+      alert("No tienes permiso para eliminar profesores. Solo el Gerente (owner) o Coordinadores Académicos pueden realizar esta acción.");
+      return;
+    }
+
     const profesor = profesores.find((p) => p.id === id);
     if (!profesor) return;
 
@@ -445,6 +480,11 @@ useEffect(() => {
       alert("Error al eliminar el profesor");
       return;
     }
+
+    await registrarAuditoria("eliminar", "profesores", id, {
+      nombre: profesor.nombre,
+      email: profesor.email
+    }, usuarioActual);
 
     setProfesores(filtrados);
 
@@ -721,136 +761,130 @@ const finalizarClase = async (clase, finalizadaPor = "profesor") => {
           </button>
         </div>
 
-        <div className="form-profesores">
-          <input
-            placeholder="Nombre completo"
-            value={nombre}
-            onChange={(e) => setNombre(e.target.value)}
-          />
+        {["owner", "admin", "coordinador_academico"].includes(userRole) && (
+          <div className="form-profesores">
+            <input
+              placeholder="Nombre completo"
+              value={nombre}
+              onChange={(e) => setNombre(e.target.value)}
+            />
 
-          <select
-            value={tipoDocumento}
-            onChange={(e) => setTipoDocumento(e.target.value)}
-          >
-            <option value="">Tipo documento</option>
-            <option value="cedula">Cédula</option>
-            <option value="ce">Cédula extranjería</option>
-            <option value="ppt">PPT</option>
-            <option value="nit">NIT</option>
-          </select>
+            <select
+              value={tipoDocumento}
+              onChange={(e) => setTipoDocumento(e.target.value)}
+            >
+              <option value="">Tipo documento</option>
+              <option value="cedula">Cédula</option>
+              <option value="ce">Cédula extranjería</option>
+              <option value="ppt">PPT</option>
+              <option value="nit">NIT</option>
+            </select>
 
-          <input
-            placeholder="Número de documento"
-            value={numeroDocumento}
-            onChange={(e) => setNumeroDocumento(e.target.value)}
-          />
+            <input
+              placeholder="Número de documento"
+              value={numeroDocumento}
+              onChange={(e) => setNumeroDocumento(e.target.value)}
+            />
 
-          {!editandoId && (
-            <>
-              <input
-                type="password"
-                placeholder="Contraseña de acceso"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-              <input
-                type="password"
-                placeholder="Confirmar contraseña"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-              />
-            </>
-          )}
+            {!editandoId && (
+              <>
+                <input
+                  type="password"
+                  placeholder="Contraseña de acceso"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+                <input
+                  type="password"
+                  placeholder="Confirmar contraseña"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                />
+              </>
+            )}
 
-          <input
-            placeholder="Teléfono"
-            value={telefono}
-            onChange={(e) => setTelefono(e.target.value)}
-          />
-<div className="especialidades-select">
-  {ESPECIALIDADES.map((esp) => {
-    const isSelected = especialidades.includes(esp);
+            <input
+              placeholder="Teléfono"
+              value={telefono}
+              onChange={(e) => setTelefono(e.target.value)}
+            />
 
-    return (
-      <button
-        type="button"
-        key={esp}
-        className={`chip-select ${isSelected ? "active" : ""}`}
-        onClick={() => {
-          if (isSelected) {
-            setEspecialidades(especialidades.filter((e) => e !== esp));
-          } else {
-            setEspecialidades([...especialidades, esp]);
-          }
-        }}
-      >
-        {esp}
-      </button>
-    );
-  })}
-</div>
-          <select
-            value={modalidad}
-            onChange={(e) => setModalidad(e.target.value)}
-          >
-            <option value="">Modalidad</option>
-            <option value="presencial">Presencial</option>
-            <option value="virtual">Virtual</option>
-            <option value="mixta">Mixta</option>
-          </select>
+            <input
+              placeholder="Salario base por hora (ej. 15000)"
+              value={salario}
+              onChange={(e) => setSalario(e.target.value)}
+            />
 
-          <select
-  value={tipoContrato}
-  onChange={(e) => setTipoContrato(e.target.value)}
->
-  <option value="">Tipo contrato</option>
-  <option value="fijo">Fijo</option>
-  <option value="prestacion">Prestación de servicios</option>
-  <option value="comision">Solo comisión</option>
-  <option value="mixto">Base + comisión</option>
-</select>
+            <select
+              value={modalidad}
+              onChange={(e) => setModalidad(e.target.value)}
+            >
+              <option value="">Modalidad</option>
+              <option value="presencial">Presencial</option>
+              <option value="virtual">Virtual</option>
+              <option value="hibrida">Híbrida</option>
+            </select>
 
-{/* 👇 SALARIO VA AQUÍ AFUERA */}
-{tipoContrato !== "comision" && (
-  <input
-    type="number"
-    placeholder="Salario"
-    value={salario}
-    onChange={(e) => setSalario(e.target.value)}
-  />
-)}
-{(tipoContrato === "comision" || tipoContrato === "mixto") && (
-  <input
-    type="number"
-    min="0"
-    max="100"
-    placeholder="Comisión %"
-    value={comision}
-    onChange={(e) => setComision(e.target.value)}
-  />
-)}
+            <select
+              value={tipoContrato}
+              onChange={(e) => setTipoContrato(e.target.value)}
+            >
+              <option value="">Tipo de contrato</option>
+              <option value="prestacion">Prestación de servicios</option>
+              <option value="nomina">Nómina</option>
+              <option value="horas">Por horas</option>
+            </select>
 
-          <select value={estado} onChange={(e) => setEstado(e.target.value)}>
-            <option value="activo">Activo</option>
-            <option value="inactivo">Inactivo</option>
-            <option value="vacaciones">Vacaciones</option>
-            <option value="suspendido">Suspendido</option>
-          </select>
+            <input
+              placeholder="Porcentaje de comisión (ej. 10)"
+              value={comision}
+              onChange={(e) => setComision(e.target.value)}
+            />
 
-          <textarea
-            placeholder="Observaciones"
-            value={observaciones}
-            onChange={(e) => setObservaciones(e.target.value)}
-          />
+            <select value={estado} onChange={(e) => setEstado(e.target.value)}>
+              <option value="activo">Activo</option>
+              <option value="inactivo">Inactivo</option>
+            </select>
 
-          <button
-            type="button"
-            className="btn-principal"
-            onClick={agregarProfesor}
-          >
-            {editandoId ? "Guardar cambios" : "Agregar profesor"}
-          </button>
-        </div>
+            <textarea
+              placeholder="Observaciones internas"
+              value={observaciones}
+              onChange={(e) => setObservaciones(e.target.value)}
+              style={{ gridColumn: "span 2", minHeight: "80px" }}
+            />
+
+            <div className="especialidades-container" style={{ gridColumn: "span 2" }}>
+              <label>Especialidades (materias que dicta):</label>
+              <div className="especialidades-grid">
+                {ESPECIALIDADES.map((esp) => (
+                  <label key={esp} className="chk-label">
+                    <input
+                      type="checkbox"
+                      checked={especialidades.includes(esp)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setEspecialidades([...especialidades, esp]);
+                        } else {
+                          setEspecialidades(especialidades.filter((item) => item !== esp));
+                        }
+                      }}
+                    />
+                    {esp.toUpperCase()}
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={agregarProfesor}
+              className="btn-guardar"
+              style={{ gridColumn: "span 2" }}
+            >
+              {editandoId ? "Guardar cambios" : "Agregar profesor"}
+            </button>
+          </div>
+        )}
 
         <div className="tabla-container">
           <table className="tabla-profesores">
@@ -895,18 +929,22 @@ const finalizarClase = async (clase, finalizadaPor = "profesor") => {
                     >
                       Ver
                     </button>
-                    <button
-                      className="btn-editar"
-                      onClick={() => editarProfesor(p)}
-                    >
-                      Editar
-                    </button>
-                    <button
-                      className="btn-eliminar"
-                      onClick={() => eliminarProfesor(p.id)}
-                    >
-                      Eliminar
-                    </button>
+                    {["owner", "admin", "coordinador_academico"].includes(userRole) && (
+                      <button
+                        className="btn-editar"
+                        onClick={() => editarProfesor(p)}
+                      >
+                        Editar
+                      </button>
+                    )}
+                    {["owner", "coordinador_academico"].includes(userRole) && (
+                      <button
+                        className="btn-eliminar"
+                        onClick={() => eliminarProfesor(p.id)}
+                      >
+                        Eliminar
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -953,18 +991,22 @@ const finalizarClase = async (clase, finalizadaPor = "profesor") => {
                 >
                   Ver
                 </button>
-                <button
-                  className="btn-editar"
-                  onClick={() => editarProfesor(p)}
-                >
-                  Editar
-                </button>
-                <button
-                  className="btn-eliminar"
-                  onClick={() => eliminarProfesor(p.id)}
-                >
-                  Eliminar
-                </button>
+                 {["owner", "admin", "coordinador_academico"].includes(userRole) && (
+                   <button
+                     className="btn-editar"
+                     onClick={() => editarProfesor(p)}
+                   >
+                     Editar
+                   </button>
+                 )}
+                 {["owner", "coordinador_academico"].includes(userRole) && (
+                   <button
+                     className="btn-eliminar"
+                     onClick={() => eliminarProfesor(p.id)}
+                   >
+                     Eliminar
+                   </button>
+                 )}
               </div>
             </div>
           ))}

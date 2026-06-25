@@ -8,12 +8,15 @@ import CustomSelect from "../components/CustomSelect";
 import { generarIdAlumnoBonito, generarIdCurso } from "../utils/idGenerator";
 import { supabase } from "../services/supabaseClient";
 import { CURSOS_BASE } from "../data/cursosBase";
+import { useAuth } from "../context/AuthContext";
+import { registrarAuditoria } from "../services/auditoriaService";
 
 
 
 
 function AlumnosPage() {
   const navigate = useNavigate();
+  const { user: usuarioActual, role: userRole } = useAuth();
 
   const handleLogout = () => {
     localStorage.removeItem("auth");
@@ -385,9 +388,16 @@ if (errorPago) {
 
 
 const eliminarAlumno = async (id) => {
+  if (userRole !== "owner") {
+    alert("No tienes permiso para eliminar alumnos. Solo el Gerente (owner) puede realizar esta acción.");
+    return;
+  }
+
   if (!window.confirm("¿Eliminar este alumno?")) return;
 
   try {
+    const alumnoObj = alumnos.find(a => a.id === id);
+
     const { error } = await supabase
       .from("alumnos")
       .delete()
@@ -398,6 +408,11 @@ const eliminarAlumno = async (id) => {
       alert("Error al eliminar");
       return;
     }
+
+    await registrarAuditoria("eliminar", "alumnos", id, {
+      nombre: alumnoObj?.nombre || "Desconocido",
+      email: alumnoObj?.email || "sin-email",
+    }, usuarioActual);
 
     // 🔥 refrescar correctamente
     const { data } = await supabase.from("alumnos").select("*");
@@ -622,14 +637,16 @@ const eliminarAlumno = async (id) => {
       Editar
     </button>
 
-    <button
-      className="btn-eliminar btn-icon"
-      onClick={() => eliminarAlumno(a.id)}
-      title="Eliminar"
-      aria-label={`Eliminar alumno ${a.nombre}`}
-    >
-      🗑
-    </button>
+    {userRole === "owner" && (
+      <button
+        className="btn-eliminar btn-icon"
+        onClick={() => eliminarAlumno(a.id)}
+        title="Eliminar"
+        aria-label={`Eliminar alumno ${a.nombre}`}
+      >
+        🗑
+      </button>
+    )}
   </div>
 </td>
                 </tr>
@@ -717,12 +734,14 @@ const eliminarAlumno = async (id) => {
                 <button className="btn-editar" onClick={() => editarAlumno(a)}>
                   Editar
                 </button>
-                <button
-                  className="btn-eliminar"
-                  onClick={() => eliminarAlumno(a.id)}
-                >
-                  Eliminar
-                </button>
+                 {userRole === "owner" && (
+                   <button
+                     className="btn-eliminar"
+                     onClick={() => eliminarAlumno(a.id)}
+                   >
+                     Eliminar
+                   </button>
+                 )}
               </div>
             </div>
           ))}

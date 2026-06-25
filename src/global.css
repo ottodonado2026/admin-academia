@@ -1,11 +1,8 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300..800;1,300..800&family=Outfit:wght@100..900&display=swap');
+
 :root {
-  --font-primary:
-    Inter,
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    sans-serif;
+  --font-primary: 'Outfit', Inter, system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
 
   --text-primary: #f5f7ff;
   --text-secondary: #cfd7e6;
@@ -133,4 +130,40 @@ iframe {
 .dashboard-layout textarea,
 .dashboard-layout select {
   font-size: 15px;
+}
+
+/* =========================================
+   TIPOGRAFÍA FINANCIERA Y CONTABLE (MONOSPACED)
+   ========================================= */
+
+.stat-card p,
+.resumen-card p,
+.resumen-value,
+.metric-value,
+.monto,
+.saldo,
+.deuda,
+.pago,
+.valor,
+.total-value,
+.kpi-value,
+.kpi-number,
+.total-monto,
+.cantidad,
+.amount,
+.price,
+.money,
+.balance-table,
+.stats-grid p,
+th,
+td,
+.fecha,
+.date,
+.metodo,
+.numero,
+.id-label,
+code,
+pre {
+  font-family: var(--font-mono) !important;
+  letter-spacing: -0.02em;
 }

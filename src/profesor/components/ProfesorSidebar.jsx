@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import logo from "../../assets/logo.png";
 
 export default function ProfesorSidebar({ activeView, setActiveView }) {
   const [user, setUser] = useState(null);
@@ -54,12 +55,8 @@ const profesorId =
       <div className="profesor-sidebar-top">
 
         <div className="profesor-sidebar-academy">
+          <img src={logo} alt="Caribbean Studio Academy" className="profesor-sidebar-logo" />
           <span className="academy-kicker">Academia</span>
-
-          <div className="profesor-sidebar-academy-text">
-            <h1 className="academy-line-one">CARIBBEAN</h1>
-            <h2 className="academy-line-two">Studio Academy</h2>
-          </div>
         </div>
 
         <div className="profesor-sidebar-brand">

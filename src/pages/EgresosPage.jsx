@@ -366,22 +366,30 @@ const agregarEgreso = async (e) => {
           </>
         ) : (
           <>
-            <button
-              className="btn-editar"
-              onClick={() => {
-                setEditandoId(e.id);
-                setEditData(e);
-              }}
-            >
-              Editar
-            </button>
+            {e.categoria === "nomina" ? (
+              <span style={{ color: "#94a3b8", fontSize: "12px", fontStyle: "italic", alignSelf: "center" }}>
+                Gesti&oacute;n en N&oacute;mina
+              </span>
+            ) : (
+              <>
+                <button
+                  className="btn-editar"
+                  onClick={() => {
+                    setEditandoId(e.id);
+                    setEditData(e);
+                  }}
+                >
+                  Editar
+                </button>
 
-            <button
-              className="btn-eliminar"
-              onClick={() => eliminarEgreso(e.id)}
-            >
-              Eliminar
-            </button>
+                <button
+                  className="btn-eliminar"
+                  onClick={() => eliminarEgreso(e.id)}
+                >
+                  Eliminar
+                </button>
+              </>
+            )}
           </>
         )}
       </td>

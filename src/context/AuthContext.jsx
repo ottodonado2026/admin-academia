@@ -54,43 +54,26 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  console.log("AuthProvider montado");
+
   useEffect(() => {
     let isMounted = true;
     let initialLoadDone = false;
 
-    // Timeout de rescate: Si Supabase se queda congelado por un bug de Web Locks, lo saltamos a los 3 segundos.
-    const rescueTimeout = setTimeout(() => {
-      if (isMounted && !initialLoadDone) {
-        console.warn("Rescue timeout triggered: Supabase está congelado. Forzando lectura manual de sesión.");
-        try {
-          let manualSession = null;
-          const sessionString = localStorage.getItem("academia-v2-auth-token");
-          if (sessionString) {
-            manualSession = JSON.parse(sessionString);
-          }
-          if (manualSession && manualSession.user) {
-            console.log("Sesión rescatada manualmente.");
-            isFetching.current = false; // Forzar semáforo a verde
-            // Usar la sesión manual y pasar el token para destrabar el fetch
-            loadSessionAndRole({ user: manualSession.user }, manualSession.access_token);
-          } else {
-            console.log("No se encontró sesión rescatable.");
-            isFetching.current = false; // Forzar semáforo a verde
-            loadSessionAndRole(null);
-          }
-        } catch (e) {
-          console.error("Error en rescate manual:", e);
-          isFetching.current = false; // Forzar semáforo a verde
-          loadSessionAndRole(null);
-        }
-      }
-    }, 3000);
+  useEffect(() => {
+    let isMounted = true;
+    let initialLoadDone = false;
 
+    // 1. Declarar loadSessionAndRole PRIMERO para que pueda ser usada por los demás
     const loadSessionAndRole = async (session, manualToken = null) => {
       if (!isMounted) return;
 
-      // Control de semáforo para evitar peticiones concurrentes y robo de Web Locks
-      if (isFetching.current) return;
+      // Evitar peticiones concurrentes, pero sin bloquear la UI eternamente
+      if (isFetching.current) {
+        console.log("Carga en progreso, ignorando duplicado");
+        return;
+      }
+
       isFetching.current = true;
 
       try {
@@ -116,11 +99,55 @@ export const AuthProvider = ({ children }) => {
       }
     };
 
-    // 1. ELIMINADO: Obtener sesión de forma explícita causaba colisiones de Web Locks con createClient().
-    // Supabase v2 recomienda confiar 100% en onAuthStateChange (que dispara INITIAL_SESSION).
+    // 2. Definir el timeout de rescate
+    const rescueTimeout = setTimeout(() => {
+      if (isMounted && !initialLoadDone) {
+        console.warn("Rescue timeout triggered: Supabase está congelado. Forzando lectura manual de sesión.");
+        try {
+          let manualSession = null;
+          const sessionString = localStorage.getItem("academia-v2-auth-token");
+          if (sessionString) {
+            manualSession = JSON.parse(sessionString);
+          }
+          if (manualSession && manualSession.user) {
+            console.log("Sesión rescatada manualmente.");
+            isFetching.current = false; // Forzar semáforo a verde
+            loadSessionAndRole({ user: manualSession.user }, manualSession.access_token);
+          } else {
+            console.log("No se encontró sesión rescatable.");
+            isFetching.current = false; // Forzar semáforo a verde
+            loadSessionAndRole(null);
+          }
+        } catch (e) {
+          console.error("Error en rescate manual:", e);
+          isFetching.current = false; // Forzar semáforo a verde
+          loadSessionAndRole(null);
+        }
+      }
+    }, 3000);
 
-    // 2. Escuchar cambios de sesión (login, logout, refresh de token, etc)
+    // 3. Ejecutar getSession inicialmente como salvavidas, pero sin chocar
+    (async () => {
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (data?.session && !initialLoadDone) {
+          await loadSessionAndRole(data.session);
+        }
+      } catch (e) {
+        console.error("Error obteniendo sesión inicial", e);
+        if (!initialLoadDone) {
+           loadSessionAndRole(null);
+        }
+      }
+    })();
+
+    // 4. Escuchar cambios de sesión
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log("======== AUTH EVENT ========");
+      console.log("Evento:", event);
+      console.log("Session:", session);
+      console.log("===========================");
+
       if (!isMounted) return;
 
       if (event === "SIGNED_OUT") {
@@ -129,7 +156,13 @@ export const AuthProvider = ({ children }) => {
         setUserData(null);
         setLoading(false);
         clearTimeout(rescueTimeout);
-      } else if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED" || event === "INITIAL_SESSION") {
+      } else if (
+        event === "SIGNED_IN" ||
+        event === "TOKEN_REFRESHED" ||
+        event === "INITIAL_SESSION"
+      ) {
+        // Solo recargar si no lo hizo ya getSession (evita doble carga)
+        if (event === "INITIAL_SESSION" && initialLoadDone) return;
         await loadSessionAndRole(session);
       }
     });

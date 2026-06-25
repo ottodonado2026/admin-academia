@@ -1,45 +1,48 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import "./ProfesorAlumnosPage.css";
 import AlumnoCard from "./components/AlumnoCard";
+import ModalExpediente from "./components/ModalExpediente";
+import { useProfesorData } from "./hooks/useProfesorData";
+import { supabase } from "../services/supabaseClient";
 
 export default function ProfesorAlumnosPage() {
-  const [user, setUser] = useState(null);
-  const [alumnos, setAlumnos] = useState([]);
-  const [pagos, setPagos] = useState([]);
-  const [clases, setClases] = useState([]);
-
+  const { clases, pagos, alumnos: todosLosAlumnos, loading, recargarDatos } = useProfesorData();
   const [busqueda, setBusqueda] = useState("");
+  const [alumnoSeleccionado, setAlumnoSeleccionado] = useState(null);
 
-  useEffect(() => {
-    setUser(JSON.parse(localStorage.getItem("user")));
-    setAlumnos(JSON.parse(localStorage.getItem("alumnos")) || []);
-    setPagos(JSON.parse(localStorage.getItem("pagos")) || []);
-    setClases(JSON.parse(localStorage.getItem("clases")) || []);
-  }, []);
+  const userDataStr = localStorage.getItem("user");
+  const user = userDataStr ? JSON.parse(userDataStr) : null;
 
   const alumnosProfesor = useMemo(() => {
-    if (!user) return [];
+    if (!user || loading) return [];
 
     const misClases = clases.filter(
-      (c) => String(c.profesorId) === String(user.id)
+      (c) => String(c.profesorId) === String(user.id) || String(c.profesor_db_id) === String(user.id)
     );
 
     const mapa = new Map();
 
+    // Priorizar datos de la tabla alumnos
     misClases.forEach((clase) => {
       (clase.alumnos || []).forEach((a) => {
         if (!mapa.has(a.id)) {
-          mapa.set(a.id, a);
+          // buscar info extendida en la tabla de alumnos
+          const alumnoDB = todosLosAlumnos.find((dbA) => dbA.id === a.id || dbA.alumno_id === a.id);
+          mapa.set(a.id, {
+            ...a,
+            ...alumnoDB,
+            id: a.id
+          });
         }
       });
     });
 
     return Array.from(mapa.values());
-  }, [clases, user]);
+  }, [clases, todosLosAlumnos, user, loading]);
 
   const alumnosFiltrados = useMemo(() => {
     return alumnosProfesor.filter((a) =>
-      a.nombre.toLowerCase().includes(busqueda.toLowerCase())
+      a.nombre?.toLowerCase().includes(busqueda.toLowerCase())
     );
   }, [alumnosProfesor, busqueda]);
 
@@ -50,7 +53,7 @@ export default function ProfesorAlumnosPage() {
       const plan = pagos.find(
         (p) =>
           String(p.alumnoId) === String(alumno.id) ||
-          String(p.alumnoId) === String(alumno.alumnoId) ||
+          String(p.alumnoId) === String(alumno.alumno_id) ||
           String(p.alumnoDbId) === String(alumno.id) ||
           String(p.alumno).trim().toLowerCase() ===
             String(alumno.nombre).trim().toLowerCase()
@@ -71,10 +74,9 @@ export default function ProfesorAlumnosPage() {
     <div className="profesor-alumnos-page">
       <div className="profesor-alumnos-header">
         <div>
-          <h2>Alumnos</h2>
+          <h2>Alumnos y Expedientes</h2>
           <p>
-            Visualiza tus alumnos asignados, su estado académico y su relación
-            con clases y pagos.
+            Visualiza tus alumnos asignados, genera certificados, registra seguimientos y comunícate vía WhatsApp.
           </p>
         </div>
 
@@ -106,7 +108,9 @@ export default function ProfesorAlumnosPage() {
         </div>
       </div>
 
-      {alumnosFiltrados.length === 0 ? (
+      {loading ? (
+        <div className="profesor-alumnos-empty">Cargando alumnos...</div>
+      ) : alumnosFiltrados.length === 0 ? (
         <div className="profesor-alumnos-empty">
           No hay alumnos asignados o no coinciden con la búsqueda.
         </div>
@@ -118,9 +122,19 @@ export default function ProfesorAlumnosPage() {
               alumno={alumno}
               pagos={pagos}
               clases={clases}
+              onSelect={setAlumnoSeleccionado}
             />
           ))}
         </div>
+      )}
+
+      {alumnoSeleccionado && (
+        <ModalExpediente 
+          alumno={alumnoSeleccionado}
+          clases={clases}
+          onClose={() => setAlumnoSeleccionado(null)}
+          onActualizado={recargarDatos}
+        />
       )}
     </div>
   );

@@ -8,7 +8,6 @@ import ProfesorDashboardPage from "./ProfesorDashboardPage";
 import ProfesorClasesPage from "./ProfesorClasesPage";
 import ProfesorAlumnosPage from "./ProfesorAlumnosPage";
 import ProfesorAsistenciaPage from "./ProfesorAsistenciaPage";
-import ProfesorSeguimientoPage from "./ProfesorSeguimientoPage";
 import ProfesorCalificacionesPage from "./ProfesorCalificacionesPage";
 import ProfesorPagos from "./components/ProfesorPagos";
 
@@ -25,8 +24,6 @@ export default function ProfesorLayout() {
         return <ProfesorAlumnosPage />;
       case "asistencia":
         return <ProfesorAsistenciaPage />;
-      case "seguimiento":
-        return <ProfesorSeguimientoPage />;
       case "calificaciones":
         return <ProfesorCalificacionesPage />;
       case "pagos":

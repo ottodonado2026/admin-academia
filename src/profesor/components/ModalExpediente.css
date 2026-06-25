@@ -1,0 +1,278 @@
+.modal-overlay-pro {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+}
+
+.modal-content-pro {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  width: 90%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  padding: 1.5rem;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+
+.modal-close-pro {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.modal-close-pro:hover {
+  color: var(--text-primary);
+}
+
+.modal-title {
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  font-size: 1.5rem;
+  color: var(--text-primary);
+}
+
+.expediente-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 1.5rem;
+  background: var(--bg-body);
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+}
+
+.exp-info h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.25rem;
+  color: var(--text-primary);
+}
+
+.exp-info p {
+  margin: 0.25rem 0;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.exp-info p strong {
+  color: var(--text-primary);
+}
+
+.exp-kpis {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+.mini-kpi {
+  background: var(--bg-card);
+  padding: 0.75rem;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.mini-kpi span {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.mini-kpi strong {
+  font-size: 1.1rem;
+  color: var(--primary-color);
+}
+
+.seguimiento-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.seguimiento-section label {
+  font-weight: 500;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+}
+
+.seguimiento-section textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-body);
+  color: var(--text-primary);
+  font-family: inherit;
+  resize: vertical;
+}
+
+.seguimiento-section textarea:focus {
+  outline: none;
+  border-color: var(--primary-color);
+}
+
+.modal-actions-expediente {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.left-actions, .right-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.btn-certificado {
+  background: linear-gradient(135deg, #FFB75E, #ED8F03);
+  color: #fff;
+  border: none;
+  padding: 0.6rem 1rem;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.btn-certificado:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  filter: grayscale(100%);
+}
+
+.btn-certificado:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.hint-cert {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.btn-secundario-pro {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  padding: 0.6rem 1rem;
+  border-radius: 6px;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.btn-principal-pro {
+  background: var(--primary-color);
+  border: none;
+  padding: 0.6rem 1rem;
+  border-radius: 6px;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-principal-pro:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* Plantilla Oculta PDF */
+.certificado-template {
+  background: #fff;
+  width: 800px;
+  height: 600px;
+  padding: 40px;
+  box-sizing: border-box;
+  color: #333;
+  font-family: 'Georgia', serif;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  text-align: center;
+  border: 10px solid #ED8F03;
+}
+
+.cert-header h1 {
+  font-size: 36px;
+  color: #ED8F03;
+  margin: 0;
+}
+
+.cert-header p {
+  font-size: 18px;
+  color: #666;
+  margin-top: 5px;
+}
+
+.cert-body p {
+  font-size: 20px;
+  margin: 10px 0;
+}
+
+.cert-name {
+  font-size: 40px;
+  font-weight: bold;
+  color: #222;
+  margin: 20px 0;
+  text-decoration: underline;
+}
+
+.cert-course {
+  font-size: 28px;
+  color: #444;
+  margin: 15px 0;
+}
+
+.cert-horas {
+  font-size: 18px;
+  color: #555;
+  font-style: italic;
+}
+
+.cert-footer {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 40px;
+}
+
+.firma-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.firma-line {
+  width: 200px;
+  height: 1px;
+  background: #333;
+  margin-bottom: 10px;
+}
+
+.firma-box span {
+  font-size: 16px;
+  color: #444;
+}
+
+.cert-fecha {
+  font-size: 14px;
+  color: #888;
+  margin-top: 20px;
+}

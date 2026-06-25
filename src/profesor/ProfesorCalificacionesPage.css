@@ -352,3 +352,51 @@
     flex-direction: column;
   }
 }
+
+.cal-actions-inline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 10px 15px;
+  border-radius: 8px;
+  margin-top: 10px;
+}
+
+.cal-actions-inline label {
+  font-size: 13px;
+  color: #cbd5e1;
+}
+
+.input-group-cal {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.input-group-cal input {
+  width: 70px;
+  padding: 6px 10px;
+  background: #0f172a;
+  border: 1px solid #1e293b;
+  color: #f8fafc;
+  border-radius: 6px;
+  outline: none;
+  font-size: 14px;
+}
+
+.input-group-cal input:focus {
+  border-color: #22c55e;
+}
+
+.saving-spinner {
+  color: #22c55e;
+  font-size: 12px;
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0% { opacity: 0.5; }
+  50% { opacity: 1; }
+  100% { opacity: 0.5; }
+}

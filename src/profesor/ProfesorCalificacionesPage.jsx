@@ -1,81 +1,60 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import "./ProfesorCalificacionesPage.css";
+import { useProfesorData } from "./hooks/useProfesorData";
+import { supabase } from "../services/supabaseClient";
+import { CURSOS_BASE } from "../data/cursosBase";
 
 export default function ProfesorCalificacionesPage() {
-  const [clases, setClases] = useState([]);
-  const [user, setUser] = useState(null);
-  const [cursos, setCursos] = useState([]);
-
+  const { clases, alumnos: todosLosAlumnos, loading, recargarDatos } = useProfesorData();
   const [busqueda, setBusqueda] = useState("");
   const [filtroCurso, setFiltroCurso] = useState("todos");
   const [filtroRendimiento, setFiltroRendimiento] = useState("todos");
+  const [guardandoId, setGuardandoId] = useState(null);
 
-  useEffect(() => {
-    setUser(JSON.parse(localStorage.getItem("user")));
-    setClases(JSON.parse(localStorage.getItem("clases")) || []);
-    setCursos(JSON.parse(localStorage.getItem("planesCursos")) || []);
-  }, []);
+  const userDataStr = localStorage.getItem("user");
+  const user = userDataStr ? JSON.parse(userDataStr) : null;
 
   const misClases = useMemo(() => {
+    if (!user || loading) return [];
     return clases.filter(
-      (c) => String(c.profesorId) === String(user?.id)
+      (c) => String(c.profesorId) === String(user.id) || String(c.profesor_db_id) === String(user.id)
     );
-  }, [clases, user]);
+  }, [clases, user, loading]);
 
   const alumnos = useMemo(() => {
     const alumnosMap = {};
 
     misClases.forEach((clase) => {
-      (clase.alumnos || []).forEach((alumno) => {
-        if (!alumnosMap[alumno.id]) {
-          const cursoInfo = getCursoInfo(alumno, clase, cursos);
-
-          alumnosMap[alumno.id] = {
-            ...alumno,
-            notas: [],
-            clasesConNota: 0,
-            ultimaNota: null,
-            cursoNombre: cursoInfo.nombre,
-            cursoId: cursoInfo.id,
+      (clase.alumnos || []).forEach((a) => {
+        if (!alumnosMap[a.id]) {
+          const alumnoDB = todosLosAlumnos.find((db) => db.id === a.id || db.alumno_id === a.id);
+          const curso = CURSOS_BASE.find((c) => String(c.id) === String(alumnoDB?.cursoId || a.curso) || c.nombre.toLowerCase().includes(String(a.curso || "").toLowerCase()));
+          
+          alumnosMap[a.id] = {
+            ...a,
+            ...alumnoDB,
+            id: a.id,
+            cursoNombre: curso?.nombre || a.curso || "Sin curso",
+            cursoId: curso?.id || "-",
+            calificacion_final: alumnoDB?.calificacion_final || ""
           };
-        }
-
-        if (alumno.calificacion !== null && alumno.calificacion !== undefined && alumno.calificacion !== "") {
-          const nota = Number(alumno.calificacion);
-
-          if (!Number.isNaN(nota)) {
-            alumnosMap[alumno.id].notas.push(nota);
-            alumnosMap[alumno.id].clasesConNota += 1;
-            alumnosMap[alumno.id].ultimaNota = nota;
-          }
         }
       });
     });
 
     return Object.values(alumnosMap)
-      .map((alumno) => ({
-        ...alumno,
-        promedio: calcularPromedio(alumno.notas),
-      }))
-      .sort((a, b) => b.promedio - a.promedio);
-  }, [misClases, cursos]);
+      .sort((a, b) => Number(b.calificacion_final || 0) - Number(a.calificacion_final || 0));
+  }, [misClases, todosLosAlumnos]);
 
   const cursosDisponibles = useMemo(() => {
     const mapa = new Map();
-
     alumnos.forEach((alumno) => {
       const id = alumno.cursoId || alumno.cursoNombre;
       if (!mapa.has(id)) {
-        mapa.set(id, {
-          id,
-          nombre: alumno.cursoNombre || "Sin curso",
-        });
+        mapa.set(id, { id, nombre: alumno.cursoNombre });
       }
     });
-
-    return Array.from(mapa.values()).sort((a, b) =>
-      a.nombre.localeCompare(b.nombre, "es")
-    );
+    return Array.from(mapa.values()).sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
   }, [alumnos]);
 
   const alumnosFiltrados = useMemo(() => {
@@ -92,7 +71,7 @@ export default function ProfesorCalificacionesPage() {
         String(alumno.cursoId) === String(filtroCurso) ||
         String(alumno.cursoNombre) === String(filtroCurso);
 
-      const estadoRendimiento = getRendimientoKey(alumno.promedio);
+      const estadoRendimiento = getRendimientoKey(Number(alumno.calificacion_final || 0));
 
       const matchRendimiento =
         filtroRendimiento === "todos" ||
@@ -104,35 +83,46 @@ export default function ProfesorCalificacionesPage() {
 
   const stats = useMemo(() => {
     const totalAlumnos = alumnos.length;
-    const conNotas = alumnos.filter((a) => a.notas.length > 0).length;
+    const conNotas = alumnos.filter((a) => Number(a.calificacion_final) > 0).length;
 
     const promedioGeneral = conNotas
-      ? round1(
-          alumnos.reduce((acc, alumno) => acc + alumno.promedio, 0) / conNotas
-        )
+      ? round1(alumnos.reduce((acc, a) => acc + Number(a.calificacion_final || 0), 0) / conNotas)
       : 0;
 
-    const altoRendimiento = alumnos.filter((a) => a.promedio >= 8).length;
-    const enRiesgo = alumnos.filter((a) => a.promedio > 0 && a.promedio < 6).length;
+    const altoRendimiento = alumnos.filter((a) => Number(a.calificacion_final) >= 8).length;
+    const enRiesgo = alumnos.filter((a) => Number(a.calificacion_final) > 0 && Number(a.calificacion_final) < 6).length;
 
-    return {
-      totalAlumnos,
-      conNotas,
-      promedioGeneral,
-      altoRendimiento,
-      enRiesgo,
-    };
+    return { totalAlumnos, conNotas, promedioGeneral, altoRendimiento, enRiesgo };
   }, [alumnos]);
+
+  const guardarCalificacion = async (alumnoId, valor) => {
+    setGuardandoId(alumnoId);
+    try {
+      const { error } = await supabase
+        .from("alumnos")
+        .update({ calificacion_final: Number(valor) })
+        .eq("id", alumnoId);
+
+      if (error) {
+        console.error("Error guardando calificacion:", error);
+        alert("Hubo un error al guardar.");
+      } else {
+        recargarDatos();
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setGuardandoId(null);
+    }
+  };
 
   return (
     <div className="profesor-calificaciones-page">
       <section className="calificaciones-hero">
         <div>
-          <h1>Calificaciones</h1>
+          <h1>Calificaciones Globales</h1>
           <p>
-            Consulta el rendimiento académico de tus alumnos, revisa su
-            promedio, filtra por curso y detecta alumnos de alto rendimiento o
-            en riesgo.
+            Consulta y evalúa el rendimiento académico final de tus alumnos, registra sus notas de módulo.
           </p>
         </div>
 
@@ -141,17 +131,14 @@ export default function ProfesorCalificacionesPage() {
             <span>Total alumnos</span>
             <strong>{stats.totalAlumnos}</strong>
           </div>
-
           <div className="cal-kpi-card">
-            <span>Con notas</span>
+            <span>Con nota final</span>
             <strong>{stats.conNotas}</strong>
           </div>
-
           <div className="cal-kpi-card">
-            <span>Promedio general</span>
+            <span>Promedio grupal</span>
             <strong>{stats.promedioGeneral}</strong>
           </div>
-
           <div className="cal-kpi-card">
             <span>Alto rendimiento</span>
             <strong>{stats.altoRendimiento}</strong>
@@ -185,105 +172,77 @@ export default function ProfesorCalificacionesPage() {
             onChange={(e) => setFiltroRendimiento(e.target.value)}
           >
             <option value="todos">Todo rendimiento</option>
-            <option value="ok">Excelente</option>
-            <option value="warn">Aceptable</option>
-            <option value="danger">En riesgo</option>
+            <option value="ok">Excelente (≥8)</option>
+            <option value="warn">Aceptable (6-7.9)</option>
+            <option value="danger">En riesgo (&lt;6)</option>
             <option value="sin_notas">Sin notas</option>
           </select>
         </div>
 
         <div className="calificaciones-summary-row">
-          <span>
-            Mostrando <strong>{alumnosFiltrados.length}</strong> alumnos
-          </span>
-          <span>
-            En riesgo: <strong>{stats.enRiesgo}</strong>
-          </span>
+          <span>Mostrando <strong>{alumnosFiltrados.length}</strong> alumnos</span>
+          <span>En riesgo: <strong>{stats.enRiesgo}</strong></span>
         </div>
       </section>
 
-      {alumnosFiltrados.length === 0 ? (
+      {loading ? (
+        <div className="calificaciones-empty">Cargando datos...</div>
+      ) : alumnosFiltrados.length === 0 ? (
         <div className="calificaciones-empty">
           No hay alumnos que coincidan con los filtros actuales.
         </div>
       ) : (
         <section className="calificaciones-grid-pro">
           {alumnosFiltrados.map((alumno, index) => {
-            const estadoClass = getRendimientoKey(alumno.promedio);
-            const estadoLabel = getRendimientoLabel(alumno.promedio);
+            const calificacion = Number(alumno.calificacion_final || 0);
+            const estadoClass = getRendimientoKey(calificacion);
+            const estadoLabel = getRendimientoLabel(calificacion);
 
             return (
               <article key={alumno.id} className="cal-card-pro">
                 <div className="cal-card-header">
                   <div className="cal-card-title-wrap">
                     <div className="cal-rank-badge">#{index + 1}</div>
-
                     <div>
                       <h3>{alumno.nombre}</h3>
-                      <p>{alumno.cursoNombre || "Sin curso"}</p>
-                      <small>{alumno.cursoId || "-"}</small>
+                      <p>{alumno.cursoNombre}</p>
+                      <small>{alumno.cursoId}</small>
                     </div>
                   </div>
-
                   <span className={`cal-badge ${estadoClass}`}>
                     {estadoLabel}
                   </span>
                 </div>
 
-                <div className="cal-card-stats">
-                  <div className="cal-stat-box">
-                    <span>Promedio</span>
-                    <strong>{alumno.promedio}</strong>
-                  </div>
-
-                  <div className="cal-stat-box">
-                    <span>Notas</span>
-                    <strong>{alumno.notas.length}</strong>
-                  </div>
-
-                  <div className="cal-stat-box">
-                    <span>Última nota</span>
-                    <strong>
-                      {alumno.ultimaNota !== null ? alumno.ultimaNota : "-"}
-                    </strong>
-                  </div>
-
-                  <div className="cal-stat-box">
-                    <span>Clases evaluadas</span>
-                    <strong>{alumno.clasesConNota}</strong>
+                <div className="cal-actions-inline">
+                  <label>Nota Final (0-10):</label>
+                  <div className="input-group-cal">
+                    <input 
+                      type="number" 
+                      min="0" max="10" step="0.1"
+                      defaultValue={alumno.calificacion_final || ""}
+                      onBlur={(e) => {
+                        const val = e.target.value;
+                        if (val !== String(alumno.calificacion_final || "")) {
+                          guardarCalificacion(alumno.alumno_id || alumno.id, val);
+                        }
+                      }}
+                      disabled={guardandoId === (alumno.alumno_id || alumno.id)}
+                    />
+                    {guardandoId === (alumno.alumno_id || alumno.id) && <span className="saving-spinner">...</span>}
                   </div>
                 </div>
 
-                <div className="cal-progress-block">
+                <div className="cal-progress-block" style={{marginTop: "1rem"}}>
                   <div className="cal-progress-head">
                     <span>Rendimiento general</span>
-                    <strong>{Math.min(100, alumno.promedio * 10)}%</strong>
+                    <strong>{Math.min(100, calificacion * 10)}%</strong>
                   </div>
-
                   <div className="cal-progress-bar">
                     <div
                       className={`cal-progress-fill ${estadoClass}`}
-                      style={{ width: `${Math.min(100, alumno.promedio * 10)}%` }}
+                      style={{ width: `${Math.min(100, calificacion * 10)}%` }}
                     />
-                  </div>
-                </div>
-
-                <div className="cal-notas-section">
-                  <span className="cal-notas-label">Notas registradas</span>
-
-                  <div className="cal-notas-chips">
-                    {alumno.notas.length > 0 ? (
-                      alumno.notas.map((nota, notaIndex) => (
-                        <span
-                          key={`${alumno.id}-${notaIndex}`}
-                          className="cal-nota-chip"
-                        >
-                          {nota}
-                        </span>
-                      ))
-                    ) : (
-                      <span className="cal-no-notes">Sin notas registradas</span>
-                    )}
                   </div>
                 </div>
               </article>
@@ -307,11 +266,6 @@ function round1(value) {
   return Number(Number(value || 0).toFixed(1));
 }
 
-function calcularPromedio(notas) {
-  if (!notas.length) return 0;
-  return round1(notas.reduce((acc, item) => acc + item, 0) / notas.length);
-}
-
 function getRendimientoKey(promedio) {
   if (!promedio || promedio <= 0) return "sin_notas";
   if (promedio >= 8) return "ok";
@@ -324,17 +278,4 @@ function getRendimientoLabel(promedio) {
   if (promedio >= 8) return "Excelente";
   if (promedio >= 6) return "Aceptable";
   return "En riesgo";
-}
-
-function getCursoInfo(alumno, clase, cursos) {
-  const cursoEncontrado = cursos.find(
-    (curso) =>
-      String(curso.id) === String(alumno.cursoId || clase.cursoId || alumno.curso) ||
-      normalizeText(curso.nombre) === normalizeText(alumno.curso || clase.curso)
-  );
-
-  return {
-    id: cursoEncontrado?.id || alumno.cursoId || clase.cursoId || alumno.curso || "-",
-    nombre: cursoEncontrado?.nombre || clase.curso || alumno.curso || "Sin curso",
-  };
 }

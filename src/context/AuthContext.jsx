@@ -72,9 +72,15 @@ export const AuthProvider = ({ children }) => {
     const loadSessionAndRole = async (session) => {
       if (!isMounted) return;
 
+      // Control de semáforo para evitar peticiones concurrentes y robo de Web Locks
+      if (isFetching.current) return;
+      isFetching.current = true;
+
       try {
         if (session?.user) {
           setUser(session.user);
+          // Micro-pausa para permitir que Supabase suelte los Web Locks de inicio de sesión
+          await new Promise(resolve => setTimeout(resolve, 50));
           await fetchUserRole(session.user.id);
         } else {
           setUser(null);
@@ -84,6 +90,7 @@ export const AuthProvider = ({ children }) => {
       } catch (err) {
         console.error("Error cargando sesión y rol:", err);
       } finally {
+        isFetching.current = false;
         if (isMounted) {
           setLoading(false);
           initialLoadDone = true;

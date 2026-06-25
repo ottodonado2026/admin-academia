@@ -23,14 +23,18 @@ export const AuthProvider = ({ children }) => {
     try {
       for (let i = localStorage.length - 1; i >= 0; i--) {
         const key = localStorage.key(i);
+        // Borrar candados o basura de supabase, pero preservar el token principal de sesión
         if (key && (key.includes("supabase") || key.includes("sb-"))) {
-          localStorage.removeItem(key);
+          if (!key.endsWith("-auth-token")) {
+            localStorage.removeItem(key);
+          }
         }
       }
     } catch (e) {
-      console.error("Error limpiando localStorage:", e);
+      console.error("Error limpiando localStorage parcial:", e);
     }
-    window.location.href = "/";
+    // Recargar la página actual para reintentar la entrada silenciosamente
+    window.location.reload();
   };
 
   const fetchUserRole = async (userId) => {

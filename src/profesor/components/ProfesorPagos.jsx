@@ -14,64 +14,87 @@ export default function ProfesorPagos() {
   const [loading, setLoading] = useState(true);
   const [loadingAbonos, setLoadingAbonos] = useState(false);
 
-  useEffect(() => {
-    const cargarDetalles = async () => {
-      setLoading(true);
-      try {
-        const { data: { user: authUser } } = await supabase.auth.getUser();
-        if (!authUser) {
-          setLoading(false);
-          return;
-        }
-
-        // Cargar detalles de nómina vinculados al docente
-        const { data, error } = await supabase
-          .from("nomina_detalles")
-          .select("*, nominas(periodo, tipo, estado)")
-          .order("created_at", { ascending: false });
-
-        if (error) {
-          console.error("Error cargando detalles de nómina:", error);
-          setLoading(false);
-          return;
-        }
-
-        setDetallesNomina(data || []);
-        if (data && data.length > 0) {
-          setDetalleSeleccionado(data[0]);
-        }
-      } catch (err) {
-        console.error("Error global cargando pagos del profesor:", err);
-      } finally {
-        setLoading(false);
+  const cargarDetalles = async (silent = false) => {
+    if (!silent) setLoading(true);
+    try {
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (!authUser) {
+        if (!silent) setLoading(false);
+        return;
       }
-    };
 
+      // Cargar detalles de nómina vinculados al docente
+      const { data, error } = await supabase
+        .from("nomina_detalles")
+        .select("*, nominas(periodo, tipo, estado)")
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error("Error cargando detalles de nómina:", error);
+        if (!silent) setLoading(false);
+        return;
+      }
+
+      setDetallesNomina(data || []);
+      if (data && data.length > 0) {
+        setDetalleSeleccionado(prev => {
+          if (prev) {
+            const actualizado = data.find(d => d.id === prev.id);
+            return actualizado || data[0];
+          }
+          return data[0];
+        });
+      }
+    } catch (err) {
+      console.error("Error global cargando pagos del profesor:", err);
+    } finally {
+      if (!silent) setLoading(false);
+    }
+  };
+
+  const cargarAbonos = async (silent = false) => {
+    if (!detalleSeleccionado) return;
+    if (!silent) setLoadingAbonos(true);
+    try {
+      const { data, error } = await supabase
+        .from("nomina_abonos")
+        .select("*")
+        .eq("nomina_detalle_id", detalleSeleccionado.id)
+        .order("fecha_pago", { ascending: false });
+
+      if (error) throw error;
+      setAbonosHistorial(data || []);
+    } catch (err) {
+      console.error("Error cargando abonos:", err);
+    } finally {
+      if (!silent) setLoadingAbonos(false);
+    }
+  };
+
+  useEffect(() => {
     cargarDetalles();
   }, []);
 
   useEffect(() => {
-    const cargarAbonos = async () => {
-      if (!detalleSeleccionado) return;
-      setLoadingAbonos(true);
-      try {
-        const { data, error } = await supabase
-          .from("nomina_abonos")
-          .select("*")
-          .eq("nomina_detalle_id", detalleSeleccionado.id)
-          .order("fecha_pago", { ascending: false });
-
-        if (error) throw error;
-        setAbonosHistorial(data || []);
-      } catch (err) {
-        console.error("Error cargando abonos:", err);
-      } finally {
-        setLoadingAbonos(false);
-      }
-    };
-
     cargarAbonos();
-  }, [detalleSeleccionado]);
+  }, [detalleSeleccionado?.id]);
+
+  useEffect(() => {
+    const channel = supabase
+      .channel("profesor_pagos_realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "nomina_detalles" }, () => {
+        cargarDetalles(true);
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "nomina_abonos" }, () => {
+        cargarAbonos(true);
+        cargarDetalles(true);
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [detalleSeleccionado?.id]);
 
   const formatearMoneda = (val) => {
     return new Intl.NumberFormat("es-CO", {

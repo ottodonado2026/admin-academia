@@ -38,6 +38,13 @@ export default function NominaPage() {
 
   const [guardandoAbono, setGuardandoAbono] = useState(false);
 
+  const [mostrarEditarAbonoModal, setMostrarEditarAbonoModal] = useState(false);
+  const [abonoAEditar, setAbonoAEditar] = useState(null);
+  const [montoEditar, setMontoEditar] = useState("");
+  const [metodoPagoEditar, setMetodoPagoEditar] = useState("transferencia");
+  const [referenciaEditar, setReferenciaEditar] = useState("");
+  const [guardandoEdicionAbono, setGuardandoEdicionAbono] = useState(false);
+
   const periodoActual = `${anioSeleccionado}-${String(mesSeleccionado + 1).padStart(2, "0")}`;
 
   const fetchNomina = async () => {
@@ -301,7 +308,7 @@ export default function NominaPage() {
           {
             tipo: "gasto",
             categoria: "nomina",
-            descripcion: `Pago de nómina (${activeTab === "profesor" ? "Profesor" : "Asesor"}) a ${detalleParaAbonar.nombre} - Periodo ${periodoActual}`,
+            descripcion: `Pago de nómina (${activeTab === "profesor" ? "Profesor" : "Asesor"}) a ${detalleParaAbonar.nombre} - Periodo ${periodoActual} (Abono ID: ${abonoInsertado.id})`,
             monto: monto,
             metodo: metodoPago,
             fecha: new Date().toISOString()
@@ -331,6 +338,234 @@ export default function NominaPage() {
       alert("Error al registrar el pago: " + err.message);
     } finally {
       setGuardandoAbono(false);
+    }
+  };
+
+  const eliminarAbono = async (abono) => {
+    if (!["owner", "contador"].includes(userRole)) {
+      alert("No tienes permisos para eliminar abonos de nómina.");
+      return;
+    }
+
+    if (!window.confirm(`¿Seguro que deseas anular este abono de ${formatearMoneda(abono.monto)}? Esta acción es irreversible y actualizará la contabilidad.`)) {
+      return;
+    }
+
+    try {
+      const { data: detalle, error: detError } = await supabase
+        .from("nomina_detalles")
+        .select("*")
+        .eq("id", abono.nomina_detalle_id)
+        .single();
+      
+      if (detError) throw detError;
+
+      const nuevoPagadoDetalle = Math.max(0, Number(detalle.total_pagado) - Number(abono.monto));
+      let nuevoEstadoDetalle = "pendiente";
+      if (nuevoPagadoDetalle > 0) {
+        if (nuevoPagadoDetalle >= Number(detalle.total_neto)) {
+          nuevoEstadoDetalle = "pagado";
+        } else {
+          nuevoEstadoDetalle = "parcial";
+        }
+      }
+
+      const { error: delAbonoError } = await supabase
+        .from("nomina_abonos")
+        .delete()
+        .eq("id", abono.id);
+
+      if (delAbonoError) throw delAbonoError;
+
+      const { error: updateDetError } = await supabase
+        .from("nomina_detalles")
+        .update({
+          total_pagado: nuevoPagadoDetalle,
+          estado: nuevoEstadoDetalle
+        })
+        .eq("id", detalle.id);
+
+      if (updateDetError) throw updateDetError;
+
+      const nuevoPagadoNomina = Math.max(0, Number(nominaGeneral.total_pagado) - Number(abono.monto));
+      const { error: updateNomError } = await supabase
+        .from("nominas")
+        .update({ total_pagado: nuevoPagadoNomina })
+        .eq("id", nominaGeneral.id);
+
+      if (updateNomError) throw updateNomError;
+
+      const { error: egresoError } = await supabase
+        .from("egresos")
+        .delete()
+        .like("descripcion", `%Abono ID: ${abono.id}%`);
+
+      if (egresoError) {
+        console.error("Error eliminando egreso contable:", egresoError);
+      }
+
+      await registrarAuditoria("eliminar", "nomina_abonos", abono.id, {
+        periodo: periodoActual,
+        tipo_personal: activeTab,
+        beneficiario: detalle.nombre,
+        monto_eliminado: abono.monto
+      }, usuarioActual);
+
+      alert("Abono anulado con éxito.");
+      
+      const nuevosAbonos = abonosHistorial.filter(a => a.id !== abono.id);
+      setAbonosHistorial(nuevosAbonos);
+      setDetalleParaAbonos({
+        ...detalleParaAbonos,
+        total_pagado: nuevoPagadoDetalle,
+        estado: nuevoEstadoDetalle
+      });
+      fetchNomina();
+    } catch (err) {
+      console.error("Error eliminando abono:", err);
+      alert("Error al eliminar el abono: " + err.message);
+    }
+  };
+
+  const abrirEditarAbono = (abono) => {
+    setAbonoAEditar(abono);
+    setMontoEditar(String(abono.monto));
+    setMetodoPagoEditar(abono.metodo_pago);
+    setReferenciaEditar(abono.referencia || "");
+    setMostrarEditarAbonoModal(true);
+  };
+
+  const guardarEdicionAbono = async (e) => {
+    e.preventDefault();
+    if (!abonoAEditar || !montoEditar || guardandoEdicionAbono) return;
+
+    const montoNuevo = Number(montoEditar);
+    const montoViejo = Number(abonoAEditar.monto);
+    const delta = montoNuevo - montoViejo;
+
+    if (montoNuevo <= 0) {
+      alert("El monto debe ser mayor a cero.");
+      return;
+    }
+
+    setGuardandoEdicionAbono(true);
+
+    try {
+      const { data: detalle, error: detError } = await supabase
+        .from("nomina_detalles")
+        .select("*")
+        .eq("id", abonoAEditar.nomina_detalle_id)
+        .single();
+      
+      if (detError) throw detError;
+
+      const pendienteSinEsteAbono = Number(detalle.total_neto) - (Number(detalle.total_pagado) - montoViejo);
+
+      if (montoNuevo > pendienteSinEsteAbono) {
+        alert(`El monto no puede exceder el saldo restante por pagar ($${formatearMoneda(pendienteSinEsteAbono)}).`);
+        setGuardandoEdicionAbono(false);
+        return;
+      }
+
+      const { error: updateAbonoError } = await supabase
+        .from("nomina_abonos")
+        .update({
+          monto: montoNuevo,
+          metodo_pago: metodoPagoEditar,
+          referencia: referenciaEditar || null,
+          registrado_por: usuarioActual?.id || null,
+          registrado_por_nombre: usuarioActual?.nombre || usuarioActual?.email || "Administrador"
+        })
+        .eq("id", abonoAEditar.id);
+
+      if (updateAbonoError) throw updateAbonoError;
+
+      const nuevoPagadoDetalle = Number(detalle.total_pagado) + delta;
+      let nuevoEstadoDetalle = "pendiente";
+      if (nuevoPagadoDetalle > 0) {
+        if (nuevoPagadoDetalle >= Number(detalle.total_neto)) {
+          nuevoEstadoDetalle = "pagado";
+        } else {
+          nuevoEstadoDetalle = "parcial";
+        }
+      }
+
+      const { error: updateDetError } = await supabase
+        .from("nomina_detalles")
+        .update({
+          total_pagado: nuevoPagadoDetalle,
+          estado: nuevoEstadoDetalle
+        })
+        .eq("id", detalle.id);
+
+      if (updateDetError) throw updateDetError;
+
+      const nuevoPagadoNomina = Number(nominaGeneral.total_pagado) + delta;
+      const { error: updateNomError } = await supabase
+        .from("nominas")
+        .update({ total_pagado: nuevoPagadoNomina })
+        .eq("id", nominaGeneral.id);
+
+      if (updateNomError) throw updateNomError;
+
+      const { data: egresosExistentes, error: queryEgresoError } = await supabase
+        .from("egresos")
+        .select("*")
+        .like("descripcion", `%Abono ID: ${abonoAEditar.id}%`);
+
+      if (!queryEgresoError && egresosExistentes && egresosExistentes.length > 0) {
+        await supabase
+          .from("egresos")
+          .update({
+            monto: montoNuevo,
+            metodo: metodoPagoEditar,
+            descripcion: `Pago de nómina (${activeTab === "profesor" ? "Profesor" : "Asesor"}) a ${detalle.nombre} - Periodo ${periodoActual} (Abono ID: ${abonoAEditar.id})`
+          })
+          .eq("id", egresosExistentes[0].id);
+      } else {
+        await supabase
+          .from("egresos")
+          .insert([{
+            tipo: "gasto",
+            categoria: "nomina",
+            descripcion: `Pago de nómina (${activeTab === "profesor" ? "Profesor" : "Asesor"}) a ${detalle.nombre} - Periodo ${periodoActual} (Abono ID: ${abonoAEditar.id})`,
+            monto: montoNuevo,
+            metodo: metodoPagoEditar,
+            fecha: new Date().toISOString()
+          }]);
+      }
+
+      await registrarAuditoria("editar", "nomina_abonos", abonoAEditar.id, {
+        periodo: periodoActual,
+        tipo_personal: activeTab,
+        beneficiario: detalle.nombre,
+        monto_anterior: montoViejo,
+        monto_nuevo: montoNuevo
+      }, usuarioActual);
+
+      alert("Pago actualizado con éxito.");
+      setMostrarEditarAbonoModal(false);
+      setAbonoAEditar(null);
+      
+      const { data: abonosActualizados } = await supabase
+        .from("nomina_abonos")
+        .select("*")
+        .eq("nomina_detalle_id", detalle.id)
+        .order("fecha_pago", { ascending: false });
+
+      setAbonosHistorial(abonosActualizados || []);
+      setDetalleParaAbonos({
+        ...detalleParaAbonos,
+        total_pagado: nuevoPagadoDetalle,
+        estado: nuevoEstadoDetalle
+      });
+
+      fetchNomina();
+    } catch (err) {
+      console.error("Error editando abono:", err);
+      alert("Error al actualizar el abono: " + err.message);
+    } finally {
+      setGuardandoEdicionAbono(false);
     }
   };
 
@@ -663,6 +898,7 @@ export default function NominaPage() {
                         <th>Método</th>
                         <th>Referencia</th>
                         <th>Registrado Por</th>
+                        {nominaGeneral?.estado === "abierto" && <th>Acciones</th>}
                       </tr>
                     </thead>
                     <tbody>
@@ -675,6 +911,26 @@ export default function NominaPage() {
                           <td style={{ textTransform: "capitalize" }}>{abono.metodo_pago}</td>
                           <td className="mono-text">{abono.referencia || "-"}</td>
                           <td>{abono.registrado_por_nombre || "Admin"}</td>
+                          {nominaGeneral?.estado === "abierto" && (
+                            <td>
+                              <div className="acciones-nomina" style={{ display: "flex", gap: "8px", justifyContent: "center" }}>
+                                <button 
+                                  className="btn-nomina-abonar" 
+                                  style={{ padding: "4px 8px", fontSize: "12px", minWidth: "auto" }}
+                                  onClick={() => abrirEditarAbono(abono)}
+                                >
+                                  ✏️ Editar
+                                </button>
+                                <button 
+                                  className="btn-nomina-ver" 
+                                  style={{ padding: "4px 8px", fontSize: "12px", background: "rgba(255, 60, 60, 0.1)", color: "#ff3c3c", border: "1px solid rgba(255, 60, 60, 0.3)", minWidth: "auto" }}
+                                  onClick={() => eliminarAbono(abono)}
+                                >
+                                  🗑️ Anular
+                                </button>
+                              </div>
+                            </td>
+                          )}
                         </tr>
                       ))}
                     </tbody>
@@ -691,6 +947,82 @@ export default function NominaPage() {
                 Cerrar
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL EDITAR ABONO */}
+      {mostrarEditarAbonoModal && abonoAEditar && (
+        <div className="profe-modal-overlay" onClick={() => setMostrarEditarAbonoModal(false)}>
+          <div className="profe-modal-card" onClick={(e) => e.stopPropagation()}>
+            <div className="profe-modal-header">
+              <h2>Editar Abono</h2>
+              <button className="profe-modal-close" onClick={() => setMostrarEditarAbonoModal(false)}>×</button>
+            </div>
+            <form onSubmit={guardarEdicionAbono}>
+              <div className="profe-modal-body">
+                <p style={{ margin: "0 0 15px 0", color: "#94a3b8", fontSize: "14px" }}>
+                  Editando abono del {new Date(abonoAEditar.fecha_pago).toLocaleDateString()}
+                </p>
+
+                <div className="profe-modal-grid">
+                  <div className="profe-modal-item" style={{ gridColumn: "span 2" }}>
+                    <span className="profe-item-label">Monto (COP)</span>
+                    <input
+                      type="number"
+                      required
+                      placeholder="Ingrese el nuevo monto"
+                      value={montoEditar}
+                      onChange={(e) => setMontoEditar(e.target.value)}
+                      className="input-monto-abono"
+                    />
+                  </div>
+                  
+                  <div className="profe-modal-item">
+                    <span className="profe-item-label">Método de Pago</span>
+                    <select
+                      value={metodoPagoEditar}
+                      onChange={(e) => setMetodoPagoEditar(e.target.value)}
+                      required
+                    >
+                      <option value="transferencia">Transferencia bancaria</option>
+                      <option value="nequi">Nequi</option>
+                      <option value="daviplata">Daviplata</option>
+                      <option value="efectivo">Efectivo</option>
+                      <option value="otro">Otro</option>
+                    </select>
+                  </div>
+
+                  <div className="profe-modal-item">
+                    <span className="profe-item-label">Referencia / Comprobante</span>
+                    <input
+                      type="text"
+                      placeholder="Ej. N° de transacción"
+                      value={referenciaEditar}
+                      onChange={(e) => setReferenciaEditar(e.target.value)}
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="profe-modal-footer">
+                <button
+                  type="button"
+                  className="profe-btn-cerrar"
+                  onClick={() => setMostrarEditarAbonoModal(false)}
+                  style={{ marginRight: "10px" }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="btn-principal"
+                  disabled={guardandoEdicionAbono}
+                  style={{ width: "auto", minWidth: "140px", marginTop: 0 }}
+                >
+                  {guardandoEdicionAbono ? "Guardando..." : "Guardar Cambios"}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

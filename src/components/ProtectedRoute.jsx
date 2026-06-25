@@ -33,8 +33,8 @@ function ProtectedRoute({ children, role }) {
   if (role) {
     const allowedRoles = Array.isArray(role) ? role : [role];
     
-    // Los administradores y dueños deberían tener acceso a casi todo lo protegido
-    const isSuperUser = userRole === "admin" || userRole === "owner";
+    // Los roles de alto nivel deberían tener acceso a los paneles administrativos protegidos
+    const isSuperUser = ["admin", "owner", "gerente"].includes(userRole);
 
     if (!allowedRoles.includes(userRole) && !isSuperUser) {
       console.warn(`Acceso denegado. Se requiere: ${allowedRoles}, Tienes: ${userRole}`);

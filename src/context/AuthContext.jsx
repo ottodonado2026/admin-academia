@@ -92,18 +92,24 @@ export const AuthProvider = ({ children }) => {
     };
 
     // 1. Obtener sesión inicial de forma explícita
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (error) {
+        console.error("Error en getSession:", error);
+      }
       if (!initialLoadDone) {
         loadSessionAndRole(session);
       }
+    }).catch(err => {
+      console.error("Excepción crítica en getSession:", err);
+      // Si la promesa falla por un bug del caché, destrabamos pasando null
+      if (!initialLoadDone) {
+        loadSessionAndRole(null);
+      }
     });
 
-    // 2. Escuchar cambios de sesión (login, logout, refresh de token)
+    // 2. Escuchar cambios de sesión (login, logout, refresh de token, etc)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!isMounted) return;
-
-      // Para INITIAL_SESSION, si ya lo cargamos con getSession, lo ignoramos para evitar doble fetch
-      if (event === "INITIAL_SESSION" && initialLoadDone) return;
 
       if (event === "SIGNED_OUT") {
         setUser(null);
@@ -111,7 +117,9 @@ export const AuthProvider = ({ children }) => {
         setUserData(null);
         setLoading(false);
         clearTimeout(safetyTimeout);
-      } else if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
+      } else if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED" || event === "INITIAL_SESSION") {
+        // Si es INITIAL_SESSION pero ya cargó por getSession(), lo ignoramos
+        if (event === "INITIAL_SESSION" && initialLoadDone) return;
         await loadSessionAndRole(session);
       }
     });

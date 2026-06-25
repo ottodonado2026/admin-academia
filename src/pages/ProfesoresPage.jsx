@@ -160,6 +160,42 @@ useEffect(() => {
     }));
 
     setProfesores(formateados);
+
+    // Auto-migración en segundo plano de profesores legacy a Supabase Auth
+    try {
+      const { data: usuariosList } = await supabase
+        .from("usuarios")
+        .select("email")
+        .eq("role", "profesor");
+
+      const emailsConAuth = new Set((usuariosList || []).map(u => u.email?.toLowerCase()));
+
+      for (const p of data) {
+        const pData = p.data || {};
+        const email = pData.email || `${pData.numeroDocumento}@profe.com`;
+        
+        if (!emailsConAuth.has(email.toLowerCase())) {
+          console.log("Migrando profesor heredado a Supabase Auth:", email);
+          const password = pData.password || pData.numeroDocumento || "12345678";
+          
+          await supabase.functions.invoke("crear-coordinador-academico", {
+            body: {
+              nombre: pData.nombre || "Profesor",
+              email: email,
+              password: password,
+              role: "profesor",
+              tipo_documento: pData.tipoDocumento || "CC",
+              numero_documento: pData.numeroDocumento || "",
+              telefono: pData.telefono || "",
+              estado: pData.estado || "activo",
+              observaciones: "Migrado automáticamente por el sistema",
+            }
+          });
+        }
+      }
+    } catch (e) {
+      console.error("Error en migración automática de profesores:", e);
+    }
   };
 
   cargarProfesores();
@@ -258,7 +294,7 @@ useEffect(() => {
     return true;
   };
 
- const agregarProfesor = async () => {
+  const agregarProfesor = async () => {
     if (!validarFormulario()) return;
 
     const payload = {
@@ -279,39 +315,90 @@ useEffect(() => {
       const actualizados = profesores.map((p) =>
         p.id === editandoId ? { ...p, ...payload } : p
       );
+      
+      const profAEditar = profesores.find(p => p.id === editandoId);
+      if (profAEditar) {
+        const nuevoPayload = {
+          ...profAEditar,
+          ...payload,
+        };
+        
+        const { error } = await supabase
+          .from("profesores")
+          .update({
+            data: nuevoPayload
+          })
+          .eq("id", editandoId);
+        
+        if (error) {
+          console.error("Error actualizando profesor en Supabase:", error);
+          alert("Error al actualizar profesor en la base de datos");
+          return;
+        }
+      }
+
       setProfesores(actualizados);
       limpiarFormulario();
       return;
     }
 
+    // Iniciar creación del profesor en Supabase Auth y public.usuarios
+    const passwordTemporal = password || payload.numeroDocumento;
+    const emailProfe = `${payload.numeroDocumento}@profe.com`;
+
+    // Invocar la Edge Function para registrar la cuenta de Auth
+    const { data: funcData, error: funcError } = await supabase.functions.invoke(
+      "crear-coordinador-academico",
+      {
+        body: {
+          nombre: payload.nombre,
+          email: emailProfe,
+          password: passwordTemporal,
+          role: "profesor",
+          tipo_documento: payload.tipoDocumento || "CC",
+          numero_documento: payload.numeroDocumento,
+          telefono: payload.telefono,
+          estado: payload.estado || "activo",
+          observaciones: payload.observaciones || "",
+        }
+      }
+    );
+
+    if (funcError || funcData?.error) {
+      console.error("Error Edge Function:", funcError || funcData?.error);
+      alert("Error registrando profesor en Supabase Auth: " + (funcError?.message || funcData?.error));
+      return;
+    }
+
+    const authUserId = funcData.user.id;
+
     const nuevoProfesor = {
-      id: generarIdProfesor(payload.nombre),
+      id: authUserId, // Usamos el ID del usuario creado en Auth
       createdAt: new Date().toISOString(),
       clasesAsignadas: 0,
       alumnosActivos: 0,
-      email: `${payload.numeroDocumento}@profe.com`,
-      password: password || payload.numeroDocumento, // Si edita y no pone clave, queda igual o usa documento (en edicion no deberia cambiar)
+      email: emailProfe,
+      password: passwordTemporal,
       role: "profesor",
       salario: Number(salario) || 0,
       ...payload,
     };
 
-    // 🔥 guardar en Supabase
-const { error } = await supabase
-  .from("profesores")
-  .insert([
-    {
-      id: String(nuevoProfesor.id),
-      data: nuevoProfesor
+    // guardar perfil en la tabla profesores en Supabase
+    const { error } = await supabase
+      .from("profesores")
+      .insert([
+        {
+          id: String(nuevoProfesor.id),
+          data: nuevoProfesor
+        }
+      ]);
+
+    if (error) {
+      console.error("Error Supabase (profesor):", error);
+      alert("Error guardando el perfil del profesor");
+      return;
     }
-  ]);
-
-if (error) {
-  console.error("Error Supabase (profesor):", error);
-} else {
-  console.log("Profesor guardado en Supabase ✅");
-}
-
 
     setProfesores([nuevoProfesor, ...profesores]);
     limpiarFormulario();
@@ -335,7 +422,7 @@ if (error) {
     setSalario(String(profesor.salario ?? ""));
   };
 
-  const eliminarProfesor = (id) => {
+  const eliminarProfesor = async (id) => {
     const profesor = profesores.find((p) => p.id === id);
     if (!profesor) return;
 
@@ -346,6 +433,19 @@ if (error) {
     if (!confirmar) return;
 
     const filtrados = profesores.filter((p) => p.id !== id);
+
+    // Eliminar de Supabase profesores
+    const { error } = await supabase
+      .from("profesores")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      console.error("Error al eliminar profesor de Supabase:", error);
+      alert("Error al eliminar el profesor");
+      return;
+    }
+
     setProfesores(filtrados);
 
     if (editandoId === id) {

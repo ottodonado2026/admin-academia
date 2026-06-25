@@ -1017,88 +1017,99 @@ const finalizarClase = async (clase, finalizadaPor = "profesor") => {
 
         {profesorSeleccionado && (
           <div
-            className="modal-overlay"
+            className="profe-modal-overlay"
             onClick={() => setProfesorSeleccionado(null)}
           >
-            <div className="modal-card" onClick={(e) => e.stopPropagation()}>
-              <div className="modal-header">
-                <h2>{profesorSeleccionado.nombre}</h2>
-                <div className="modal-icons">
-                  <span>👨‍🏫</span>
+            <div className="profe-modal-card" onClick={(e) => e.stopPropagation()}>
+              <div className="profe-modal-header">
+                <div className="profe-modal-profile">
+                  <div className="profe-modal-avatar">👨‍🏫</div>
+                  <div>
+                    <h2>{profesorSeleccionado.nombre}</h2>
+                    <span className={`estado-badge ${profesorSeleccionado.estado}`}>
+                      {(profesorSeleccionado.estado || "activo").toUpperCase()}
+                    </span>
+                  </div>
                 </div>
+                <button className="profe-modal-close" onClick={() => setProfesorSeleccionado(null)}>×</button>
               </div>
 
-              <div className="modal-grid">
-                <div className="modal-item">
-                  <span>Documento</span>
-                  <strong>
-                    {profesorSeleccionado.tipoDocumento} -{" "}
-                    {profesorSeleccionado.numeroDocumento}
-                  </strong>
+              <div className="profe-modal-body">
+                <div className="profe-modal-section-title">Información Personal</div>
+                <div className="profe-modal-grid">
+                  <div className="profe-modal-item">
+                    <span className="profe-item-label">Documento</span>
+                    <strong className="profe-item-value">
+                      {String(profesorSeleccionado.tipoDocumento || "CC").toUpperCase()} - {profesorSeleccionado.numeroDocumento}
+                    </strong>
+                  </div>
+                  <div className="profe-modal-item">
+                    <span className="profe-item-label">Teléfono</span>
+                    <strong className="profe-item-value">{profesorSeleccionado.telefono || "No registrado"}</strong>
+                  </div>
                 </div>
 
-         
-
-                <div className="modal-item">
-                  <span>Teléfono</span>
-                  <strong>{profesorSeleccionado.telefono}</strong>
+                <div className="profe-modal-section-title">Detalles Académicos</div>
+                <div className="profe-modal-grid">
+                  <div className="profe-modal-item">
+                    <span className="profe-item-label">Modalidad</span>
+                    <strong className="profe-item-value">{profesorSeleccionado.modalidad || "No especificada"}</strong>
+                  </div>
+                  <div className="profe-modal-item">
+                    <span className="profe-item-label">Tipo de Contrato</span>
+                    <strong className="profe-item-value">{profesorSeleccionado.tipoContrato || "No especificado"}</strong>
+                  </div>
+                  <div className="profe-modal-item">
+                    <span className="profe-item-label">Comisión</span>
+                    <strong className="profe-item-value">{profesorSeleccionado.comision}%</strong>
+                  </div>
+                  <div className="profe-modal-item">
+                    <span className="profe-item-label">Especialidades</span>
+                    <div className="profe-chips-list">
+                      {profesorSeleccionado.especialidades && profesorSeleccionado.especialidades.length > 0 ? (
+                        profesorSeleccionado.especialidades.map((e) => (
+                          <span className="profe-chip-view" key={e}>
+                            {e.toUpperCase()}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="no-data">Ninguna</span>
+                      )}
+                    </div>
+                  </div>
                 </div>
 
-                <div className="modal-item">
-                  <span>Especialidad</span>
-                  <strong>
- <div className="chips">
-  {profesorSeleccionado.especialidades?.map((e) => (
-    <span className="chip" key={e}>
-      {e.charAt(0).toUpperCase() + e.slice(1)}
-    </span>
-  ))}
-</div>
-</strong>
+                <div className="profe-modal-section-title">Credenciales de Acceso</div>
+                <div className="profe-modal-grid access-grid">
+                  <div className="profe-modal-item">
+                    <span className="profe-item-label">Correo de Acceso</span>
+                    <strong className="profe-item-value copyable">{profesorSeleccionado.email}</strong>
+                  </div>
+                  <div className="profe-modal-item">
+                    <span className="profe-item-label">Contraseña Inicial</span>
+                    <strong className="profe-item-value password-value">{profesorSeleccionado.password}</strong>
+                  </div>
                 </div>
 
-                <div className="modal-item">
-                  <span>Modalidad</span>
-                  <strong>{profesorSeleccionado.modalidad}</strong>
-                </div>
-
-                <div className="modal-item">
-                  <span>Contrato</span>
-                  <strong>{profesorSeleccionado.tipoContrato}</strong>
-                </div>
-
-                <div className="modal-item">
-                  <span>Comisión</span>
-                  <strong>{profesorSeleccionado.comision}%</strong>
-                </div>
-
-                <div className="modal-item">
-                  <span>Estado</span>
-                  <strong>{profesorSeleccionado.estado}</strong>
-                </div>
-
-                <div className="modal-item">
-                  <span>Observaciones</span>
-                  <strong>{profesorSeleccionado.observaciones || "-"}</strong>
-                </div>
-
-                <div className="modal-item">
-                  <span>Acceso profesor</span>
-                  <strong>{profesorSeleccionado.email}</strong>
-                </div>
-
-                <div className="modal-item">
-                  <span>Clave inicial</span>
-                  <strong>{profesorSeleccionado.password}</strong>
-                </div>
+                {profesorSeleccionado.observaciones && (
+                  <>
+                    <div className="profe-modal-section-title">Observaciones Internas</div>
+                    <div className="profe-modal-observaciones">
+                      {profesorSeleccionado.observaciones}
+                    </div>
+                  </>
+                )}
               </div>
 
-              <button
-                className="btn-cerrar"
-                onClick={() => setProfesorSeleccionado(null)}
-              >
-                Cerrar
-              </button>
+              <div className="profe-modal-footer">
+                <button
+                  type="button"
+                  className="profe-btn-cerrar"
+                  onClick={() => setProfesorSeleccionado(null)}
+                >
+                  Cerrar Detalles
+                </button>
+              </div>
             </div>
           </div>
         )}

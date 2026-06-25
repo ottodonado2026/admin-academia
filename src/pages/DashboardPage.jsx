@@ -50,6 +50,10 @@ function DashboardPage() {
   const [fechaFinCustom, setFechaFinCustom] = useState("");
   const [fechaExacta, setFechaExacta] = useState("");
 
+  // Estados para la exportación profesional de Excel
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportStep, setExportStep] = useState(0);
+
   const usuarioActual = {
     ...user,
     nombre: userData?.nombre || user?.email,
@@ -543,465 +547,451 @@ rol: usuarioActual?.rol || "sin-rol",
   }
 };
 
-
-
   const generarExcel = async () => {
-  try {
+    setIsExporting(true);
+    setExportStep(1); // Paso 1: Analizando filtros y registros
+    const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-    await registrarDescarga();
+    try {
+      await delay(600);
+      await registrarDescarga();
 
-   // 👇 AQUÍ VA TU CÓDIGO NUEVO
-const workbook = new ExcelJS.Workbook();
+      setExportStep(2); // Paso 2: Procesando información financiera
+      await delay(600);
 
-/* ======================================================
-   📄 HOJA 1: RESUMEN
-====================================================== */
-const resumenSheet = workbook.addWorksheet("Resumen");
+      // Determinar texto del periodo según filtros activos
+      let periodoTexto = `${meses[mesSeleccionado]} ${anioSeleccionado}`;
+      if (filtroFecha === "hoy") {
+        periodoTexto = `Hoy (${normalizarFecha(new Date())})`;
+      } else if (filtroFecha === "fecha" && fechaExacta) {
+        periodoTexto = `Día ${fechaExacta}`;
+      } else if (filtroFecha === "rango" && fechaInicioCustom && fechaFinCustom) {
+        periodoTexto = `Rango (${fechaInicioCustom} al ${fechaFinCustom})`;
+      }
 
+      const workbook = new ExcelJS.Workbook();
 
-// 🔹 NOMBRE EMPRESA
-resumenSheet.mergeCells("A1:G1");
-const empresaCell = resumenSheet.getCell("A1");
+      /* ======================================================
+         📄 HOJA 1: RESUMEN
+      ====================================================== */
+      const resumenSheet = workbook.addWorksheet("Resumen");
 
-empresaCell.value = "CARIBBEAN STUDIO ACADEMY";
+      // 🔹 NOMBRE EMPRESA
+      resumenSheet.mergeCells("A1:G1");
+      const empresaCell = resumenSheet.getCell("A1");
+      empresaCell.value = "CARIBBEAN STUDIO ACADEMY";
+      empresaCell.font = {
+        size: 18,
+        bold: true,
+        color: { argb: "FF1F2937" },
+      };
+      empresaCell.alignment = {
+        horizontal: "center",
+        vertical: "middle",
+      };
 
-empresaCell.font = {
-  size: 18,
-  bold: true,
-  color: { argb: "FF1F2937" },
-};
+      // 🔹 SUBTÍTULO
+      resumenSheet.mergeCells("A2:G2");
+      const tituloCell = resumenSheet.getCell("A2");
+      tituloCell.value = "Reporte General - Dashboard";
+      tituloCell.font = {
+        size: 14,
+        bold: true,
+      };
+      tituloCell.alignment = {
+        horizontal: "center",
+      };
 
-empresaCell.alignment = {
-  horizontal: "center",
-  vertical: "middle",
-};
+      // 🔹 FECHA
+      resumenSheet.mergeCells("A3:G3");
+      const fechaCell = resumenSheet.getCell("A3");
+      fechaCell.value = `Generado el: ${new Date().toLocaleString()}`;
+      fechaCell.alignment = {
+        horizontal: "center",
+      };
 
-// 🔹 SUBTÍTULO
-resumenSheet.mergeCells("A2:G2");
-const tituloCell = resumenSheet.getCell("A2");
+      // 🔹 USUARIO QUE GENERA
+      resumenSheet.mergeCells("A4:G4");
+      const usuarioCell = resumenSheet.getCell("A4");
+      usuarioCell.value = `Generado por: ${
+        usuarioActual?.nombre || usuarioActual?.email
+      } (${usuarioActual?.rol || "Usuario"})`;
+      usuarioCell.font = {
+        size: 11,
+      };
+      usuarioCell.alignment = {
+        horizontal: "center",
+      };
 
-tituloCell.value = "Reporte General - Dashboard";
+      // 🔹 FILTROS
+      resumenSheet.mergeCells("A5:G5");
+      const filtroCell = resumenSheet.getCell("A5");
+      filtroCell.value = `Filtros → Periodo: ${periodoTexto} | Búsqueda: ${busqueda || "Ninguna"} | Método: ${filtroMetodo} | Curso: ${filtroCurso}`;
+      filtroCell.font = {
+        italic: true,
+        size: 10,
+      };
+      filtroCell.alignment = {
+        horizontal: "center",
+      };
 
-tituloCell.font = {
-  size: 14,
-  bold: true,
-};
+      // espacio
+      resumenSheet.addRow([]);
+      resumenSheet.addRow([]);
 
-tituloCell.alignment = {
-  horizontal: "center",
-};
+      // 🔹 KPIs
+      const header = resumenSheet.addRow([
+        "Total ingresos",
+        "Pagos alumnos",
+        "Total recaudado",
+        "Movimientos",
+        "Alumnos",
+        "Utilidad",
+        "Margen",
+      ]);
 
-// 🔹 FECHA
-resumenSheet.mergeCells("A3:G3");
-const fechaCell = resumenSheet.getCell("A3");
+      header.eachCell((cell) => {
+        cell.font = { bold: true, color: { argb: "FFFFFFFF" } };
+        cell.fill = {
+          type: "pattern",
+          pattern: "solid",
+          fgColor: { argb: "FF1E293B" },
+        };
+        cell.alignment = { horizontal: "center" };
+      });
 
-fechaCell.value = `Generado el: ${new Date().toLocaleString()}`;
+      const valores = resumenSheet.addRow([
+        totalIngresosMes,
+        totalPagosMes,
+        totalRecaudado,
+        totalMovimientos,
+        alumnosConPagos,
+        utilidadReal,
+        `${margen.toFixed(1)}%`,
+      ]);
+      const startRow = header.number;
+      const endRow = valores.number;
+      const startCol = 1;
+      const endCol = 7;
 
-fechaCell.alignment = {
-  horizontal: "center",
-};
+      for (let row = startRow; row <= endRow; row++) {
+        for (let col = startCol; col <= endCol; col++) {
+          const cell = resumenSheet.getRow(row).getCell(col);
+          cell.border = {
+            top: { style: "thin", color: { argb: "FF999999" } },
+            left: { style: "thin", color: { argb: "FF999999" } },
+            bottom: { style: "thin", color: { argb: "FF999999" } },
+            right: { style: "thin", color: { argb: "FF999999" } },
+          };
+        }
+      }
 
+      // 🔥 BORDES COMPLETOS TIPO TABLA PROFESIONAL
+      [header, valores].forEach((row) => {
+        row.eachCell((cell) => {
+          cell.border = {
+            top: { style: "thin", color: { argb: "FFCCCCCC" } },
+            left: { style: "thin", color: { argb: "FFCCCCCC" } },
+            bottom: { style: "thin", color: { argb: "FFCCCCCC" } },
+            right: { style: "thin", color: { argb: "FFCCCCCC" } },
+          };
+          cell.alignment = {
+            vertical: "middle",
+            horizontal: "center",
+          };
+        });
+      });
 
-// 🔹 USUARIO QUE GENERA
-resumenSheet.mergeCells("A4:G4");
-const usuarioCell = resumenSheet.getCell("A4");
+      resumenSheet.autoFilter = {
+        from: "A8",
+        to: "G8",
+      };
+      resumenSheet.addRow([]);
+      resumenSheet.addRow([]);
 
-usuarioCell.value = `Generado por: ${
-  usuarioActual?.nombre || usuarioActual?.email
-} (${usuarioActual?.rol || "Usuario"})`;
+      // 🔹 formato moneda
+      [1, 2, 3, 6].forEach((col) => {
+        const cell = valores.getCell(col);
+        cell.numFmt = '"$"#,##0';
+        cell.alignment = { horizontal: "right" }; // 🔥 clave
+      });
 
+      // 🔹 colores KPI
+      valores.getCell(6).font = {
+        bold: true,
+        color: { argb: utilidadReal >= 0 ? "FF00FF00" : "FFFF0000" }
+      };
 
-usuarioCell.font = {
-  size: 11,
-};
+      valores.getCell(7).font = {
+        bold: true,
+        color: { argb: margen >= 0 ? "FF00FF00" : "FFFF0000" }
+      };
 
-usuarioCell.alignment = {
-  horizontal: "center",
-};
+      // 🔹 gráfico simple (barra simulada)
+      resumenSheet.addRow([]);
+      resumenSheet.addRow(["Comparación"]);
 
+      const chartData = [
+        ["Ingresos", totalIngresosMes],
+        ["Egresos", totalEgresosMes],
+        ["Utilidad", utilidadReal],
+      ];
 
+      const maxValor = Math.max(
+        totalIngresosMes,
+        totalEgresosMes,
+        Math.abs(utilidadReal),
+        1
+      );
 
-// 🔹 FILTROS
-resumenSheet.mergeCells("A5:G5");
-const filtroCell = resumenSheet.getCell("A5");
+      chartData.forEach(([label, val]) => {
+        const porcentaje = Math.abs(val) / maxValor;
+        const barraLength = Math.max(1, Math.floor(porcentaje * 30));
+        const barra = "▇".repeat(barraLength);
+        const row = resumenSheet.addRow([
+          label,
+          val,
+          barra,
+        ]);
 
-filtroCell.value = `Filtros → Mes: ${meses[mesSeleccionado]} | Año: ${anioSeleccionado} | Búsqueda: ${busqueda || "Ninguna"} | Método: ${filtroMetodo} | Curso: ${filtroCurso}`
-filtroCell.font = {
-  italic: true,
-  size: 10,
-};
+        // formato moneda
+        row.getCell(2).numFmt = '"$"#,##0';
+        row.getCell(2).alignment = { horizontal: "right" };
 
-filtroCell.alignment = {
-  horizontal: "center",
-};
+        // estilo visual más limpio
+        row.getCell(3).font = {
+          color: {
+            argb:
+              label === "Egresos"
+                ? "FFFF4D4D"
+                : label === "Utilidad"
+                ? val >= 0
+                  ? "FF00FF00"
+                  : "FFFF0000"
+                : "FF0099FF",
+          },
+          bold: true,
+        };
+        row.getCell(3).alignment = { horizontal: "left" };
+      });
 
-// espacio
-resumenSheet.addRow([]);
-resumenSheet.addRow([]);
+      // ancho automático
+      resumenSheet.columns = [
+        { width: 30 },
+        { width: 30 },
+        { width: 50 },
+      ];
 
-// 🔹 KPIs
+      /* ======================================================
+         📄 HOJA 2: DETALLE
+      ====================================================== */
+      setExportStep(3); // Paso 3: Diseñando hojas y gráficos de Excel
+      await delay(600);
 
-const header = resumenSheet.addRow([
-  "Total ingresos",
-  "Pagos alumnos",
-  "Total recaudado",
-  "Movimientos",
-  "Alumnos",
-  "Utilidad",
-  "Margen",
-]);
+      const detalleSheet = workbook.addWorksheet("Detalle");
 
-header.eachCell((cell) => {
-  cell.font = { bold: true, color: { argb: "FFFFFFFF" } };
-  cell.fill = {
-    type: "pattern",
-    pattern: "solid",
-    fgColor: { argb: "FF1E293B" },
+      // 🔹 encabezados
+      detalleSheet.views = [{ state: "frozen", ySplit: 7 }];
+
+      // Encabezado estilo Historial
+      detalleSheet.mergeCells("A1:G1");
+      detalleSheet.getCell("A1").value = "CARIBBEAN STUDIO ACADEMY";
+
+      detalleSheet.mergeCells("A2:G2");
+      detalleSheet.getCell("A2").value = "Reporte Dashboard";
+
+      detalleSheet.mergeCells("A3:G3");
+      detalleSheet.getCell("A3").value = `Generado el: ${normalizarFecha(new Date())}`;
+
+      detalleSheet.mergeCells("A4:G4");
+      detalleSheet.getCell("A4").value = `Periodo: ${periodoTexto}`;
+
+      detalleSheet.addRow([]);
+
+      const headerRow = detalleSheet.addRow([
+        "Fecha",
+        "Alumno",
+        "ID Alumno",
+        "Curso",
+        "Método de pago",
+        "Referencia",
+        "Monto (COP)",
+      ]);
+
+      ["A1", "A2", "A3", "A4"].forEach((cellRef, index) => {
+        const cell = detalleSheet.getCell(cellRef);
+        cell.alignment = {
+          horizontal: "center",
+          vertical: "middle",
+        };
+        cell.font = {
+          bold: true,
+          size: index === 0 ? 16 : 12,
+          color: { argb: "FF111111" },
+        };
+        cell.fill = {
+          type: "pattern",
+          pattern: "solid",
+          fgColor: { argb: index === 0 ? "FFD9EAD3" : "FFF3F3F3" },
+        };
+        cell.border = {
+          top: { style: "thin", color: { argb: "FFB7B7B7" } },
+          left: { style: "thin", color: { argb: "FFB7B7B7" } },
+          bottom: { style: "thin", color: { argb: "FFB7B7B7" } },
+          right: { style: "thin", color: { argb: "FFB7B7B7" } },
+        };
+      });
+
+      headerRow.eachCell((cell) => {
+        cell.font = {
+          bold: true,
+          color: { argb: "FFFFFFFF" },
+        };
+        cell.alignment = {
+          horizontal: "center",
+          vertical: "middle",
+        };
+        cell.fill = {
+          type: "pattern",
+          pattern: "solid",
+          fgColor: { argb: "FF1F4E78" },
+        };
+        cell.border = {
+          top: { style: "thin", color: { argb: "FFBFBFBF" } },
+          left: { style: "thin", color: { argb: "FFBFBFBF" } },
+          bottom: { style: "thin", color: { argb: "FFBFBFBF" } },
+          right: { style: "thin", color: { argb: "FFBFBFBF" } },
+        };
+      });
+
+      // 🔹 datos (usamos la lista filtrada del dashboard directamente para respetar rango y filtros)
+      const dataExport = [...historialFiltrado];
+
+      if (!dataExport.length) {
+        alert("No hay datos para exportar con los filtros actuales.");
+        setIsExporting(false);
+        setExportStep(0);
+        return;
+      }
+
+      dataExport.forEach((item) => {
+        const row = detalleSheet.addRow([
+          normalizarFecha(item.fecha),
+          item.alumno,
+          item.alumnoId,
+          item.curso,
+          item.metodo,
+          item.referencia,
+          item.monto,
+        ]);
+
+        // formato moneda
+        row.getCell(7).numFmt = '"$"#,##0';
+
+        // 🔥 bordes estilo tabla profesional
+        row.eachCell((cell) => {
+          cell.border = {
+            top: { style: "thin", color: { argb: "FFDDDDDD" } },
+            left: { style: "thin", color: { argb: "FFDDDDDD" } },
+            bottom: { style: "thin", color: { argb: "FFDDDDDD" } },
+            right: { style: "thin", color: { argb: "FFDDDDDD" } },
+          };
+          cell.alignment = {
+            vertical: "middle",
+            horizontal: cell.col === 7 ? "right" : "left",
+          };
+        });
+      });
+
+      // 🔹 total profesional
+      const total = dataExport.reduce((acc, i) => acc + i.monto, 0);
+
+      detalleSheet.addRow([]);
+
+      const totalRow = detalleSheet.addRow([
+        "",
+        "",
+        "",
+        "",
+        "",
+        "TOTAL GENERAL",
+        total,
+      ]);
+
+      // estilo completo de fila
+      totalRow.eachCell((cell, colNumber) => {
+        cell.font = {
+          bold: true,
+          size: 12,
+          color: { argb: "FF000000" },
+        };
+        cell.alignment = {
+          vertical: "middle",
+          horizontal: colNumber === 7 ? "right" : "center",
+        };
+        cell.fill = {
+          type: "pattern",
+          pattern: "solid",
+          fgColor: { argb: "FFE2EFDA" }, // verde suave tipo resumen financiero
+        };
+        cell.border = {
+          top: { style: "medium", color: { argb: "FFAAAAAA" } },
+          left: { style: "thin", color: { argb: "FFAAAAAA" } },
+          bottom: { style: "medium", color: { argb: "FFAAAAAA" } },
+          right: { style: "thin", color: { argb: "FFAAAAAA" } },
+        };
+      });
+
+      // formato moneda
+      totalRow.getCell(7).numFmt = '"$"#,##0';
+
+      // 🔹 ancho profesional por columna
+      detalleSheet.columns = [
+        { width: 15 }, // Fecha
+        { width: 28 }, // Alumno
+        { width: 18 }, // ID
+        { width: 20 }, // Curso
+        { width: 20 }, // Método
+        { width: 22 }, // Referencia
+        { width: 18 }, // Monto
+      ];
+
+      // 🔹 activar filtros tipo Excel
+      detalleSheet.autoFilter = {
+        from: "A7",
+        to: "G7",
+      };
+
+      /* ======================================================
+         📦 EXPORTAR
+      ====================================================== */
+      setExportStep(4); // Paso 4: Generando archivo Excel
+      await delay(500);
+
+      const buffer = await workbook.xlsx.writeBuffer();
+
+      const blob = new Blob([buffer], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+
+      setExportStep(5); // Paso 5: ¡Descarga iniciada!
+      await delay(400);
+
+      // 🔥 iOS / Safari fix
+      if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+        const url = window.URL.createObjectURL(blob);
+        window.open(url);
+      } else {
+        saveAs(blob, "dashboard_financiero.xlsx");
+      }
+    } catch (error) {
+      console.error("Error exportando:", error);
+      alert("Hubo un error al generar el archivo. Por favor intenta de nuevo.");
+    } finally {
+      setIsExporting(false);
+      setExportStep(0);
+    }
   };
-  cell.alignment = { horizontal: "center" };
-});
-
-const valores = resumenSheet.addRow([
-  totalIngresosMes,
-  totalPagosMes,
-  totalRecaudado,
-  totalMovimientos,
-  alumnosConPagos,
-  utilidadReal,
-  `${margen.toFixed(1)}%`,
-]);
-const startRow = header.number;
-const endRow = valores.number;
-const startCol = 1;
-const endCol = 7;
-
-for (let row = startRow; row <= endRow; row++) {
-  for (let col = startCol; col <= endCol; col++) {
-    const cell = resumenSheet.getRow(row).getCell(col);
-
-    cell.border = {
-      top: { style: "thin", color: { argb: "FF999999" } },
-      left: { style: "thin", color: { argb: "FF999999" } },
-      bottom: { style: "thin", color: { argb: "FF999999" } },
-      right: { style: "thin", color: { argb: "FF999999" } },
-    };
-  }
-}
-
-// 🔥 BORDES COMPLETOS TIPO TABLA PROFESIONAL
-[header, valores].forEach((row) => {
-  row.eachCell((cell) => {
-    cell.border = {
-      top: { style: "thin", color: { argb: "FFCCCCCC" } },
-      left: { style: "thin", color: { argb: "FFCCCCCC" } },
-      bottom: { style: "thin", color: { argb: "FFCCCCCC" } },
-      right: { style: "thin", color: { argb: "FFCCCCCC" } },
-    };
-
-    cell.alignment = {
-      vertical: "middle",
-      horizontal: "center",
-    };
-  });
-});
-
-resumenSheet.autoFilter = {
-  from: "A8",
-  to: "G8",
-};
-resumenSheet.addRow([]);
-resumenSheet.addRow([]);
-
-// 🔹 formato moneda
-[1,2,3,6].forEach((col) => {
-  const cell = valores.getCell(col);
-
-  cell.numFmt = '"$"#,##0';
-  cell.alignment = { horizontal: "right" }; // 🔥 clave
-});
-
-// 🔹 colores KPI
-valores.getCell(6).font = {
-  bold: true,
-  color: { argb: utilidadReal >= 0 ? "FF00FF00" : "FFFF0000" }
-};
-
-valores.getCell(7).font = {
-  bold: true,
-  color: { argb: margen >= 0 ? "FF00FF00" : "FFFF0000" }
-};
-
-// 🔹 gráfico simple (barra simulada)
-resumenSheet.addRow([]);
-resumenSheet.addRow(["Comparación"]);
-
-const chartData = [
-  ["Ingresos", totalIngresosMes],
-  ["Egresos", totalEgresosMes],
-  ["Utilidad", utilidadReal],
-];
-
-const maxValor = Math.max(
-  totalIngresosMes,
-  totalEgresosMes,
-  Math.abs(utilidadReal),
-  1
-);
-
-chartData.forEach(([label, val]) => {
-  const porcentaje = Math.abs(val) / maxValor;
-
-  const barraLength = Math.max(1, Math.floor(porcentaje * 30));
-
-  const barra = "▇".repeat(barraLength);
-
-  const row = resumenSheet.addRow([
-    label,
-    val,
-    barra,
-  ]);
-
-  // formato moneda
-  row.getCell(2).numFmt = '"$"#,##0';
-  row.getCell(2).alignment = { horizontal: "right" };
-
-  // estilo visual más limpio
-  row.getCell(3).font = {
-    color: {
-      argb:
-        label === "Egresos"
-          ? "FFFF4D4D"
-          : label === "Utilidad"
-          ? val >= 0
-            ? "FF00FF00"
-            : "FFFF0000"
-          : "FF0099FF",
-    },
-    bold: true,
-  };
-
-  row.getCell(3).alignment = { horizontal: "left" };
-});
-
-// ancho automático
-resumenSheet.columns = [
-  { width: 30 },
-  { width: 30 },
-  { width: 50 },
-];
-
-/* ======================================================
-   📄 HOJA 2: DETALLE
-====================================================== */
-const detalleSheet = workbook.addWorksheet("Detalle");
-
-// 🔹 encabezados
-detalleSheet.views = [{ state: "frozen", ySplit: 7 }];
-
-// Encabezado estilo Historial
-detalleSheet.mergeCells("A1:G1");
-detalleSheet.getCell("A1").value = "CARIBBEAN STUDIO ACADEMY";
-
-detalleSheet.mergeCells("A2:G2");
-detalleSheet.getCell("A2").value = "Reporte Dashboard";
-
-detalleSheet.mergeCells("A3:G3");
-detalleSheet.getCell("A3").value = `Generado el: ${normalizarFecha(new Date())}`;
-
-detalleSheet.mergeCells("A4:G4");
-detalleSheet.getCell("A4").value = `Periodo: ${meses[mesSeleccionado]} ${anioSeleccionado}`;
-
-detalleSheet.addRow([]);
-
-const headerRow = detalleSheet.addRow([
-  "Fecha",
-  "Alumno",
-  "ID Alumno",
-  "Curso",
-  "Método de pago",
-  "Referencia",
-  "Monto (COP)",
-]);
-
-["A1", "A2", "A3", "A4"].forEach((cellRef, index) => {
-  const cell = detalleSheet.getCell(cellRef);
-
-  cell.alignment = {
-    horizontal: "center",
-    vertical: "middle",
-  };
-
-  cell.font = {
-    bold: true,
-    size: index === 0 ? 16 : 12,
-    color: { argb: "FF111111" },
-  };
-
-  cell.fill = {
-    type: "pattern",
-    pattern: "solid",
-    fgColor: { argb: index === 0 ? "FFD9EAD3" : "FFF3F3F3" },
-  };
-
-  cell.border = {
-    top: { style: "thin", color: { argb: "FFB7B7B7" } },
-    left: { style: "thin", color: { argb: "FFB7B7B7" } },
-    bottom: { style: "thin", color: { argb: "FFB7B7B7" } },
-    right: { style: "thin", color: { argb: "FFB7B7B7" } },
-  };
-});
-
-headerRow.eachCell((cell) => {
-  cell.font = {
-    bold: true,
-    color: { argb: "FFFFFFFF" },
-  };
-
-  cell.alignment = {
-    horizontal: "center",
-    vertical: "middle",
-  };
-
-  cell.fill = {
-    type: "pattern",
-    pattern: "solid",
-    fgColor: { argb: "FF1F4E78" },
-  };
-
-  cell.border = {
-    top: { style: "thin", color: { argb: "FFBFBFBF" } },
-    left: { style: "thin", color: { argb: "FFBFBFBF" } },
-    bottom: { style: "thin", color: { argb: "FFBFBFBF" } },
-    right: { style: "thin", color: { argb: "FFBFBFBF" } },
-  };
-});
-
-// 🔹 datos
-const dataExport = historialFiltrado.filter((item) => {
-  return (
-    item.fecha.getMonth() === mesSeleccionado &&
-    item.fecha.getFullYear() === anioSeleccionado
-  );
-});
-
-
-if (!dataExport.length) {
-  alert("No hay datos para exportar");
-  return;
-}
-dataExport.forEach((item) => {
-  const row = detalleSheet.addRow([
-    normalizarFecha(item.fecha),
-    item.alumno,
-    item.alumnoId,
-    item.curso,
-    item.metodo,
-    item.referencia,
-    item.monto,
-  ]);
-
-  // formato moneda
-  row.getCell(7).numFmt = '"$"#,##0';
-
-  // 🔥 bordes estilo tabla profesional
-  row.eachCell((cell) => {
-    cell.border = {
-      top: { style: "thin", color: { argb: "FFDDDDDD" } },
-      left: { style: "thin", color: { argb: "FFDDDDDD" } },
-      bottom: { style: "thin", color: { argb: "FFDDDDDD" } },
-      right: { style: "thin", color: { argb: "FFDDDDDD" } },
-    };
-
-    cell.alignment = {
-      vertical: "middle",
-      horizontal: cell.col === 7 ? "right" : "left",
-    };
-  });
-});
-
-// 🔹 total profesional
-const total = dataExport.reduce((acc, i) => acc + i.monto, 0);
-
-detalleSheet.addRow([]);
-
-const totalRow = detalleSheet.addRow([
-  "",
-  "",
-  "",
-  "",
-  "",
-  "TOTAL GENERAL",
-  total,
-]);
-
-// estilo completo de fila
-totalRow.eachCell((cell, colNumber) => {
-  cell.font = {
-    bold: true,
-    size: 12,
-    color: { argb: "FF000000" },
-  };
-
-  cell.alignment = {
-    vertical: "middle",
-    horizontal: colNumber === 7 ? "right" : "center",
-  };
-
-  cell.fill = {
-    type: "pattern",
-    pattern: "solid",
-    fgColor: { argb: "FFE2EFDA" }, // verde suave tipo resumen financiero
-  };
-
-  cell.border = {
-    top: { style: "medium", color: { argb: "FFAAAAAA" } },
-    left: { style: "thin", color: { argb: "FFAAAAAA" } },
-    bottom: { style: "medium", color: { argb: "FFAAAAAA" } },
-    right: { style: "thin", color: { argb: "FFAAAAAA" } },
-  };
-});
-
-// formato moneda
-totalRow.getCell(7).numFmt = '"$"#,##0';
-
-
-// 🔹 ancho profesional por columna
-detalleSheet.columns = [
-  { width: 15 }, // Fecha
-  { width: 28 }, // Alumno
-  { width: 18 }, // ID
-  { width: 20 }, // Curso
-  { width: 20 }, // Método
-  { width: 22 }, // Referencia
-  { width: 18 }, // Monto
-];
-
-// 🔹 activar filtros tipo Excel
-detalleSheet.autoFilter = {
-  from: "A7",
-  to: "G7",
-};
-
-/* ======================================================
-   📦 EXPORTAR
-====================================================== */
-const buffer = await workbook.xlsx.writeBuffer();
-
-const blob = new Blob([buffer], {
-  type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-});
-
-// 🔥 iOS / Safari fix
-if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-  const url = window.URL.createObjectURL(blob);
-  window.open(url);
-} else {
-  saveAs(blob, "dashboard_financiero.xlsx");
-}
-  } catch (error) {
-    console.error("Error exportando:", error);
-  }
-};
 
   return (
     <div className="dashboard-layout">
@@ -1208,6 +1198,91 @@ style={{ height: `${(valor / maxEgreso) * 180}px` }}                />
 
       
       </main>
+
+      {/* MODAL DE EXPORTACIÓN PROFESIONAL */}
+      {isExporting && (
+        <div className="export-modal-overlay">
+          <div className="export-modal-card animate-zoom-in">
+            <div className="export-modal-header">
+              <div className="export-spinner-container">
+                <div className="export-spinner"></div>
+                <div className="export-spinner-glow"></div>
+              </div>
+              <h2>Preparando tu informe</h2>
+              <p>Estamos procesando la información del Dashboard para generar tu reporte profesional en Excel.</p>
+            </div>
+
+            <div className="export-modal-body">
+              {/* Barra de progreso animada */}
+              <div className="export-progress-container">
+                <div className="export-progress-bar" style={{ width: `${(exportStep / 5) * 100}%` }}></div>
+                <span className="export-progress-percentage">{Math.round((exportStep / 5) * 100)}%</span>
+              </div>
+
+              {/* Lista de pasos con su respectivo estado */}
+              <ul className="export-steps-list">
+                <li className={exportStep >= 1 ? "active" : ""}>
+                  <span className="step-icon">{exportStep > 1 ? "✓" : "⚡"}</span>
+                  <span className="step-label">Analizando filtros y registros activos</span>
+                </li>
+                <li className={exportStep >= 2 ? "active" : ""}>
+                  <span className="step-icon">{exportStep > 2 ? "✓" : exportStep === 2 ? "⚡" : "○"}</span>
+                  <span className="step-label">Procesando información financiera</span>
+                </li>
+                <li className={exportStep >= 3 ? "active" : ""}>
+                  <span className="step-icon">{exportStep > 3 ? "✓" : exportStep === 3 ? "⚡" : "○"}</span>
+                  <span className="step-label">Diseñando hojas y gráficos de Excel</span>
+                </li>
+                <li className={exportStep >= 4 ? "active" : ""}>
+                  <span className="step-icon">{exportStep > 4 ? "✓" : exportStep === 4 ? "⚡" : "○"}</span>
+                  <span className="step-label">Compilando archivo final</span>
+                </li>
+                <li className={exportStep >= 5 ? "active" : ""}>
+                  <span className="step-icon">{exportStep === 5 ? "🎉" : "○"}</span>
+                  <span className="step-label">¡Descarga iniciada!</span>
+                </li>
+              </ul>
+
+              {/* Filtros activos que se están exportando */}
+              <div className="export-filters-summary">
+                <h4>Filtros aplicados en la exportación:</h4>
+                <div className="export-filter-badges">
+                  <div className="filter-badge">
+                    <span className="badge-title">Periodo:</span>
+                    <span className="badge-value">
+                      {filtroFecha === "hoy"
+                        ? "Hoy"
+                        : filtroFecha === "fecha" && fechaExacta
+                        ? fechaExacta
+                        : filtroFecha === "rango" && fechaInicioCustom && fechaFinCustom
+                        ? `${fechaInicioCustom} al ${fechaFinCustom}`
+                        : `${meses[mesSeleccionado]} ${anioSeleccionado}`}
+                    </span>
+                  </div>
+                  <div className="filter-badge">
+                    <span className="badge-title">Método:</span>
+                    <span className="badge-value">{filtroMetodo === "todos" ? "Todos" : filtroMetodo}</span>
+                  </div>
+                  <div className="filter-badge">
+                    <span className="badge-title">Curso:</span>
+                    <span className="badge-value">{filtroCurso === "todos" ? "Todos" : filtroCurso}</span>
+                  </div>
+                  {busqueda.trim() && (
+                    <div className="filter-badge">
+                      <span className="badge-title">Búsqueda:</span>
+                      <span className="badge-value">"{busqueda.trim()}"</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+            
+            <div className="export-modal-footer">
+              <span className="footer-warning">Por favor, no cierres esta pestaña.</span>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
   

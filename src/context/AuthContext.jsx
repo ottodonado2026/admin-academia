@@ -64,12 +64,9 @@ export const AuthProvider = ({ children }) => {
         console.warn("Rescue timeout triggered: Supabase está congelado. Forzando lectura manual de sesión.");
         try {
           let manualSession = null;
-          for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (key && key.endsWith("-auth-token")) {
-              manualSession = JSON.parse(localStorage.getItem(key));
-              break;
-            }
+          const sessionString = localStorage.getItem("academia-v2-auth-token");
+          if (sessionString) {
+            manualSession = JSON.parse(sessionString);
           }
           if (manualSession && manualSession.user) {
             console.log("Sesión rescatada manualmente.");

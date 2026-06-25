@@ -35,6 +35,19 @@ export default function ModalClase({ clase, onClose, onGuardar, pagos = [] }) {
     return { total, asistieron, sumanHoras };
   }, [alumnos]);
 
+  const calcularModuloActual = (horasAcumuladas) => {
+    if (!horasAcumuladas) return 1;
+    const horas = Number(horasAcumuladas);
+    if (horas < 10) return 1;
+    if (horas < 20) return 2;
+    if (horas < 30) return 3;
+    if (horas < 40) return 4;
+    return 5;
+  };
+
+  const moduloActual = calcularModuloActual(localClase.alumnos?.horas_acumuladas || 0);
+  const modulosFaltantes = Math.max(0, 5 - moduloActual);
+
   return (
     <div className="modal-overlay-pro" onClick={onClose}>
       <div className="modal-card-pro" onClick={(e) => e.stopPropagation()}>
@@ -43,13 +56,12 @@ export default function ModalClase({ clase, onClose, onGuardar, pagos = [] }) {
             <h2>{localClase.curso}</h2>
             <p>
              {localClase.fecha} ·{" "}
-              {localClase.horaInicio || localClase.hora_inicio}
-
-              {(localClase.horaFin || localClase.hora_fin)
+              {localClase.horaInicio || localClase.hora_inicio || "--:--"}
+              {localClase.horaFin || localClase.hora_fin
                 ? ` - ${localClase.horaFin || localClase.hora_fin}`
                 : ""} ·{" "}
 
-              {localClase.modalidad}
+              {localClase.alumnos?.modalidad || localClase.modalidad || "Regular"}
             </p>
           </div>
 
@@ -61,12 +73,12 @@ export default function ModalClase({ clase, onClose, onGuardar, pagos = [] }) {
        <div className="modal-grid-pro">
   <div className="modal-info-box">
     <span>Tema</span>
-    <strong>{localClase.tema || "No definido"}</strong>
+    <strong>{localClase.tema || localClase.observaciones || "No definido"}</strong>
   </div>
 
   <div className="modal-info-box">
-    <span>Módulo</span>
-   <strong>{localClase.modulo || "No definido"}</strong>
+    <span>Módulo actual</span>
+   <strong>{moduloActual} ({modulosFaltantes} restantes)</strong>
   </div>
 
   <div className="modal-info-box">

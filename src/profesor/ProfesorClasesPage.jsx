@@ -10,6 +10,17 @@ const STORAGE_KEYS = {
   clases: "clases",
 };
 
+// --- LOGICA DE MODULOS Y HORAS ---
+const calcularModuloActual = (horasAcumuladas) => {
+  if (!horasAcumuladas) return 1;
+  const horas = Number(horasAcumuladas);
+  if (horas < 10) return 1;
+  if (horas < 20) return 2;
+  if (horas < 30) return 3;
+  if (horas < 40) return 4;
+  return 5;
+};
+
 const ESTADOS_CLASE = {
   PROGRAMADA: "programada",
   COMPLETADA: "completada",
@@ -52,7 +63,7 @@ useEffect(() => {
       await Promise.all([
         supabase
           .from("clases")
-          .select("*")
+          .select("*, alumnos:alumno_id(estado_pago, modalidad, horas_acumuladas)")
           .or(`profesor_id.eq.${userData.id},profesor_db_id.eq.${userData.id}`)
           .order("fecha", { ascending: false }),
 
@@ -83,16 +94,23 @@ useEffect(() => {
       table: "clases",
     },
     () => {
-      if (activo)
-      cargarDatos();
+      if (activo) cargarDatos();
     }
   )
   .subscribe();
 
- return () => {
-  activo = false;
-  supabase.removeChannel(channel);
-};
+  // Forzar recarga si la sesión de Supabase apenas se inicializa (corrige datos vacíos al entrar)
+  const { data: authListener } = supabase.auth.onAuthStateChange((event) => {
+    if (event === "SIGNED_IN" || event === "INITIAL_SESSION") {
+      if (activo) cargarDatos();
+    }
+  });
+
+  return () => {
+    activo = false;
+    supabase.removeChannel(channel);
+    authListener.subscription.unsubscribe();
+  };
 }, []);
   
 

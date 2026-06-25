@@ -16,9 +16,11 @@ const [roleLabel, setRoleLabel] = useState("");
 
   const [fade, setFade] = useState(false);
 
-  const { user, role, login } = useAuth();
+  const { user, role, login, loading } = useAuth();
 
   useEffect(() => {
+    if (loading) return; // Esperar a que termine de consultar el rol en la base de datos
+
     if (user && role) {
       if (role === "coordinador_academico" || role === "coordinador") {
         navigate("/coordinador");
@@ -32,7 +34,7 @@ const [roleLabel, setRoleLabel] = useState("");
     } else if (user && role === null) {
       alert("Error: Has iniciado sesión, pero tu usuario no tiene un rol asignado en la base de datos (tabla 'usuarios'). Por favor contacta a soporte.");
     }
-  }, [user, role, navigate]);
+  }, [user, role, navigate, loading]);
 
   const handleLogin = async (e) => {
     e.preventDefault();

@@ -100,24 +100,30 @@ export default function ModalExpediente({ alumno, onClose, clases, onActualizado
     <div className="modal-overlay-pro">
       <div className="modal-content-pro modal-expediente">
         <button className="modal-close-pro" onClick={onClose}>×</button>
-        <h2 className="modal-title">Expediente del Alumno</h2>
+        
+        <div className="modal-expediente-header">
+          <h2 className="modal-title">Expediente del Alumno</h2>
+          <span className="exp-badge-status">{alumno.estadoAcademico || alumno.estado || "Activo"}</span>
+        </div>
 
         <div className="expediente-grid">
           <div className="exp-info">
             <h3>{alumno.nombre}</h3>
-            <p><strong>Curso:</strong> {nombreCurso}</p>
-            <p><strong>Teléfono:</strong> {alumno.telefono || "No registrado"}</p>
-            <p><strong>Email:</strong> {alumno.email || "No registrado"}</p>
+            <div className="exp-info-details">
+              <p><strong>Curso:</strong> {nombreCurso}</p>
+              <p><strong>Teléfono:</strong> {alumno.telefono || "No registrado"}</p>
+              <p><strong>Email:</strong> {alumno.email || "No registrado"}</p>
+            </div>
           </div>
           
           <div className="exp-kpis">
             <div className="mini-kpi">
               <span>Horas</span>
-              <strong>{horas} / {horasTotales}</strong>
+              <strong>{horas} <small>/ {horasTotales}</small></strong>
             </div>
             <div className="mini-kpi">
               <span>Módulo</span>
-              <strong>{moduloActual} / {modulos}</strong>
+              <strong>{moduloActual} <small>/ {modulos}</small></strong>
             </div>
           </div>
         </div>
@@ -125,7 +131,7 @@ export default function ModalExpediente({ alumno, onClose, clases, onActualizado
         <div className="seguimiento-section">
           <label>Observaciones / Seguimiento del Profesor</label>
           <textarea 
-            rows="5"
+            rows="4"
             placeholder="Anota aquí el progreso del alumno, dificultades, fortalezas..."
             value={seguimiento}
             onChange={(e) => setSeguimiento(e.target.value)}
@@ -139,7 +145,7 @@ export default function ModalExpediente({ alumno, onClose, clases, onActualizado
               onClick={generarCertificadoPDF}
               disabled={!puedeGenerarCertificado || generando}
             >
-              {generando ? "Generando..." : "Generar Certificado"}
+              {generando ? "Generando PDF..." : "Generar Certificado"}
             </button>
             {!puedeGenerarCertificado && <small className="hint-cert">Requiere {horasPorModulo}h</small>}
           </div>
@@ -153,31 +159,43 @@ export default function ModalExpediente({ alumno, onClose, clases, onActualizado
         </div>
 
         {/* Plantilla Oculta para el Certificado PDF */}
-        <div id="certificado-template" className="certificado-template" style={{ display: 'none' }}>
-          <div className="certificado-inner">
-            <div className="cert-header">
-              <h1>Certificado de Aprobación</h1>
-              <p>Otorgado por la Academia</p>
-            </div>
-            <div className="cert-body">
-              <p>Se certifica que el alumno:</p>
-              <h2 className="cert-name">{alumno.nombre}</h2>
-              <p>ha completado con éxito el <strong>Módulo {moduloActual}</strong> del programa</p>
-              <h3 className="cert-course">{nombreCurso}</h3>
-              <p className="cert-horas">con una dedicación total de {horas} horas lectivas.</p>
-            </div>
-            <div className="cert-footer">
-              <div className="firma-box">
-                <div className="firma-line"></div>
-                <span>Dirección Académica</span>
+        <div id="certificado-template" className="certificado-template-v2" style={{ display: 'none' }}>
+          <div className="cert-border-outer">
+            <div className="cert-border-inner">
+              <div className="cert-header-v2">
+                <div className="cert-logo-placeholder">CARIBBEAN STUDIO ACADEMY</div>
+                <h1>CERTIFICADO DE APROBACIÓN</h1>
               </div>
-              <div className="firma-box">
-                <div className="firma-line"></div>
-                <span>Profesor</span>
+              
+              <div className="cert-body-v2">
+                <p className="cert-present">El presente certificado se otorga a:</p>
+                <h2 className="cert-name-v2">{alumno.nombre}</h2>
+                <div className="cert-divider"></div>
+                <p className="cert-reason">
+                  Por haber completado satisfactoriamente el <strong>Módulo {moduloActual}</strong> del programa académico:
+                </p>
+                <h3 className="cert-course-v2">{nombreCurso}</h3>
+                <p className="cert-horas-v2">Cumpliendo con un total de <strong>{horas} horas lectivas</strong>.</p>
               </div>
-            </div>
-            <div className="cert-fecha">
-              Fecha de emisión: {new Date().toLocaleDateString()}
+              
+              <div className="cert-footer-v2">
+                <div className="cert-date-v2">
+                  Dado a los {new Date().getDate()} días del mes de {new Date().toLocaleString('es-ES', { month: 'long' })} de {new Date().getFullYear()}
+                </div>
+                
+                <div className="cert-signatures">
+                  <div className="firma-box-v2">
+                    <div className="firma-line-v2"></div>
+                    <strong>Gerente General</strong>
+                    <span>Caribbean Studio</span>
+                  </div>
+                  <div className="firma-box-v2">
+                    <div className="firma-line-v2"></div>
+                    <strong>Coordinador Académico Principal</strong>
+                    <span>Dirección Académica</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>

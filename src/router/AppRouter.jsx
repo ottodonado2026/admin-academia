@@ -11,6 +11,7 @@ import CuentasPorCobrar from "../pages/CuentasPorCobrar";
 import ProfesoresPage from "../pages/ProfesoresPage";
 import LoginProfesor from "../profesor/LoginProfesor";
 import HistorialDePagos from "../historialdepagos/HistorialPagosPage";
+import NominaPage from "../pages/NominaPage";
 
 import AsesoresLogin from "../asesores/AsesoresLogin";
 import AsesoresPanel from "../asesores/AsesoresPanel";
@@ -87,6 +88,14 @@ function AppRouter() {
 
         <Route path="/pagos" element={<ProtectedRoute role="admin"><PagosPage /></ProtectedRoute>} />
         <Route path="/historial-pagos" element={<ProtectedRoute role="admin"><HistorialDePagos /></ProtectedRoute>} />
+        <Route
+          path="/nomina"
+          element={
+            <ProtectedRoute role={["admin", "owner", "contador"]}>
+              <NominaPage />
+            </ProtectedRoute>
+          }
+        />
         <Route path="/ingresos" element={<ProtectedRoute role="admin"><IngresosPage /></ProtectedRoute>} />
         <Route path="/egresos" element={<ProtectedRoute role="admin"><EgresosPage /></ProtectedRoute>} />
         <Route path="/cuentas" element={<ProtectedRoute role="admin"><CuentasPorCobrar /></ProtectedRoute>} />

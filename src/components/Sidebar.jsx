@@ -183,6 +183,10 @@ useEffect(() => {
         Historial de pagos
       </NavLink>
 
+      <NavLink to="/nomina" onClick={() => setOpen(false)}>
+        Nómina
+      </NavLink>
+
       <NavLink to="/ingresos" onClick={() => setOpen(false)}>
         Ingresos
       </NavLink>

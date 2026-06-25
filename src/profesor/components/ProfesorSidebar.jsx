@@ -18,6 +18,7 @@ export default function ProfesorSidebar({ activeView, setActiveView }) {
       { id: "asistencia", label: "Asistencia" },
       { id: "calificaciones", label: "Calificaciones" },
       { id: "seguimiento", label: "Seguimiento" },
+      { id: "pagos", label: "Pagos" },
     ],
     []
   );

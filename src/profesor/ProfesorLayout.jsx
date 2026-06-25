@@ -10,6 +10,7 @@ import ProfesorAlumnosPage from "./ProfesorAlumnosPage";
 import ProfesorAsistenciaPage from "./ProfesorAsistenciaPage";
 import ProfesorSeguimientoPage from "./ProfesorSeguimientoPage";
 import ProfesorCalificacionesPage from "./ProfesorCalificacionesPage";
+import ProfesorPagos from "./components/ProfesorPagos";
 
 export default function ProfesorLayout() {
   const [activeView, setActiveView] = useState("dashboard");
@@ -28,6 +29,8 @@ export default function ProfesorLayout() {
         return <ProfesorSeguimientoPage />;
       case "calificaciones":
         return <ProfesorCalificacionesPage />;
+      case "pagos":
+        return <ProfesorPagos />;
       default:
         return <ProfesorDashboardPage />;
     }

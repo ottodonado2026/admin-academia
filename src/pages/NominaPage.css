@@ -1,0 +1,453 @@
+/* =========================================
+   CONTENEDOR GENERAL NÓMINA
+   ========================================= */
+.nomina-page {
+  padding: 40px;
+}
+
+.nomina-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.nomina-subtitle {
+  color: var(--text-muted);
+  font-size: 14px;
+  margin-top: 4px;
+}
+
+.nomina-periodo-selector {
+  display: flex;
+  gap: 10px;
+}
+
+.nomina-periodo-selector select {
+  height: 42px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.03);
+  color: white;
+  padding: 0 16px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+/* =========================================
+   PESTAÑAS (TABS)
+   ========================================= */
+.nomina-tabs {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 10px;
+}
+
+.tab-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 15px;
+  font-weight: 600;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -12px;
+}
+
+.tab-btn:hover {
+  color: white;
+}
+
+.tab-btn.active {
+  color: #39ff14;
+  border-bottom: 2px solid #39ff14;
+}
+
+/* =========================================
+   KPI METRICS
+   ========================================= */
+.nomina-kpis {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+  margin-bottom: 28px;
+}
+
+.nomina-kpi-card {
+  background: rgba(16, 18, 27, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 22px;
+  backdrop-filter: blur(10px);
+  transition: transform 0.2s ease;
+}
+
+.nomina-kpi-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.nomina-kpi-card h3 {
+  color: var(--text-muted);
+  font-size: 13px;
+  margin: 0 0 10px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.nomina-kpi-card p {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 800;
+  font-family: var(--font-mono);
+  letter-spacing: -0.02em;
+  color: #fff;
+}
+
+.nomina-kpi-card.kpi-pagado p {
+  color: #39ff14;
+}
+
+.nomina-kpi-card.kpi-restante p {
+  color: #ff8c00;
+}
+
+/* =========================================
+   ESTADOS DE NÓMINA GENERAL
+   ========================================= */
+.tabla-header-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.tabla-header-info h2 {
+  font-size: 20px;
+  margin: 0;
+}
+
+.nomina-estado-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.nomina-estado-badge.abierto {
+  background: rgba(57, 255, 20, 0.12);
+  color: #39ff14;
+  border: 1px solid rgba(57, 255, 20, 0.25);
+}
+
+.nomina-estado-badge.cerrado {
+  background: rgba(148, 163, 184, 0.12);
+  color: #94a3b8;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+/* =========================================
+   TABLA NÓMINA
+   ========================================= */
+.tabla-nomina {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tabla-nomina th {
+  text-align: left;
+  font-size: 12px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  padding: 14px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.tabla-nomina td {
+  padding: 14px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 14px;
+}
+
+.tabla-nomina tr:hover td {
+  background: rgba(255, 255, 255, 0.01);
+}
+
+.mono-text {
+  font-family: var(--font-mono);
+  letter-spacing: -0.01em;
+}
+
+.font-bold {
+  font-weight: 700;
+}
+
+/* =========================================
+   BARRA DE PROGRESO DE LIQUIDACIÓN
+   ========================================= */
+.progreso-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 150px;
+}
+
+.progreso-bar-bg {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progreso-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #39ff14, #00c8ff);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.progreso-text {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+
+/* =========================================
+   ESTADO DE LIQUIDACIÓN
+   ========================================= */
+.estado-liquidación {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.estado-liquidación.pendiente {
+  background: rgba(239, 68, 68, 0.12);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.estado-liquidación.parcial {
+  background: rgba(250, 204, 21, 0.12);
+  color: #fef08a;
+  border: 1px solid rgba(250, 204, 21, 0.2);
+}
+
+.estado-liquidación.pagado {
+  background: rgba(57, 255, 20, 0.12);
+  color: #39ff14;
+  border: 1px solid rgba(57, 255, 20, 0.2);
+}
+
+/* =========================================
+   ACCIONES NÓMINA
+   ========================================= */
+.acciones-nomina {
+  display: flex;
+  gap: 6px;
+}
+
+.btn-nomina-abonar {
+  background: rgba(57, 255, 20, 0.12);
+  color: #39ff14;
+  border: 1px solid rgba(57, 255, 20, 0.3);
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-nomina-abonar:hover {
+  background: rgba(57, 255, 20, 0.2);
+  border-color: #39ff14;
+}
+
+.btn-nomina-ver {
+  background: rgba(255, 255, 255, 0.05);
+  color: #cbd5e1;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-nomina-ver:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: white;
+}
+
+/* =========================================
+   CARGA / VACIO
+   ========================================= */
+.nomina-loading, .nomina-vacia {
+  text-align: center;
+  padding: 60px 20px;
+  background: rgba(255, 255, 255, 0.01);
+  border: 1px dashed rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+}
+
+.nomina-loading {
+  color: var(--text-muted);
+  font-size: 15px;
+}
+
+.nomina-vacia p {
+  color: var(--text-muted);
+  margin-bottom: 20px;
+}
+
+.btn-inicializar {
+  background: linear-gradient(135deg, #39ff14, #00c8ff);
+  border: none;
+  color: black;
+  font-weight: bold;
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.btn-inicializar:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(57, 255, 20, 0.35);
+}
+
+/* =========================================
+   MODAL ABONOS DETAILS
+   ========================================= */
+.abono-info-valores {
+  display: flex;
+  justify-content: space-between;
+  background: rgba(255, 255, 255, 0.02);
+  padding: 14px 20px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.abono-info-valores div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.abono-info-valores span {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.abono-info-valores strong {
+  font-size: 16px;
+  font-family: var(--font-mono);
+}
+
+.input-monto-abono {
+  height: 48px !important;
+  font-size: 16px !important;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: #39ff14 !important;
+  border-color: rgba(57, 255, 20, 0.3) !important;
+}
+
+.abonos-resumen-cabecera {
+  display: flex;
+  justify-content: space-between;
+  background: rgba(255, 255, 255, 0.02);
+  padding: 16px 20px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  margin-bottom: 16px;
+}
+
+.abonos-resumen-cabecera div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.abonos-resumen-cabecera span {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.abonos-resumen-cabecera strong {
+  font-size: 16px;
+  font-family: var(--font-mono);
+}
+
+.abonos-lista {
+  max-height: 280px;
+  overflow-y: auto;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
+}
+
+.abonos-loading, .abonos-vacio {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.tabla-abonos-historial {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tabla-abonos-historial th {
+  text-align: left;
+  font-size: 10px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.02);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.tabla-abonos-historial td {
+  padding: 12px 14px;
+  font-size: 13px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+/* Responsivo */
+@media (max-width: 980px) {
+  .nomina-kpis {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
+
+@media (max-width: 768px) {
+  .nomina-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+  .nomina-periodo-selector {
+    width: 100%;
+  }
+  .nomina-periodo-selector select {
+    flex: 1;
+  }
+}

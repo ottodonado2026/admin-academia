@@ -1,7 +1,7 @@
 import { useState } from "react";
 import "./ModalExpediente.css";
 import { supabase } from "../../services/supabaseClient";
-import jsPDF from "jspdf";
+import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
 import { CURSOS_BASE } from "../../data/cursosBase";
 

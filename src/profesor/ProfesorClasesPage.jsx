@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../services/supabaseClient";
+import { useAuth } from "../context/AuthContext";
 import "./ProfesorClasesPage.css";
 import ClaseCard from "./components/ClaseCard";
 import ModalClase from "./components/ModalClase";
@@ -31,12 +32,10 @@ const ESTADOS_CLASE = {
 
 
 function ProfesorClasesPage() {
-  const [user, setUser] = useState(null);
-  
-
+  const { user: authUser, loading: loadingAuth } = useAuth();
   
   const [pagos, setPagos] = useState([]);
- 
+  const [alumnosData, setAlumnosData] = useState({});
   const [clases, setClases] = useState([]);
 
   const [busqueda, setBusqueda] = useState("");
@@ -48,26 +47,22 @@ function ProfesorClasesPage() {
 
  
 useEffect(() => {
+  if (loadingAuth) return;
+  if (!authUser?.id) return;
+
   let activo = true;
 
   const cargarDatos = async () => {
-    const userData = safeParse(localStorage.getItem(STORAGE_KEYS.user), null);
-
-    if (!activo) return;
-
-    setUser(userData);
-
-    if (!userData?.id) return;
-
-    const [{ data: clasesData, error: clasesError }, { data: pagosData }] =
+    const [{ data: clasesData, error: clasesError }, { data: pagosData }, { data: alumnosResp }] =
       await Promise.all([
         supabase
           .from("clases")
-          .select("*, alumnos:alumno_id(estado_pago, modalidad, horas_acumuladas)")
-          .or(`profesor_id.eq.${userData.id},profesor_db_id.eq.${userData.id}`)
+          .select("*")
+          .or(`profesor_id.eq.${authUser.id},profesor_db_id.eq.${authUser.id}`)
           .order("fecha", { ascending: false }),
 
         supabase.from("pagos").select("*"),
+        supabase.from("alumnos").select("*"),
       ]);
 
     if (!activo) return;
@@ -76,7 +71,23 @@ useEffect(() => {
       console.error("Error cargando clases del profesor:", clasesError);
       setClases([]);
     } else {
-      setClases(clasesData || []);
+      // Cruzar alumnos en memoria para no depender del foreign key en supabase
+      const alumnosMap = {};
+      (alumnosResp || []).forEach(a => {
+        alumnosMap[a.id] = a;
+        if (a.alumno_id) alumnosMap[a.alumno_id] = a;
+      });
+      setAlumnosData(alumnosMap);
+
+      const clasesConAlumnos = (clasesData || []).map(c => {
+        const alumnoDB = alumnosMap[c.alumno_db_id] || alumnosMap[c.alumno_id];
+        if (alumnoDB && c.alumnos && c.alumnos.length > 0) {
+           c.alumnos[0] = { ...c.alumnos[0], horas_acumuladas: alumnoDB.horas_acumuladas, modalidad: alumnoDB.modalidad };
+        }
+        return c;
+      });
+
+      setClases(clasesConAlumnos);
     }
 
     setPagos(pagosData || []);
@@ -99,7 +110,7 @@ useEffect(() => {
   )
   .subscribe();
 
-  // Forzar recarga si la sesión de Supabase apenas se inicializa (corrige datos vacíos al entrar)
+  // Forzar recarga si la sesión de Supabase apenas se inicializa
   const { data: authListener } = supabase.auth.onAuthStateChange((event) => {
     if (event === "SIGNED_IN" || event === "INITIAL_SESSION") {
       if (activo) cargarDatos();
@@ -109,9 +120,9 @@ useEffect(() => {
   return () => {
     activo = false;
     supabase.removeChannel(channel);
-    authListener.subscription.unsubscribe();
+    authListener?.subscription?.unsubscribe();
   };
-}, []);
+}, [authUser, loadingAuth]);
   
 
 

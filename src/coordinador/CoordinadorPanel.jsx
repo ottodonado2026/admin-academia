@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import { supabase } from "../services/supabaseClient";
+import { useAuth } from "../context/AuthContext";
+import ExcelJS from "exceljs";
 
 import "./CoordinadorPanel.css";
 
@@ -236,6 +238,7 @@ const calcularComisionLead = (lead) => {
 
 function CoordinadorPanel() {
   const navigate = useNavigate();
+  const { user: authUser, role: authRole, userData: contextUserData, loading: loadingAuth } = useAuth();
 
   const [usuario, setUsuario] = useState(null);
   const [permisosClases, setPermisosClases] = useState({
@@ -311,17 +314,6 @@ const CLASES_GRATIS_POR_PAGINA = 10;
   };
 
   useEffect(() => {
-    const fetchSession = async () => {
-      const { data } = await supabase.auth.getSession();
-      if (!data.session) {
-        navigate("/login");
-        return;
-      }
-      setUsuario(data.session.user);
-    };
-
-    fetchSession();
-
     const channel = supabase
       .channel("coordinador-clases-realtime")
       .on("postgres_changes", { event: "*", schema: "public", table: "clases" }, () => {
@@ -332,51 +324,38 @@ const CLASES_GRATIS_POR_PAGINA = 10;
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [navigate]);
+  }, []);
 
   useEffect(() => {
+    if (loadingAuth) return;
+    if (!authUser) {
+      if (!loadingAuth) navigate("/login");
+      return;
+    }
+
     let activo = true;
 
     const cargarDatos = async () => {
       setLoading(true);
 
       try {
-        const { data: authData } = await supabase.auth.getUser();
-        const authUser = authData?.user || null;
+        let usuarioActual = contextUserData || {
+          id: authUser.id,
+          nombre: authUser.email,
+          email: authUser.email,
+          role: authRole || "coordinador",
+        };
 
-        let usuarioActual = null;
+        setUsuario(usuarioActual);
 
-        if (authUser) {
-          const { data: usuarioData, error: usuarioError } = await supabase
-            .from("usuarios")
-            .select("*")
-            .eq("auth_uid", authUser.id)
-            .maybeSingle();
+        const roleActual = String(usuarioActual?.role || "").toLowerCase();
 
-          if (usuarioError) {
-            console.error("Error cargando usuario coordinador:", usuarioError);
-          }
-
-          usuarioActual = usuarioData || {
-            id: authUser.id,
-            nombre: authUser.email,
-            email: authUser.email,
-            role: "coordinador",
-          };
-        }
-
-     const roleActual = String(usuarioActual?.role || "").toLowerCase();
-
-const esPrincipal =
-  roleActual === "admin" ||
-  roleActual === "owner" ||
-  (
-    roleActual === "coordinador_academico" &&
-    (
-      usuarioActual?.puede_registrar_coordinadores === true ||
-      usuarioActual?.coordinador_nivel === "principal"
-    )
-  );
+        const esPrincipal =
+          roleActual === "admin" ||
+          roleActual === "owner" ||
+          (roleActual === "coordinador_academico" &&
+          (usuarioActual?.puede_registrar_coordinadores === true ||
+           usuarioActual?.coordinador_nivel === "principal"));
 
 const puedeEditarClases =
   esPrincipal ||

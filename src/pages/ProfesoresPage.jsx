@@ -69,10 +69,7 @@ const [cargandoClases, setCargandoClases] = useState(false);
     setCargandoClases(true);
 
     try {
-      const { data: authData } = await supabase.auth.getUser();
-      const authUser = authData?.user || null;
-
-      if (!authUser) {
+      if (!usuarioActual) {
         setCargandoClases(false);
         return;
       }
@@ -80,7 +77,7 @@ const [cargandoClases, setCargandoClases] = useState(false);
       const { data: profesorData, error: profesorError } = await supabase
         .from("profesores")
         .select("*")
-        .eq("data->>email", authUser.email)
+        .eq("data->>email", usuarioActual.email)
         .maybeSingle();
 
       if (profesorError) {

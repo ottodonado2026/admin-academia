@@ -11,8 +11,8 @@ import { useProfesorData } from "./hooks/useProfesorData";
 
 const ESTADOS_EDITABLES = ["programada", "reprogramada", "completada"];
 
-import { supabase } from "../../services/supabaseClient";
-import { CURSOS_BASE } from "../../data/cursosBase";
+import { supabase } from "../services/supabaseClient";
+import { CURSOS_BASE } from "../data/cursosBase";
 
 function formatAMPM(timeStr) {
   if (!timeStr) return "--:--";

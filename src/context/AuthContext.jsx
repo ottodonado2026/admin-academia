@@ -56,9 +56,6 @@ export const AuthProvider = ({ children }) => {
 
   console.log("AuthProvider montado");
 
-  useEffect(() => {
-    let isMounted = true;
-    let initialLoadDone = false;
 
   useEffect(() => {
     let isMounted = true;

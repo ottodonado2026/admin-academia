@@ -2,6 +2,22 @@ import * as XLSX from "xlsx";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 
+const cleanConcepto = (str) => {
+  if (!str) return "Sin descripción";
+  return String(str).replace(/\s*\(Abono ID:.*?\)/i, "").trim();
+};
+
+const getPeriodoText = (periodo) => {
+  const meses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+  const fecha = new Date();
+  
+  if (periodo === "mes") return `Mes de ${meses[fecha.getMonth()]} del ${fecha.getFullYear()}`;
+  if (periodo === "semana") return "Últimos 7 días";
+  if (periodo === "año") return `Año ${fecha.getFullYear()}`;
+  if (periodo === "todo") return "Histórico Completo";
+  return periodo;
+};
+
 /**
  * Exporta el balance a Excel
  */
@@ -10,7 +26,7 @@ export const exportBalanceToExcel = (ingresos, egresos, totales, filtros) => {
   const wsIngresos = XLSX.utils.json_to_sheet(
     ingresos.map((i) => ({
       Fecha: new Date(i.fecha).toLocaleDateString(),
-      Concepto: i.nombre,
+      Concepto: cleanConcepto(i.nombre),
       Categoría: i.categoria,
       Método: i.metodo,
       Monto: i.monto,
@@ -20,7 +36,7 @@ export const exportBalanceToExcel = (ingresos, egresos, totales, filtros) => {
   const wsEgresos = XLSX.utils.json_to_sheet(
     egresos.map((e) => ({
       Fecha: new Date(e.fecha).toLocaleDateString(),
-      Concepto: e.descripcion || e.nombre || e.concepto,
+      Concepto: cleanConcepto(e.descripcion || e.nombre || e.concepto),
       Categoría: e.categoria,
       Monto: e.monto,
     }))
@@ -61,7 +77,7 @@ export const exportBalanceToPDF = (ingresos, egresos, totales, filtros, empresa 
   
   doc.setFontSize(11);
   doc.setTextColor(127, 140, 141);
-  doc.text(`Período: ${filtros.periodo}`, 14, 40);
+  doc.text(`Período: ${getPeriodoText(filtros.periodo)}`, 14, 40);
   doc.text(`Fecha de emisión: ${new Date().toLocaleString()}`, 14, 46);
 
   // Resumen Financiero
@@ -88,7 +104,7 @@ export const exportBalanceToPDF = (ingresos, egresos, totales, filtros, empresa 
 
   const topIngresos = ingresos.slice(0, 10).map((i) => [
     new Date(i.fecha).toLocaleDateString(),
-    i.nombre,
+    cleanConcepto(i.nombre),
     i.categoria,
     `$${i.monto.toLocaleString()}`,
   ]);
@@ -114,7 +130,7 @@ export const exportBalanceToPDF = (ingresos, egresos, totales, filtros, empresa 
 
   const topEgresos = egresos.slice(0, 10).map((e) => [
     new Date(e.fecha).toLocaleDateString(),
-    e.descripcion || e.nombre || e.concepto,
+    cleanConcepto(e.descripcion || e.nombre || e.concepto),
     e.categoria,
     `$${e.monto.toLocaleString()}`,
   ]);

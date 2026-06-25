@@ -97,7 +97,12 @@ export const AuthProvider = ({ children }) => {
       setLoading(false);
       return { error };
     }
-    // El onAuthStateChange actualizará el estado
+    
+    // Forzar actualización de estado por si onAuthStateChange no dispara (ej. si ya estaba logueado)
+    setUser(data.user);
+    await fetchUserRole(data.user.id, true);
+    setLoading(false);
+    
     return { user: data.user };
   };
 

@@ -4,6 +4,8 @@ import { NavLink } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { supabase } from "../services/supabaseClient";
 
+import { useAuth } from "../context/AuthContext";
+
 let sidebarUserCache = null;
 
 const roleLabels = {
@@ -15,7 +17,18 @@ const roleLabels = {
 };
 
 function Sidebar({ onLogout }) {
+  const { logout } = useAuth();
   const [open, setOpen] = useState(false);
+
+  const handleCerrarSesion = async () => {
+    try {
+      await logout(); // Cierra sesión en Supabase y limpia el contexto
+    } catch (err) {
+      console.error("Error al cerrar sesión", err);
+    }
+    if (onLogout) onLogout(); // Redirige a inicio
+  };
+
 useEffect(() => {
   if (open) {
     document.body.classList.add("sidebar-open");
@@ -223,7 +236,7 @@ useEffect(() => {
           </nav>
         </div>
 
-        <button onClick={onLogout} className="logout-btn">
+        <button onClick={handleCerrarSesion} className="logout-btn">
           ⏻ Cerrar sesión
         </button>
       </aside>

@@ -2,6 +2,32 @@ import { Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 function ProtectedRoute({ children, role }) {
+  const allowedRoles = role ? (Array.isArray(role) ? role : [role]) : [];
+
+  // 1. Bypass para profesores (autenticados vía localStorage)
+  if (allowedRoles.includes("profesor")) {
+    try {
+      const localUser = JSON.parse(localStorage.getItem("user") || "null");
+      if (localUser?.role === "profesor") {
+        return children;
+      }
+    } catch (e) {
+      console.error("Error leyendo sesión local de profesor:", e);
+    }
+  }
+
+  // 2. Bypass para asesores (autenticados vía localStorage)
+  if (allowedRoles.includes("asesor")) {
+    try {
+      const localAsesor = JSON.parse(localStorage.getItem("asesorAuth") || "null");
+      if (localAsesor) {
+        return children;
+      }
+    } catch (e) {
+      console.error("Error leyendo sesión local de asesor:", e);
+    }
+  }
+
   const { user, role: userRole, loading } = useAuth();
 
   if (loading) {
@@ -31,9 +57,7 @@ function ProtectedRoute({ children, role }) {
 
   // Verificación de roles (si se especificó un rol en la ruta)
   if (role) {
-    const allowedRoles = Array.isArray(role) ? role : [role];
-    
-    // Los roles de alto nivel deberían tener acceso a los paneles administrativos protegidos
+    // Los roles de alto nivel del panel de administración
     const isSuperUser = ["admin", "owner", "gerente"].includes(userRole);
 
     if (!allowedRoles.includes(userRole) && !isSuperUser) {

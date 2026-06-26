@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-
+import LoginLoader from "../components/LoginLoader";
 
 function LoginPage() {
   const navigate = useNavigate();
@@ -15,6 +15,7 @@ const [roleLabel, setRoleLabel] = useState("");
 
 
   const [fade, setFade] = useState(false);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   const { user, role, login, loading } = useAuth();
 
@@ -22,12 +23,21 @@ const [roleLabel, setRoleLabel] = useState("");
   useEffect(() => {
     if (loading || !user || !role) return;
 
+    let targetRoute = "/";
     if (role === "coordinador_academico" || role === "coordinador") {
-      navigate("/coordinador");
+      targetRoute = "/coordinador";
     } else if (["owner", "admin", "contador", "gerente"].includes(role)) {
-      navigate("/dashboard");
+      targetRoute = "/dashboard";
     }
-  }, [user, role, loading, navigate]);
+
+    if (isLoggingIn && targetRoute !== "/") {
+      setTimeout(() => {
+        navigate(targetRoute);
+      }, 1500);
+    } else if (targetRoute !== "/") {
+      navigate(targetRoute);
+    }
+  }, [user, role, loading, navigate, isLoggingIn]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -37,16 +47,19 @@ const [roleLabel, setRoleLabel] = useState("");
       return;
     }
 
+    setIsLoggingIn(true);
     const { error } = await login(email, password);
 
     if (error) {
       console.error("Error login:", error);
       alert("Correo o contraseña incorrectos");
+      setIsLoggingIn(false);
     }
   };
 
   return (
     <>
+      {isLoggingIn && <LoginLoader />}
       {/* 🔥 AQUI VA LA ANIMACIÓN (esto te faltaba) */}
       <style>
   {`

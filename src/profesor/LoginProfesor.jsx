@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../services/supabaseClient";
 import "./LoginProfesor.css";
+import LoginLoader from "../components/LoginLoader";
 
 function LoginProfesor() {
   const navigate = useNavigate();
@@ -9,6 +10,7 @@ function LoginProfesor() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 const [fade, setFade] = useState(false);
+const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -18,6 +20,7 @@ const [fade, setFade] = useState(false);
       return;
     }
 
+    setIsLoggingIn(true);
     try {
       // 1. Iniciar sesión usando Supabase Auth
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -26,6 +29,7 @@ const [fade, setFade] = useState(false);
       });
 
       if (error) {
+        setIsLoggingIn(false);
         console.error("Error login Supabase:", error);
         alert("Credenciales incorrectas: " + error.message);
         return;
@@ -67,12 +71,16 @@ const [fade, setFade] = useState(false);
           })
         );
 
-        navigate("/panel-profesor");
+        setTimeout(() => {
+          navigate("/panel-profesor");
+        }, 1500);
         return;
       }
 
+      setIsLoggingIn(false);
       alert("No se encontró un perfil de profesor asociado a esta cuenta.");
     } catch (err) {
+      setIsLoggingIn(false);
       console.error("Error inesperado en login:", err);
       alert("Ocurrió un error inesperado al iniciar sesión.");
     }
@@ -80,6 +88,7 @@ const [fade, setFade] = useState(false);
 
   return (
     <div className={`login-profesor-container ${fade ? "fade-out" : ""}`}>
+      {isLoggingIn && <LoginLoader />}
       <div className="login-card">
 
         <h1>Panel Profesor</h1>

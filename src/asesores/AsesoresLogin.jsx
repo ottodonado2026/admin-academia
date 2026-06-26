@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import "./AsesoresPanel.css";
 
 import { supabase } from "../services/supabaseClient";
+import LoginLoader from "../components/LoginLoader";
 
 
 
@@ -15,6 +16,7 @@ function AsesoresLogin() {
   });
 
   const [error, setError] = useState("");
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   const handleChange = (e) => {
     setForm({
@@ -25,6 +27,7 @@ function AsesoresLogin() {
 
 const handleLogin = async (e) => {
   e.preventDefault();
+  setIsLoggingIn(true);
 
   try {
     setError("");
@@ -35,6 +38,7 @@ const handleLogin = async (e) => {
     });
 
     if (error) {
+      setIsLoggingIn(false);
       console.error("ERROR LOGIN SUPABASE:", error);
       setError(error.message);
       return;
@@ -43,6 +47,7 @@ const handleLogin = async (e) => {
     const user = data?.user;
 
     if (!user) {
+      setIsLoggingIn(false);
       setError("No se encontró usuario");
       return;
     }
@@ -54,6 +59,7 @@ const handleLogin = async (e) => {
       .single();
 
     if (asesorError || !asesorDB) {
+      setIsLoggingIn(false);
       console.error("ERROR BUSCANDO ASESOR:", asesorError);
       setError("Este usuario no está registrado como asesor");
       return;
@@ -70,9 +76,12 @@ const handleLogin = async (e) => {
       })
     );
 
-   navigate("/panel-asesor"); 
+   setTimeout(() => {
+     navigate("/panel-asesor"); 
+   }, 1500);
 
   } catch (err) {
+    setIsLoggingIn(false);
     console.error("ERROR INESPERADO LOGIN:", err);
     setError(err.message || "Error inesperado");
   }
@@ -80,6 +89,7 @@ const handleLogin = async (e) => {
 
   return (
     <div className="asesor-auth-page">
+      {isLoggingIn && <LoginLoader />}
       <div className="asesor-auth-card">
         <h1>💰 Panel Comercial</h1>
         <p>Caribbean Studio Academy</p>

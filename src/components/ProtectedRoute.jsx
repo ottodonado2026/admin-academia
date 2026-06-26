@@ -2,14 +2,16 @@ import { Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 function ProtectedRoute({ children, role }) {
+  const { user, role: userRole, loading } = useAuth();
   const allowedRoles = role ? (Array.isArray(role) ? role : [role]) : [];
 
   // 1. Bypass para profesores (autenticados vía localStorage)
+  let isProfesorBypass = false;
   if (allowedRoles.includes("profesor")) {
     try {
       const localUser = JSON.parse(localStorage.getItem("user") || "null");
       if (localUser?.role === "profesor") {
-        return children;
+        isProfesorBypass = true;
       }
     } catch (e) {
       console.error("Error leyendo sesión local de profesor:", e);
@@ -17,18 +19,21 @@ function ProtectedRoute({ children, role }) {
   }
 
   // 2. Bypass para asesores (autenticados vía localStorage)
+  let isAsesorBypass = false;
   if (allowedRoles.includes("asesor")) {
     try {
       const localAsesor = JSON.parse(localStorage.getItem("asesorAuth") || "null");
       if (localAsesor) {
-        return children;
+        isAsesorBypass = true;
       }
     } catch (e) {
       console.error("Error leyendo sesión local de asesor:", e);
     }
   }
 
-  const { user, role: userRole, loading } = useAuth();
+  if (isProfesorBypass || isAsesorBypass) {
+    return children;
+  }
 
   if (loading) {
     return (

@@ -31,8 +31,8 @@ const meses = [
 function DashboardPage() {
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    localStorage.removeItem("auth");
+  const handleLogout = async () => {
+    await logout();
     navigate("/");
   };
 
@@ -41,7 +41,7 @@ function DashboardPage() {
   const [anioSeleccionado, setAnioSeleccionado] = useState(hoy.getFullYear());
 
   const { ingresos, egresos, alumnos, pagos, historialPagos, loading: loadingData, refetch } = useDashboard();
-  const { user, role, userData } = useAuth();
+  const { user, role, userData, logout } = useAuth();
 
   const [busqueda, setBusqueda] = useState("");
   const [filtroFecha, setFiltroFecha] = useState("mes");
@@ -81,30 +81,26 @@ function DashboardPage() {
 
 
   useEffect(() => {
-    // Escuchar eventos en tiempo real (mantendremos esto para actualizar UI si algo cambia)
+    let debounceTimer = null;
+    const debouncedRefetch = () => {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => refetch(), 400);
+    };
 
-  const channel = supabase
-    .channel("realtime-dashboard")
-    .on(
-      "postgres_changes",
-      { event: "*", schema: "public", table: "historial_pagos" },
-      () => {
-        refetch();
-      }
-    )
-    .on(
-      "postgres_changes",
-      { event: "*", schema: "public", table: "pagos" },
-      () => {
-        refetch();
-      }
-    )
-    .subscribe();
+    const channel = supabase
+      .channel("realtime-dashboard")
+      .on("postgres_changes", { event: "*", schema: "public", table: "historial_pagos" }, debouncedRefetch)
+      .on("postgres_changes", { event: "*", schema: "public", table: "pagos" }, debouncedRefetch)
+      .on("postgres_changes", { event: "*", schema: "public", table: "alumnos" }, debouncedRefetch)
+      .on("postgres_changes", { event: "*", schema: "public", table: "ingresos" }, debouncedRefetch)
+      .on("postgres_changes", { event: "*", schema: "public", table: "egresos" }, debouncedRefetch)
+      .subscribe();
 
-  return () => {
-    supabase.removeChannel(channel);
-  };
-}, []);
+    return () => {
+      clearTimeout(debounceTimer);
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   useEffect(() => {
     if (!showExportMenu) return;

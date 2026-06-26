@@ -16,8 +16,6 @@ export const AuthProvider = ({ children }) => {
   const [role, setRole] = useState(null);
   const [userData, setUserData] = useState(null);
   const [loadingAuth, setLoadingAuth] = useState(true);
-  
-  const isFetching = useRef(false);
 
   const fetchUserRole = async (userId, accessToken = null) => {
     try {
@@ -57,18 +55,27 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     let isMounted = true;
-    let initialLoadDone = false;
+    let sessionPromise = null;
 
-    const loadSessionAndRole = async (session, manualToken = null) => {
+    try {
+      const sessionString = localStorage.getItem("academia-v2-auth-token");
+      if (sessionString) {
+        const manualSession = JSON.parse(sessionString);
+        if (manualSession && manualSession.user) {
+          setUser(manualSession.user);
+        }
+      }
+    } catch (e) {
+      console.error("Error rescate síncrono", e);
+    }
+
+    const loadSessionAndRole = async (session) => {
       if (!isMounted) return;
-      if (isFetching.current) return;
-      
-      isFetching.current = true;
 
       try {
         if (session?.user) {
           setUser(session.user);
-          await fetchUserRole(session.user.id, manualToken);
+          await fetchUserRole(session.user.id);
         } else {
           setUser(null);
           setRole(null);
@@ -77,45 +84,20 @@ export const AuthProvider = ({ children }) => {
       } catch (err) {
         console.error("Error cargando sesión y rol:", err);
       } finally {
-        isFetching.current = false;
         if (isMounted) {
           setLoadingAuth(false);
-          initialLoadDone = true;
         }
       }
     };
 
-    const rescueTimeout = setTimeout(() => {
-      if (isMounted && !initialLoadDone) {
-        console.warn("Rescue timeout triggered");
-        try {
-          let manualSession = null;
-          const sessionString = localStorage.getItem("academia-v2-auth-token");
-          if (sessionString) {
-            manualSession = JSON.parse(sessionString);
-          }
-          if (manualSession && manualSession.user) {
-            isFetching.current = false;
-            loadSessionAndRole({ user: manualSession.user }, manualSession.access_token);
-          } else {
-            isFetching.current = false;
-            loadSessionAndRole(null);
-          }
-        } catch (e) {
-          console.error("Error rescate", e);
-          isFetching.current = false;
-          loadSessionAndRole(null);
-        }
-      }
-    }, 3000);
-
     async function init() {
       try {
-        const { data, error } = await supabase.auth.getSession();
+        sessionPromise = supabase.auth.getSession();
+        const { data, error } = await sessionPromise;
         if (error) {
           console.error("Error en getSession:", error);
         }
-        if (isMounted && !initialLoadDone) {
+        if (isMounted) {
           await loadSessionAndRole(data.session);
         }
       } catch (e) {
@@ -128,21 +110,22 @@ export const AuthProvider = ({ children }) => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!isMounted) return;
 
+      if (event === "INITIAL_SESSION") {
+        return;
+      }
+
       if (event === "SIGNED_OUT") {
         setUser(null);
         setRole(null);
         setUserData(null);
         setLoadingAuth(false);
-        clearTimeout(rescueTimeout);
-      } else if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED" || event === "INITIAL_SESSION") {
-        if (event === "INITIAL_SESSION" && initialLoadDone) return;
+      } else if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
         await loadSessionAndRole(session);
       }
     });
 
     return () => {
       isMounted = false;
-      clearTimeout(rescueTimeout);
       subscription.unsubscribe();
     };
   }, []);

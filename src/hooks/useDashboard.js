@@ -3,7 +3,7 @@ import { supabase } from "../services/supabaseClient";
 import { useAuth } from "../context/AuthContext";
 
 export const useDashboard = () => {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [data, setData] = useState({
     pagos: [],
     historialPagos: [],
@@ -68,9 +68,9 @@ export const useDashboard = () => {
   };
 
   useEffect(() => {
-    if (!user?.id) return;
+    if (authLoading || !user?.id) return;
     fetchDashboardData();
-  }, [user?.id]);
+  }, [user?.id, authLoading]);
 
   return { ...data, loading, error, refetch: fetchDashboardData };
 };

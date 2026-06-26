@@ -73,7 +73,7 @@ const [isLoggingIn, setIsLoggingIn] = useState(false);
 
         setTimeout(() => {
           navigate("/panel-profesor");
-        }, 1500);
+        }, 2500);
         return;
       }
 

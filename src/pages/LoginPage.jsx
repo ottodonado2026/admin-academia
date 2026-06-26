@@ -33,7 +33,7 @@ const [roleLabel, setRoleLabel] = useState("");
     if (isLoggingIn && targetRoute !== "/") {
       setTimeout(() => {
         navigate(targetRoute);
-      }, 1500);
+      }, 2500);
     } else if (targetRoute !== "/") {
       navigate(targetRoute);
     }

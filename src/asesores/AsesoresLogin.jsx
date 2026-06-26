@@ -78,7 +78,7 @@ const handleLogin = async (e) => {
 
    setTimeout(() => {
      navigate("/panel-asesor"); 
-   }, 1500);
+   }, 2500);
 
   } catch (err) {
     setIsLoggingIn(false);

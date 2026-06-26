@@ -1,71 +1,9 @@
 import React from 'react';
+import './LoginLoader.css';
 
 export default function LoginLoader() {
   return (
-    <div style={styles.overlay}>
-      <style>
-        {`
-          @keyframes glowPulse {
-            0% { box-shadow: 0 0 30px rgba(57, 255, 20, 0.1); }
-            50% { box-shadow: 0 0 50px rgba(0, 200, 255, 0.25); }
-            100% { box-shadow: 0 0 30px rgba(57, 255, 20, 0.1); }
-          }
-          @keyframes barAnim {
-            0%, 100% { height: 12px; background: #39ff14; box-shadow: 0 0 8px rgba(57,255,20,0.5); }
-            50% { height: 50px; background: #00c8ff; box-shadow: 0 0 15px rgba(0,200,255,0.8); }
-          }
-          @keyframes textFade {
-            0%, 100% { opacity: 0.7; }
-            50% { opacity: 1; text-shadow: 0 0 12px rgba(57,255,20,0.5); }
-          }
-          .login-loader-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 24px;
-            background: rgba(16, 18, 27, 0.85);
-            padding: 50px 70px;
-            border-radius: 24px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            backdrop-filter: blur(20px);
-            animation: glowPulse 3s infinite ease-in-out;
-          }
-          .login-loader-bars {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-            height: 60px;
-          }
-          .login-loader-bar {
-            width: 6px;
-            border-radius: 4px;
-            animation: barAnim 1s infinite ease-in-out;
-          }
-          .login-loader-bar:nth-child(1) { animation-delay: 0s; }
-          .login-loader-bar:nth-child(2) { animation-delay: 0.2s; }
-          .login-loader-bar:nth-child(3) { animation-delay: 0.4s; }
-          .login-loader-bar:nth-child(4) { animation-delay: 0.6s; }
-          .login-loader-bar:nth-child(5) { animation-delay: 0.8s; }
-          
-          .login-loader-title {
-            font-family: 'Outfit', sans-serif;
-            font-size: 1.4rem;
-            font-weight: 700;
-            color: #fff;
-            letter-spacing: 2px;
-            animation: textFade 2s infinite ease-in-out;
-            margin: 0;
-          }
-          .login-loader-subtitle {
-            font-family: 'Outfit', sans-serif;
-            font-size: 0.95rem;
-            color: #a9b0c3;
-            margin: 0;
-          }
-        `}
-      </style>
+    <div className="login-loader-overlay">
       <div className="login-loader-container">
         <div className="login-loader-bars">
           <div className="login-loader-bar"></div>
@@ -80,19 +18,3 @@ export default function LoginLoader() {
     </div>
   );
 }
-
-const styles = {
-  overlay: {
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    width: '100vw',
-    height: '100vh',
-    background: 'rgba(5, 8, 22, 0.8)',
-    backdropFilter: 'blur(15px)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 9999,
-  }
-};

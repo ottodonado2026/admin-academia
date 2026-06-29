@@ -3,11 +3,13 @@ import Sidebar from "../components/Sidebar";
 import { useNavigate } from "react-router-dom";
 import "./IngresosPage.css";
 import { supabase } from "../services/supabaseClient";
+import { useAuth } from "../context/AuthContext";
 
 const STORAGE_KEY = "ingresos";
 
 function IngresosPage() {
   const navigate = useNavigate();
+  const { role: userRole } = useAuth();
 
   const handleLogout = () => {
     localStorage.removeItem("auth");
@@ -46,11 +48,19 @@ function IngresosPage() {
 
 
   const editarIngreso = (ingreso) => {
+    if (userRole === "consulta") {
+      alert("🔒 Seguridad: Tu cuenta tiene permisos de solo consulta. No puedes editar ingresos.");
+      return;
+    }
   setEditandoId(ingreso.id);
   setEditData({ ...ingreso });
 };
 
 const guardarEdicion = async () => {
+  if (userRole === "consulta") {
+    alert("🔒 Seguridad: Tu cuenta tiene permisos de solo consulta. No puedes guardar cambios.");
+    return;
+  }
   // 🔴 VALIDACIÓN
   if (!editData.referencia) {
     alert("La referencia es obligatoria");
@@ -122,6 +132,11 @@ const filtrarIngresos = () => {
 const agregarIngreso = async (e) => {
   e.preventDefault();
 
+  if (userRole === "consulta") {
+    alert("🔒 Seguridad: Tu cuenta tiene permisos de solo consulta. No puedes agregar ingresos.");
+    return;
+  }
+
   if (!monto || !referencia) {
   alert("Monto y referencia son obligatorios");
   return;
@@ -166,6 +181,11 @@ alert(error.message);
 };
 
  const eliminarIngreso = async (id) => {
+  if (userRole === "consulta") {
+    alert("🔒 Seguridad: Tu cuenta tiene permisos de solo consulta. No puedes eliminar ingresos.");
+    return;
+  }
+
   if (!window.confirm("¿Eliminar ingreso?")) return;
 
   const { error } = await supabase

@@ -10,14 +10,18 @@ let sidebarUserCache = null;
 
 const roleLabels = {
   owner: "Gerente",
+  gerente: "Gerente",
+  super_admin: "Super Administrador",
   admin: "Administrador",
   contador: "Contador",
   coordinador: "Coordinador",
   coordinador_academico: "Coordinador académico",
+  empleado: "Empleado",
+  consulta: "Consulta (Lectura)",
 };
 
 function Sidebar({ onLogout }) {
-  const { logout } = useAuth();
+  const { logout, role: userRole } = useAuth();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
 
@@ -55,7 +59,11 @@ useEffect(() => {
   const roleLabel =
     roleLabels[role] || sidebarUserCache?.roleLabel || "Usuario";
 
-  const esCoordinadorAcademico = role === "coordinador_academico";
+  const isSuperAdmin = ["owner", "gerente", "super_admin"].includes(role);
+  const isAdmin = role === "admin";
+  const isContador = role === "contador";
+  const isEmpleado = ["coordinador", "coordinador_academico", "empleado"].includes(role);
+  const isConsulta = role === "consulta";
 
   useEffect(() => {
     const data = JSON.parse(localStorage.getItem("solicitudesCambios") || "[]");
@@ -138,6 +146,90 @@ useEffect(() => {
     </>
   );
 
+  const menuContador = (
+    <>
+      <NavLink to="/dashboard" onClick={() => setOpen(false)}>
+        Dashboard
+      </NavLink>
+
+      <NavLink to="/pagos" onClick={() => setOpen(false)}>
+        Pagos
+      </NavLink>
+
+      <NavLink to="/historial-pagos" onClick={() => setOpen(false)}>
+        Historial de pagos
+      </NavLink>
+
+      <NavLink to="/nomina" onClick={() => setOpen(false)}>
+        Nómina
+      </NavLink>
+
+      <NavLink to="/ingresos" onClick={() => setOpen(false)}>
+        Ingresos
+      </NavLink>
+
+      <NavLink to="/egresos" onClick={() => setOpen(false)}>
+        Egresos
+      </NavLink>
+
+      <NavLink to="/cuentas" onClick={() => setOpen(false)}>
+        Cuentas por cobrar
+      </NavLink>
+
+      <NavLink to="/balance" onClick={() => setOpen(false)}>
+        Balance General
+      </NavLink>
+    </>
+  );
+
+  const menuConsulta = (
+    <>
+      <NavLink to="/dashboard" onClick={() => setOpen(false)}>
+        Dashboard
+      </NavLink>
+
+      <NavLink to="/alumnos" onClick={() => setOpen(false)}>
+        Alumnos
+      </NavLink>
+
+      <NavLink to="/coordinador" onClick={() => setOpen(false)}>
+        Coordinador académico
+      </NavLink>
+
+      <NavLink to="/profesores" onClick={() => setOpen(false)}>
+        Profesores
+      </NavLink>
+
+      <NavLink to="/asesores" onClick={() => setOpen(false)}>
+        Asesores
+      </NavLink>
+
+      <NavLink to="/leads" onClick={() => setOpen(false)}>
+        Leads
+      </NavLink>
+
+      <NavLink to="/pagos" onClick={() => setOpen(false)}>
+        Pagos
+      </NavLink>
+
+      <NavLink to="/historial-pagos" onClick={() => setOpen(false)}>
+        Historial de pagos
+      </NavLink>
+
+      <NavLink to="/ingresos" onClick={() => setOpen(false)}>
+        Ingresos
+      </NavLink>
+
+      <NavLink to="/egresos" onClick={() => setOpen(false)}>
+        Egresos
+      </NavLink>
+
+      <NavLink to="/balance" onClick={() => setOpen(false)}>
+        Balance General
+      </NavLink>
+    </>
+  );
+
   const menuAdmin = (
     <>
       <NavLink to="/dashboard" onClick={() => setOpen(false)}>
@@ -206,6 +298,14 @@ useEffect(() => {
     </>
   );
 
+  const renderMenu = () => {
+    if (isSuperAdmin || isAdmin) return menuAdmin;
+    if (isContador) return menuContador;
+    if (isEmpleado) return menuCoordinador;
+    if (isConsulta) return menuConsulta;
+    return null;
+  };
+
   return (
     <>
       {open && <div className="overlay" onClick={() => setOpen(false)} />}
@@ -233,11 +333,7 @@ useEffect(() => {
           </div>
 
           <nav className="sidebar-nav">
-            {role
-              ? esCoordinadorAcademico
-                ? menuCoordinador
-                : menuAdmin
-              : null}
+            {role ? renderMenu() : null}
           </nav>
         </div>
 

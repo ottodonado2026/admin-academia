@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import Sidebar from "../components/Sidebar";
 import "./EgresosPage.css";
 import { supabase } from "../services/supabaseClient";
+import { useAuth } from "../context/AuthContext";
 
 // Importaciones para exportación
 import ExcelJS from "exceljs";
@@ -17,6 +18,7 @@ const mesesNombres = [
 ];
 
 function EgresosPage() {
+  const { role: userRole } = useAuth();
   const [egresos, setEgresos] = useState([]);
   const [usuarioActual, setUsuarioActual] = useState(null);
 
@@ -112,6 +114,11 @@ function EgresosPage() {
   const agregarEgreso = async (e) => {
     if (e) e.preventDefault();
 
+    if (userRole === "consulta") {
+      alert("🔒 Seguridad: Tu cuenta tiene permisos de solo consulta. No puedes registrar egresos.");
+      return;
+    }
+
     if (!categoria) {
       alert("Selecciona una categoría");
       return;
@@ -163,6 +170,11 @@ function EgresosPage() {
   };
 
   const eliminarEgreso = async (id) => {
+    if (userRole === "consulta") {
+      alert("🔒 Seguridad: Tu cuenta tiene permisos de solo consulta. No puedes eliminar egresos.");
+      return;
+    }
+
     if (!window.confirm("¿Eliminar egreso?")) return;
 
     const { error } = await supabase
@@ -180,6 +192,11 @@ function EgresosPage() {
   };
 
   const guardarEdicion = async () => {
+    if (userRole === "consulta") {
+      alert("🔒 Seguridad: Tu cuenta tiene permisos de solo consulta. No puedes guardar cambios.");
+      return;
+    }
+
     const { error } = await supabase
       .from("egresos")
       .update({

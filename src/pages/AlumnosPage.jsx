@@ -271,6 +271,11 @@ const formatearMonedaCOP = (valor) => {
 
   
 const agregarAlumno = async () => {
+  if (userRole === "consulta") {
+    alert("🔒 Seguridad: Tu cuenta tiene permisos de solo consulta. No puedes agregar ni editar alumnos.");
+    return;
+  }
+
   if (!nombre || !curso || !valor || !tipo) {
     alert("Completa los campos obligatorios");
     return;
@@ -388,8 +393,13 @@ if (errorPago) {
 
 
 const eliminarAlumno = async (id) => {
-  if (userRole !== "owner") {
-    alert("No tienes permiso para eliminar alumnos. Solo el Gerente (owner) puede realizar esta acción.");
+  if (userRole === "consulta") {
+    alert("🔒 Seguridad: Tu cuenta tiene permisos de solo consulta. No puedes eliminar alumnos.");
+    return;
+  }
+
+  if (!["owner", "gerente", "admin", "super_admin"].includes(userRole)) {
+    alert("No tienes permiso para eliminar alumnos. Solo el Gerente o Administrador puede realizar esta acción.");
     return;
   }
 

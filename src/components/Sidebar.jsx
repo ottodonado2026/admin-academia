@@ -3,8 +3,8 @@ import logo from "../assets/logo.png";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { supabase } from "../services/supabaseClient";
-
 import { useAuth } from "../context/AuthContext";
+import MFAModal from "./MFAModal";
 
 let sidebarUserCache = null;
 
@@ -306,8 +306,11 @@ useEffect(() => {
     return null;
   };
 
+  const [showMFA, setShowMFA] = useState(false);
+
   return (
     <>
+      {showMFA && <MFAModal onClose={() => setShowMFA(false)} />}
       {open && <div className="overlay" onClick={() => setOpen(false)} />}
 
       <div className="topbar-mobile">
@@ -337,9 +340,16 @@ useEffect(() => {
           </nav>
         </div>
 
-        <button onClick={handleCerrarSesion} className="logout-btn">
-          ⏻ Cerrar sesión
-        </button>
+        <div className="sidebar-footer-actions">
+          {(isSuperAdmin || isAdmin) && (
+            <button className="mfa-sidebar-btn" onClick={() => setShowMFA(true)} title="Gestionar Autenticacion de Dos Factores">
+              🔐 Seguridad MFA
+            </button>
+          )}
+          <button onClick={handleCerrarSesion} className="logout-btn">
+            ⏻ Cerrar sesión
+          </button>
+        </div>
       </aside>
     </>
   );

@@ -5,6 +5,18 @@ import { useAuth } from "../context/AuthContext";
 import "./LoginProfesor.css";
 import LoginLoader from "../components/LoginLoader";
 
+// Utilidad para registrar intentos de login (auditoría de seguridad)
+const registrarIntentoLogin = async (email, exitoso, mensajeError = null) => {
+  try {
+    await supabase.from("intentos_login").insert([{
+      email: email?.toLowerCase()?.trim(),
+      exitoso,
+      mensaje_error: mensajeError,
+      user_agent: navigator?.userAgent || "desconocido",
+    }]);
+  } catch (_) {}
+};
+
 function LoginProfesor() {
   const navigate = useNavigate();
 
@@ -46,10 +58,14 @@ const [isLoggingIn, setIsLoggingIn] = useState(false);
       if (error) {
         setIsLoggingIn(false);
         console.error("Error login Supabase:", error);
+        // 🔒 Registrar intento fallido
+        await registrarIntentoLogin(email, false, error.message);
         alert("Credenciales incorrectas: " + error.message);
         return;
       }
       
+      // Registrar éxito
+      await registrarIntentoLogin(email, true);
       // La redirección ocurrirá por el useEffect cuando cambie el rol
     } catch (err) {
       setIsLoggingIn(false);

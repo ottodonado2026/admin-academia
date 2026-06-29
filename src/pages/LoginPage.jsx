@@ -2,6 +2,21 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import LoginLoader from "../components/LoginLoader";
+import { supabase } from "../services/supabaseClient";
+
+// Utilidad para registrar intentos de login (auditoría de seguridad)
+const registrarIntentoLogin = async (email, exitoso, mensajeError = null) => {
+  try {
+    await supabase.from("intentos_login").insert([{
+      email: email?.toLowerCase()?.trim(),
+      exitoso,
+      mensaje_error: mensajeError,
+      user_agent: navigator?.userAgent || "desconocido",
+    }]);
+  } catch (_) {
+    // No bloquear la UI si falla el registro de auditoría
+  }
+};
 
 function LoginPage() {
   const navigate = useNavigate();
@@ -52,8 +67,13 @@ const [roleLabel, setRoleLabel] = useState("");
 
     if (error) {
       console.error("Error login:", error);
+      // 🔒 Registrar intento fallido en auditoría
+      await registrarIntentoLogin(email, false, error.message);
       alert("Correo o contraseña incorrectos");
       setIsLoggingIn(false);
+    } else {
+      // Registrar intento exitoso
+      await registrarIntentoLogin(email, true);
     }
   };
 

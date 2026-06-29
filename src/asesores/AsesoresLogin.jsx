@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import "./AsesoresPanel.css";
-
 import { supabase } from "../services/supabaseClient";
 import LoginLoader from "../components/LoginLoader";
 
@@ -25,6 +25,20 @@ function AsesoresLogin() {
     });
   };
 
+  const { user, role } = useAuth(); // Agregado: usar AuthContext
+
+  // Efecto para redirigir cuando el AuthContext confirme el rol
+  useEffect(() => {
+    if (user && role === "asesor") {
+      setTimeout(() => {
+        navigate("/panel-asesor");
+      }, 1000);
+    } else if (user && role && role !== "asesor") {
+      // Si entra alguien que no es asesor, mandarlo a su ruta
+      navigate("/");
+    }
+  }, [user, role, navigate]);
+
 const handleLogin = async (e) => {
   e.preventDefault();
   setIsLoggingIn(true);
@@ -32,7 +46,7 @@ const handleLogin = async (e) => {
   try {
     setError("");
 
-    const { data, error } = await supabase.auth.signInWithPassword({
+    const { error } = await supabase.auth.signInWithPassword({
       email: form.email.trim().toLowerCase(),
       password: form.password,
     });
@@ -44,42 +58,7 @@ const handleLogin = async (e) => {
       return;
     }
 
-    const user = data?.user;
-
-    if (!user) {
-      setIsLoggingIn(false);
-      setError("No se encontró usuario");
-      return;
-    }
-
-    const { data: asesorDB, error: asesorError } = await supabase
-      .from("asesores")
-      .select("*")
-      .eq("auth_uid", user.id)
-      .single();
-
-    if (asesorError || !asesorDB) {
-      setIsLoggingIn(false);
-      console.error("ERROR BUSCANDO ASESOR:", asesorError);
-      setError("Este usuario no está registrado como asesor");
-      return;
-    }
-
-    localStorage.setItem(
-      "asesorAuth",
-      JSON.stringify({
-        id: asesorDB.id,
-        nombre: asesorDB.nombre,
-        email: asesorDB.email,
-        asesorId: asesorDB.asesor_id,
-        estado: asesorDB.estado,
-      })
-    );
-
-   setTimeout(() => {
-     navigate("/panel-asesor"); 
-   }, 2500);
-
+    // La redirección ocurrirá por el useEffect cuando cambie el rol
   } catch (err) {
     setIsLoggingIn(false);
     console.error("ERROR INESPERADO LOGIN:", err);

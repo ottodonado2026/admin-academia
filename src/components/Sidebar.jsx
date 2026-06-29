@@ -1,6 +1,6 @@
 import "./Sidebar.css";
 import logo from "../assets/logo.png";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { supabase } from "../services/supabaseClient";
 
@@ -18,15 +18,16 @@ const roleLabels = {
 
 function Sidebar({ onLogout }) {
   const { logout } = useAuth();
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
 
   const handleCerrarSesion = async () => {
     try {
       await logout(); // Cierra sesión en Supabase y limpia el contexto
+      navigate("/"); // Redirige automáticamente de forma global
     } catch (err) {
       console.error("Error al cerrar sesión", err);
     }
-    if (onLogout) onLogout(); // Redirige a inicio
   };
 
 useEffect(() => {

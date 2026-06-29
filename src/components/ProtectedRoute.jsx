@@ -5,36 +5,6 @@ function ProtectedRoute({ children, role }) {
   const { user, role: userRole, loading } = useAuth();
   const allowedRoles = role ? (Array.isArray(role) ? role : [role]) : [];
 
-  // 1. Bypass para profesores (autenticados vía localStorage)
-  let isProfesorBypass = false;
-  if (allowedRoles.includes("profesor")) {
-    try {
-      const localUser = JSON.parse(localStorage.getItem("user") || "null");
-      if (localUser?.role === "profesor") {
-        isProfesorBypass = true;
-      }
-    } catch (e) {
-      console.error("Error leyendo sesión local de profesor:", e);
-    }
-  }
-
-  // 2. Bypass para asesores (autenticados vía localStorage)
-  let isAsesorBypass = false;
-  if (allowedRoles.includes("asesor")) {
-    try {
-      const localAsesor = JSON.parse(localStorage.getItem("asesorAuth") || "null");
-      if (localAsesor) {
-        isAsesorBypass = true;
-      }
-    } catch (e) {
-      console.error("Error leyendo sesión local de asesor:", e);
-    }
-  }
-
-  if (isProfesorBypass || isAsesorBypass) {
-    return children;
-  }
-
   if (loading) {
     return (
       <div
@@ -50,23 +20,23 @@ function ProtectedRoute({ children, role }) {
           fontWeight: "700",
         }}
       >
-        Cargando sesión...
+        Autenticando de forma segura...
       </div>
     );
   }
 
-  // No autenticado
+  // 1. Verificación estricta de Sesión (JWT Activo)
   if (!user) {
     return <Navigate to="/" replace />;
   }
 
-  // Verificación de roles (si se especificó un rol en la ruta)
+  // 2. Verificación criptográfica de Rol (Sin depender de LocalStorage)
   if (role) {
-    // Los roles de alto nivel del panel de administración
+    // Roles superiores
     const isSuperUser = ["admin", "owner", "gerente"].includes(userRole);
 
     if (!allowedRoles.includes(userRole) && !isSuperUser) {
-      console.warn(`Acceso denegado. Se requiere: ${allowedRoles}, Tienes: ${userRole}`);
+      console.warn(`🔒 Seguridad: Acceso denegado. Rol requerido: ${allowedRoles}. Rol actual: ${userRole}`);
       return <Navigate to="/" replace />;
     }
   }

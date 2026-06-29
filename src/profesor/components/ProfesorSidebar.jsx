@@ -1,14 +1,12 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import logo from "../../assets/logo.png";
+import { useAuth } from "../../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 export default function ProfesorSidebar({ activeView, setActiveView }) {
-  const [user, setUser] = useState(null);
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
- 
- useEffect(() => {
-  const userData = JSON.parse(localStorage.getItem("user"));
-  setUser(userData);
-}, []);
 
   const menu = useMemo(
     () => [
@@ -22,9 +20,9 @@ export default function ProfesorSidebar({ activeView, setActiveView }) {
     []
   );
 
-  const logout = () => {
-    localStorage.removeItem("user");
-    window.location.href = "/";
+  const handleLogout = async () => {
+    await logout();
+    navigate("/");
   };
 
  const nombreProfesor = user?.nombre || "Profesor";
@@ -87,7 +85,7 @@ const profesorId =
         <button
           type="button"
           className="profesor-sidebar-logout"
-          onClick={logout}
+          onClick={handleLogout}
         >
           Salir
         </button>

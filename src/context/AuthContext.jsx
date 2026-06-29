@@ -19,35 +19,52 @@ export const AuthProvider = ({ children }) => {
 
   const fetchUserRole = async (userId, accessToken = null) => {
     try {
-      let data, error;
-
-      if (accessToken) {
-        // Fallback: Modo rescate
-        const res = await fetch(`${supabaseUrl}/rest/v1/usuarios?select=role,nombre&auth_uid=eq.${userId}`, {
-          headers: {
-            'apikey': supabaseAnonKey,
-            'Authorization': `Bearer ${accessToken}`
-          }
-        });
-        const result = await res.json();
-        if (!res.ok) throw new Error(result.message || "Error en fetch manual");
-        data = result.length > 0 ? result[0] : null;
-      } else {
-        // Modo normal
-        const response = await supabase
-          .from("usuarios")
-          .select("role, nombre")
-          .eq("auth_uid", userId)
-          .maybeSingle();
-        data = response.data;
-        error = response.error;
-        if (error) throw error;
+      // 1. Buscar en tabla usuarios (Admins / Coordinadores / etc)
+      const resUsuarios = accessToken 
+        ? await fetch(`${supabaseUrl}/rest/v1/usuarios?select=*&auth_uid=eq.${userId}`, {
+            headers: { 'apikey': supabaseAnonKey, 'Authorization': `Bearer ${accessToken}` }
+          }).then(r => r.json()).catch(() => [])
+        : await supabase.from("usuarios").select("*").eq("auth_uid", userId).maybeSingle().then(r => r.data ? [r.data] : []);
+      
+      const adminData = Array.isArray(resUsuarios) ? resUsuarios[0] : resUsuarios;
+      
+      if (adminData) {
+        setRole(adminData.role?.toLowerCase() || "admin");
+        setUserData(adminData);
+        return;
       }
 
-      setRole(data?.role?.toLowerCase() || null);
-      setUserData(data || null);
+      // 2. Buscar en tabla profesores
+      const { data: profData } = await supabase
+        .from("profesores")
+        .select("*")
+        .eq("id", userId)
+        .maybeSingle();
+      
+      if (profData) {
+        setRole("profesor");
+        setUserData(profData);
+        return;
+      }
+
+      // 3. Buscar en tabla asesores
+      const { data: asesorData } = await supabase
+        .from("asesores")
+        .select("*")
+        .eq("auth_uid", userId)
+        .maybeSingle();
+      
+      if (asesorData) {
+        setRole("asesor");
+        setUserData(asesorData);
+        return;
+      }
+
+      // Si no se encuentra en ninguna
+      setRole(null);
+      setUserData(null);
     } catch (error) {
-      console.error("Error fetching user role:", error);
+      console.error("Error fetching user identity:", error);
       setRole(null);
       setUserData(null);
     }
@@ -75,7 +92,7 @@ export const AuthProvider = ({ children }) => {
       try {
         if (session?.user) {
           setUser(session.user);
-          await fetchUserRole(session.user.id);
+          await fetchUserRole(session.user.id, session.access_token);
         } else {
           setUser(null);
           setRole(null);
@@ -148,8 +165,11 @@ export const AuthProvider = ({ children }) => {
       await supabase.auth.signOut();
     } finally {
       setLoadingAuth(false);
+      // Limpieza profunda (Seguridad)
       localStorage.removeItem("academia-v2-auth-token");
       localStorage.removeItem("auth");
+      localStorage.removeItem("user");
+      localStorage.removeItem("asesorAuth");
     }
   };
 
@@ -159,3 +179,4 @@ export const AuthProvider = ({ children }) => {
     </AuthContext.Provider>
   );
 };
+

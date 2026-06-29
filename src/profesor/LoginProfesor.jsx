@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../services/supabaseClient";
+import { useAuth } from "../context/AuthContext";
 import "./LoginProfesor.css";
 import LoginLoader from "../components/LoginLoader";
 
@@ -12,6 +13,20 @@ function LoginProfesor() {
 const [fade, setFade] = useState(false);
 const [isLoggingIn, setIsLoggingIn] = useState(false);
 
+  const { user, role, login } = useAuth(); // Agregado: usar AuthContext
+
+  // Efecto para redirigir cuando el AuthContext confirme el rol
+  useEffect(() => {
+    if (user && role === "profesor") {
+      setTimeout(() => {
+        navigate("/panel-profesor");
+      }, 1000);
+    } else if (user && role && role !== "profesor") {
+      // Si entra alguien que no es profesor, mandarlo a su ruta
+      navigate("/");
+    }
+  }, [user, role, navigate]);
+
   const handleLogin = async (e) => {
     e.preventDefault();
 
@@ -22,8 +37,8 @@ const [isLoggingIn, setIsLoggingIn] = useState(false);
 
     setIsLoggingIn(true);
     try {
-      // 1. Iniciar sesión usando Supabase Auth
-      const { data, error } = await supabase.auth.signInWithPassword({
+      // Usar login de AuthContext o directo de supabase
+      const { error } = await supabase.auth.signInWithPassword({
         email: email.trim().toLowerCase(),
         password: password.trim()
       });
@@ -34,51 +49,8 @@ const [isLoggingIn, setIsLoggingIn] = useState(false);
         alert("Credenciales incorrectas: " + error.message);
         return;
       }
-
-      const authUser = data.user;
-
-      // 2. Buscar el perfil en la tabla de profesores (puede ser por ID o por email para compatibilidad)
-      let profesor = null;
-      const { data: profDB, error: profError } = await supabase
-        .from("profesores")
-        .select("*")
-        .eq("id", authUser.id)
-        .maybeSingle();
-
-      if (!profError && profDB) {
-        profesor = profDB;
-      } else {
-        // Fallback por email si el id no coincide (para legacy migrados)
-        const { data: todos } = await supabase.from("profesores").select("*");
-        const found = (todos || [])
-          .map(p => ({ id: p.id, ...p.data }))
-          .find(p => String(p.email).trim().toLowerCase() === email.trim().toLowerCase());
-
-        if (found) {
-          profesor = { id: found.id, data: found };
-        }
-      }
-
-      if (profesor) {
-        const payload = { id: profesor.id, ...profesor.data };
-        localStorage.setItem(
-          "user",
-          JSON.stringify({
-            id: payload.id,
-            role: "profesor",
-            nombre: payload.nombre,
-            email: payload.email,
-          })
-        );
-
-        setTimeout(() => {
-          navigate("/panel-profesor");
-        }, 2500);
-        return;
-      }
-
-      setIsLoggingIn(false);
-      alert("No se encontró un perfil de profesor asociado a esta cuenta.");
+      
+      // La redirección ocurrirá por el useEffect cuando cambie el rol
     } catch (err) {
       setIsLoggingIn(false);
       console.error("Error inesperado en login:", err);

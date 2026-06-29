@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import "./AsesoresPanelPro.css";
 
 import { generarIdAlumnoBonito, generarIdCurso } from "../utils/idGenerator";
+import { useAuth } from "../context/AuthContext";
 import { supabase } from "../services/supabaseClient";
 
 
@@ -197,6 +198,7 @@ const estadoLabels = {
 
 function AsesoresPanel() {
   const navigate = useNavigate();
+  const { logout } = useAuth();
  
 
   const [alerta, setAlerta] = useState({
@@ -1128,10 +1130,10 @@ console.log("ID usado para update:", leadActivo?.id);
 };
 
 
-  const logout = () => {
-  localStorage.removeItem("asesorAuth");
-  navigate("/asesores/login");
-};
+  const handleLogout = async () => {
+    await logout();
+    navigate("/");
+  };
 
 const estaBloqueado = leadActivo?.bloqueado === true;
 const puedeEditar = !leadActivo?.bloqueado || leadActivo?.aprobadoPorAdmin;
@@ -1215,7 +1217,7 @@ return (
             <button className="ghost-btn-pro" onClick={solicitarCambioClave}>
               🔑 Cambiar contraseña
             </button>
-            <button className="danger-btn-pro" onClick={logout}>
+            <button className="danger-btn-pro" onClick={handleLogout}>
               Cerrar sesión
             </button>
           </div>

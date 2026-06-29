@@ -142,6 +142,11 @@ const agregarIngreso = async (e) => {
   return;
 }
 
+  if (Number(monto) <= 0) {
+    alert("El monto debe ser mayor a 0");
+    return;
+  }
+
   const nuevo = {
     nombre,
     tipo,

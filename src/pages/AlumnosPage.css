@@ -23,8 +23,48 @@
 }
 
 .alumnos-page h1 {
-  margin: 0 0 18px;
+  margin: 0;
   line-height: 1.1;
+}
+
+.page-header-tabs {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  border-bottom: 1px solid #E2E8F0;
+  padding-bottom: 16px;
+}
+
+.alumnos-tabs {
+  display: flex;
+  gap: 8px;
+  background: #F1F5F9;
+  padding: 4px;
+  border-radius: 12px;
+}
+
+.alumnos-tabs .tab-btn {
+  background: transparent;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  color: #64748B;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 14px;
+}
+
+.alumnos-tabs .tab-btn:hover {
+  color: #1E293B;
+  background: rgba(255,255,255,0.5);
+}
+
+.alumnos-tabs .tab-btn.active {
+  background: #FFFFFF;
+  color: #0f62fe;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
 /* =========================
@@ -135,6 +175,25 @@
 .alumnos-page .btn-outline:hover {
   background: #F8FAFC;
   color: #1E293B;
+}
+
+/* =========================
+   CUSTOM SELECT OVERRIDE
+========================= */
+.alumnos-page .custom-select-trigger {
+  background: #F8FAFC !important;
+  color: #1E293B !important;
+  border-color: #E2E8F0 !important;
+}
+.alumnos-page .custom-select-dropdown {
+  background: #FFFFFF !important;
+  border-color: #E2E8F0 !important;
+}
+.alumnos-page .custom-select-option {
+  color: #1E293B !important;
+}
+.alumnos-page .custom-select-option:hover {
+  background: #F1F5F9 !important;
 }
 
 /* =========================

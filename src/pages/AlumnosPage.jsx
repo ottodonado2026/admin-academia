@@ -50,6 +50,7 @@ function AlumnosPage() {
   const [contactoEmergencia, setContactoEmergencia] = useState("");
   
   const [estado, setEstado] = useState("activo");
+  const [activeTab, setActiveTab] = useState("registro");
   
   const [alumnoSeleccionado, setAlumnoSeleccionado] = useState(null);
 
@@ -192,6 +193,7 @@ function AlumnosPage() {
     
     setEstado(a.estado || "activo");
     setEditandoId(a.id);
+    setActiveTab("registro");
     
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -216,8 +218,25 @@ function AlumnosPage() {
       <Sidebar onLogout={handleLogout} />
 
       <main className="dashboard-main">
-        <h1>Alumnos Matriculados</h1>
+        <div className="page-header-tabs">
+          <h1>Alumnos Matriculados</h1>
+          <div className="alumnos-tabs">
+            <button 
+              className={`tab-btn ${activeTab === 'registro' ? 'active' : ''}`} 
+              onClick={() => setActiveTab('registro')}
+            >
+              Matrícula / Registro
+            </button>
+            <button 
+              className={`tab-btn ${activeTab === 'lista' ? 'active' : ''}`} 
+              onClick={() => setActiveTab('lista')}
+            >
+              Listado de Alumnos
+            </button>
+          </div>
+        </div>
 
+        {activeTab === 'registro' && (
         <div className="colegio-form-container">
           <h3>{editandoId ? "Editar Estudiante" : "Nueva Matrícula"}</h3>
           
@@ -295,7 +314,9 @@ function AlumnosPage() {
             <button type="button" className="btn-primary" onClick={agregarAlumno}>{editandoId ? "Guardar Cambios" : "Matricular Alumno"}</button>
           </div>
         </div>
+        )}
 
+        {activeTab === 'lista' && (
         <div className="tabla-container">
           <table className="tabla-pagos">
             <thead>
@@ -356,6 +377,7 @@ function AlumnosPage() {
             </tbody>
           </table>
         </div>
+        )}
 
         {/* MODAL DE EXPEDIENTE */}
         {alumnoSeleccionado && (

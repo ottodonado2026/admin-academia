@@ -57,14 +57,14 @@
 }
 
 .alumnos-tabs .tab-btn:hover {
-  color: #1E293B;
-  background: rgba(255,255,255,0.5);
+  color: #0f62fe;
+  background: rgba(15,98,254,0.1);
 }
 
 .alumnos-tabs .tab-btn.active {
-  background: #FFFFFF;
-  color: #0f62fe;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  background: #0f62fe;
+  color: #FFFFFF;
+  box-shadow: 0 2px 4px rgba(15,98,254,0.2);
 }
 
 /* =========================
@@ -543,14 +543,47 @@
    MODAL
 ========================= */
 
-.alumnos-page .alumnos-page .modal-content.expediente-modal {
-  width: 90%;
-  max-width: 800px;
+.alumnos-page .modal-content.expediente-modal {
+  width: 95%;
+  max-width: 600px;
   background: #FFFFFF;
-  border-radius: 16px;
+  color: #1E293B;
+  border-radius: 20px;
   display: flex;
   flex-direction: column;
-  max-height: 85vh;
+  max-height: 90vh;
+  border: 1px solid #E2E8F0;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+}
+
+.alumnos-page .modal-content.expediente-modal .modal-header {
+  border-bottom: 1px solid #E2E8F0;
+  padding-bottom: 12px;
+  margin-bottom: 16px;
+}
+
+.alumnos-page .modal-content.expediente-modal .modal-header h2 {
+  color: #0f62fe;
+}
+
+.alumnos-page .modal-content.expediente-modal .btn-close {
+  background: #F1F5F9;
+  color: #64748B;
+  border: none;
+  font-size: 20px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  cursor: pointer;
+}
+.alumnos-page .modal-content.expediente-modal .btn-close:hover {
+  background: #E2E8F0;
+  color: #1E293B;
+}
+
+.alumnos-page .modal-content.expediente-modal h3 {
+  color: #1E293B;
+  margin-top: 0;
 }
 
 .expediente-grid {
@@ -805,19 +838,17 @@
   position: relative;
   width: 100%;
   min-width: 0;
-}
-.custom-select {
-  height: 45px;
+  height: 42px;
 }
 
 .custom-select-trigger {
   width: 100%;
-  height: 45px;
-  border-radius: 10px;
- background: #0b0b0b;
-  border: 1px solid var(--border);
-  color: var(--text-main);
-  padding: 0 14px;
+  height: 42px;
+  border-radius: 8px;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  color: #1E293B;
+  padding: 0 12px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -826,69 +857,70 @@
   box-sizing: border-box;
   text-align: left;
 }
+
 .custom-select.open {
   z-index: 9999;
 }
 
 .custom-select-trigger:hover {
-  border-color: var(--border);
+  border-color: #CBD5E1;
 }
 
 .custom-select.open .custom-select-trigger {
-  border-color: var(--border);
-  box-shadow: none;
+  border-color: #0f62fe;
+  box-shadow: 0 0 0 2px rgba(15,98,254,0.1);
 }
 
 .custom-select-trigger .placeholder {
-  opacity: 0.7;
+  color: #94A3B8;
 }
 
 .custom-select-arrow {
   flex-shrink: 0;
   font-size: 16px;
   line-height: 1;
+  color: #64748B;
 }
 
 .custom-select-dropdown {
   position: absolute;
-  top: calc(100% + 8px);
+  top: calc(100% + 4px);
   left: 0;
   right: 0;
   width: 100%;
   max-width: 100%;
-  z-index: 9999;
-  background: #0b0b0b;
+  z-index: 10000;
+  background: #FFFFFF;
   border: 1px solid #E2E8F0;
-  border-radius: 12px;
-  box-shadow: 0 14px 34px rgba(0,0,0,0.45);
+  border-radius: 8px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
   overflow: hidden;
-  max-height: 260px;
+  max-height: 220px;
   overflow-y: auto;
   box-sizing: border-box;
-}
-.alumnos-page .alumnos-form {
-  position: relative;
-  z-index: 1;
 }
 
 .custom-select-option {
   width: 100%;
   border: 0;
   background: transparent;
-  color: #fff;
-  padding: 12px 14px;
+  color: #1E293B;
+  padding: 10px 14px;
   text-align: left;
   cursor: pointer;
   font-size: 14px;
+  transition: 0.2s;
 }
 
 .custom-select-option:hover {
-  background: rgba(255,255,255,0.05);
+  background: #F1F5F9;
+  color: #0f62fe;
 }
 
 .custom-select-option.selected {
-  background: rgba(255,255,255,0.05);
-  color: #fff;
+  background: #EEF2FF;
+  color: #0f62fe;
+  font-weight: 600;
 }
 
 @media (max-width: 900px) {

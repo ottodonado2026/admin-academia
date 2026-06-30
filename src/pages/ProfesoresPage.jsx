@@ -1,174 +1,54 @@
 import Sidebar from "../components/Sidebar";
 import { useNavigate } from "react-router-dom";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import "./ProfesoresPage.css";
-import { config } from "../config/institucion";
+// Reutilizamos los estilos base del colegio importando AlumnosPage.css
+import "./AlumnosPage.css"; 
 import { supabase } from "../services/supabaseClient";
 import { useAuth } from "../context/AuthContext";
 import { registrarAuditoria } from "../services/auditoriaService";
-
-function generarIdProfesorAleatorio(profesoresExistentes) {
-  let idCandidate = "";
-  let isUnique = false;
-  let attempts = 0;
-  while (!isUnique && attempts < 1000) {
-    idCandidate = String(Math.floor(1000 + Math.random() * 9000));
-    isUnique = !profesoresExistentes.some(p => String(p.id) === idCandidate);
-    attempts++;
-  }
-  return idCandidate || String(Date.now()).slice(-4);
-}
+import CustomSelect from "../components/CustomSelect";
 
 function ProfesoresPage() {
   const navigate = useNavigate();
   const { user: usuarioActual, role: userRole } = useAuth();
-  const STORAGE_KEY = "profesores";
- const ESPECIALIDADES = [
-  "produccion",
-  "dj",
-  "guitarra",
-  "piano",
-  "canto"
-];
-
+  
+  const [activeTab, setActiveTab] = useState("registro");
   const [profesores, setProfesores] = useState([]);
-
+  
+  // Datos Personales
   const [nombre, setNombre] = useState("");
-  const [tipoDocumento, setTipoDocumento] = useState("");
+  const [tipoDocumento, setTipoDocumento] = useState("cc");
   const [numeroDocumento, setNumeroDocumento] = useState("");
   const [telefono, setTelefono] = useState("");
-  const [especialidades, setEspecialidades] = useState([]);  const [modalidad, setModalidad] = useState("");
-  const [tipoContrato, setTipoContrato] = useState("");
-  const [comision, setComision] = useState("");
+  const [email, setEmail] = useState("");
+  
+  // Perfil Escolar
+  const [temas, setTemas] = useState(""); 
+  const [esquemaTrabajo, setEsquemaTrabajo] = useState("tiempo_completo");
+  const [jornada, setJornada] = useState("completa");
+  const [horasDadas, setHorasDadas] = useState("");
   const [estado, setEstado] = useState("activo");
-  const [observaciones, setObservaciones] = useState("");
+  
+  // Seguimiento & Vacaciones
+  const [seguimiento, setSeguimiento] = useState("");
+  const [vacacionesInicio, setVacacionesInicio] = useState("");
+  const [vacacionesFin, setVacacionesFin] = useState("");
   
   const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
 
   const [editandoId, setEditandoId] = useState(null);
   const [profesorSeleccionado, setProfesorSeleccionado] = useState(null);
-  const [busqueda, setBusqueda] = useState("");
-  const [salario, setSalario] = useState("");
-
-  const [directorGrupo, setDirectorGrupo] = useState(false);
-  const [grupoDirectorId, setGrupoDirectorId] = useState("");
-  const [grupos, setGrupos] = useState([]);
-
-  useEffect(() => {
-    if (config.tipo === "colegio") {
-      supabase.from("grupos").select("*").then(({data}) => data && setGrupos(data));
-    }
-  }, []);
-
-  const [usuarioProfesor, setUsuarioProfesor] = useState(null);
-const [clasesProfesor, setClasesProfesor] = useState([]);
-const [cargandoClases, setCargandoClases] = useState(false);
 
   const handleLogout = () => {
-    localStorage.removeItem("user");
+    localStorage.removeItem("auth");
     navigate("/");
   };
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(profesores));
-  }, [profesores]);
+    cargarProfesores();
+  }, []);
 
-
-  useEffect(() => {
-  const cargarClasesDelProfesor = async () => {
-    setCargandoClases(true);
-
-    try {
-      if (!usuarioActual) {
-        setCargandoClases(false);
-        return;
-      }
-
-      const { data: profesorData, error: profesorError } = await supabase
-        .from("profesores")
-        .select("*")
-        .eq("data->>email", usuarioActual.email)
-        .maybeSingle();
-
-      if (profesorError) {
-        console.error("Error cargando profesor actual:", profesorError);
-        setCargandoClases(false);
-        return;
-      }
-
-      if (!profesorData) {
-        setCargandoClases(false);
-        return;
-      }
-
-      const profesorActual = {
-        id: profesorData.id,
-        ...(profesorData.data || {}),
-      };
-
-      setUsuarioProfesor(profesorActual);
-
-      const { data: clasesData, error: clasesError } = await supabase
-        .from("clases")
-        .select("*, alumnos:alumno_id(estado_pago)")
-        .or(
-          `profesor_db_id.eq.${profesorActual.id},profesor_id.eq.${profesorActual.id}`
-        )
-        .order("fecha", { ascending: false });
-
-      if (clasesError) {
-        console.error("Error cargando clases del profesor:", clasesError);
-        setClasesProfesor([]);
-        return;
-      }
-
-      setClasesProfesor(clasesData || []);
-    } catch (error) {
-      console.error("Error inesperado cargando clases del profesor:", error);
-    } finally {
-      setCargandoClases(false);
-    }
-  };
-
-  cargarClasesDelProfesor();
-
-  // Sincronización en tiempo real para las clases
-  const channel = supabase
-    .channel("profesor-clases-realtime")
-    .on("postgres_changes", { event: "*", schema: "public", table: "clases" }, () => {
-      cargarClasesDelProfesor();
-    })
-    .subscribe();
-
-  return () => {
-    supabase.removeChannel(channel);
-  };
-}, []);
-
-useEffect(() => {
-  const interval = setInterval(() => {
-    clasesProfesor.forEach(async (clase) => {
-      if (clase.estado !== "en_curso") return;
-
-      if (!clase.fecha || !clase.hora_fin) return;
-
-      const ahora = new Date();
-
-      const fechaFinClase = new Date(
-        `${clase.fecha}T${clase.hora_fin}`
-      );
-
-      if (ahora >= fechaFinClase) {
-        await finalizarClase(clase, "automatico");
-      }
-    });
-  }, 30000);
-
-  return () => clearInterval(interval);
-}, [clasesProfesor]);
-
-  useEffect(() => {
   const cargarProfesores = async () => {
     const { data, error } = await supabase
       .from("profesores")
@@ -186,1072 +66,369 @@ useEffect(() => {
     }));
 
     setProfesores(formateados);
-
-    // Auto-migración en segundo plano de profesores legacy a Supabase Auth
-    try {
-      const { data: usuariosList } = await supabase
-        .from("usuarios")
-        .select("email")
-        .eq("role", "profesor");
-
-      const emailsConAuth = new Set((usuariosList || []).map(u => u.email?.toLowerCase()));
-
-      for (const p of data) {
-        const pData = p.data || {};
-        const email = pData.email || `${pData.numeroDocumento}@profe.com`;
-        
-        if (!emailsConAuth.has(email.toLowerCase())) {
-          console.log("Migrando profesor heredado a Supabase Auth:", email);
-          const password = pData.password || pData.numeroDocumento || "12345678";
-          
-          await supabase.functions.invoke("crear-coordinador-academico", {
-            body: {
-              nombre: pData.nombre || "Profesor",
-              email: email,
-              password: password,
-              role: "profesor",
-              tipo_documento: pData.tipoDocumento || "CC",
-              numero_documento: pData.numeroDocumento || "",
-              telefono: pData.telefono || "",
-              estado: pData.estado || "activo",
-              observaciones: "Migrado automáticamente por el sistema",
-            }
-          });
-        }
-      }
-    } catch (e) {
-      console.error("Error en migración automática de profesores:", e);
-    }
   };
 
-  cargarProfesores();
-}, []);
   const limpiarFormulario = () => {
-    setNombre("");
-    setTipoDocumento("");
-    setNumeroDocumento("");
-    setTelefono("");
-    setEspecialidades([]);
-    setModalidad("");
-    setTipoContrato("");
-    setComision("");
-    setEstado("activo");
-    setObservaciones("");
-    setDirectorGrupo(false);
-    setGrupoDirectorId("");
-    setPassword("");
-    setConfirmPassword("");
-    setEditandoId(null);
-  };
-
-  const validarFormulario = () => {
-    const nombreLimpio = nombre.trim();
-    const documentoLimpio = numeroDocumento.trim();
-    const telefonoLimpio = telefono.trim();
-    
-
-    if (!nombreLimpio) {
-      alert("El nombre del profesor es obligatorio");
-      return false;
-    }
-
-    if (!tipoDocumento) {
-      alert("Selecciona el tipo de documento");
-      return false;
-    }
-
-    if (!documentoLimpio) {
-      alert("El número de documento es obligatorio");
-      return false;
-    }
-
-    if (!telefonoLimpio) {
-      alert("El teléfono es obligatorio");
-      return false;
-    }
-
-    if (especialidades.length === 0) {
-  alert("Selecciona al menos una especialidad");
-  return false;
-}
-
-    if (!editandoId) {
-      if (!password || password.length < 6) {
-        alert("La contraseña es obligatoria y debe tener al menos 6 caracteres");
-        return false;
-      }
-      if (password !== confirmPassword) {
-        alert("Las contraseñas no coinciden");
-        return false;
-      }
-    }
-
-    if (!modalidad) {
-      alert("Selecciona la modalidad");
-      return false;
-    }
-
-    if (!tipoContrato) {
-      alert("Selecciona el tipo de contrato");
-      return false;
-    }
-
-   if (tipoContrato === "comision" || tipoContrato === "mixto") {
-  const comisionNumero = Number(comision);
-
-  if (
-    Number.isNaN(comisionNumero) ||
-    comisionNumero < 0 ||
-    comisionNumero > 100
-  ) {
-    alert("La comisión debe estar entre 0 y 100");
-    return false;
-  }
-}
-
-    const duplicado = profesores.some((p) => {
-      if (editandoId && p.id === editandoId) return false;
-      return String(p.numeroDocumento) === documentoLimpio;
-    });
-
-    if (duplicado) {
-      alert("Ya existe un profesor con ese número de documento");
-      return false;
-    }
-
-    return true;
+    setNombre(""); setTipoDocumento("cc"); setNumeroDocumento("");
+    setTelefono(""); setEmail(""); setTemas(""); setEsquemaTrabajo("tiempo_completo");
+    setJornada("completa"); setHorasDadas(""); setEstado("activo");
+    setSeguimiento(""); setVacacionesInicio(""); setVacacionesFin("");
+    setPassword(""); setEditandoId(null);
   };
 
   const agregarProfesor = async () => {
-    const puedeEditarProf = ["owner", "admin", "coordinador_academico"].includes(userRole);
+    const puedeEditarProf = ["owner", "admin", "coordinador_academico", "gerente", "super_admin"].includes(userRole);
     if (!puedeEditarProf) {
-      alert("No tienes permiso para agregar o editar profesores.");
+      alert("🔒 No tienes permiso para agregar o editar docentes.");
       return;
     }
 
-    if (!validarFormulario()) return;
+    if (!editandoId && profesores.length >= 7) {
+      alert("⚠️ Límite de docentes alcanzado. Actualmente solo puedes registrar 7 docentes.");
+      return;
+    }
+
+    if (!nombre.trim() || !numeroDocumento.trim()) {
+      alert("El nombre y número de documento son obligatorios.");
+      return;
+    }
+
+    if (!editandoId && (!password || password.length < 6)) {
+      alert("Debes asignar una contraseña inicial de al menos 6 caracteres.");
+      return;
+    }
 
     const payload = {
       nombre: nombre.trim(),
       tipoDocumento,
       numeroDocumento: numeroDocumento.trim(),
       telefono: telefono.trim(),
-      especialidades,
-      modalidad,
-      tipoContrato,
-      comision: Number(comision),
+      email: email.trim(),
+      temas: temas.trim(),
+      esquemaTrabajo,
+      jornada,
+      horasDadas: Number(horasDadas) || 0,
       estado,
-      observaciones: observaciones.trim(),
-      directorGrupo,
-      grupoDirectorId,
+      seguimiento: seguimiento.trim(),
+      vacacionesInicio,
+      vacacionesFin,
       updatedAt: new Date().toISOString(),
     };
 
-    if (editandoId) {
-      const actualizados = profesores.map((p) =>
-        p.id === editandoId ? { ...p, ...payload } : p
-      );
-      
-      const profAEditar = profesores.find(p => p.id === editandoId);
-      if (profAEditar) {
-        const nuevoPayload = {
-          ...profAEditar,
-          ...payload,
-        };
-        
+    try {
+      if (editandoId) {
+        // ACTUALIZAR
         const { error } = await supabase
           .from("profesores")
-          .update({
-            data: nuevoPayload
-          })
+          .update({ data: payload })
           .eq("id", editandoId);
+          
+        if (error) throw error;
+        await registrarAuditoria("editar", "docentes", editandoId, { cambios: payload }, usuarioActual);
+      } else {
+        // CREAR NUEVO
+        const emailProfe = email.trim() || `${numeroDocumento.trim()}@colegio.com`;
         
-        if (error) {
-          console.error("Error actualizando profesor en Supabase:", error);
-          alert("Error al actualizar profesor en la base de datos");
-          return;
+        // Registrar en auth mediante edge function
+        const { error: funcError } = await supabase.functions.invoke(
+          "crear-coordinador-academico",
+          {
+            body: {
+              nombre: payload.nombre,
+              email: emailProfe,
+              password: password,
+              role: "profesor",
+              tipo_documento: payload.tipoDocumento,
+              numero_documento: payload.numeroDocumento,
+              telefono: payload.telefono,
+              estado: payload.estado,
+              observaciones: "Creado por coordinador",
+            }
+          }
+        );
+
+        if (funcError) {
+          throw new Error("Error creando credenciales: " + (funcError.message || ""));
         }
 
-        await registrarAuditoria("editar", "profesores", editandoId, {
-          cambios: payload
-        }, usuarioActual);
+        const { data: userData } = await supabase
+          .from("usuarios")
+          .select("id")
+          .eq("email", emailProfe)
+          .maybeSingle();
+
+        const newId = userData?.id || Date.now().toString();
+
+        const { error: dbError } = await supabase
+          .from("profesores")
+          .insert([{ id: newId, data: payload }]);
+          
+        if (dbError) throw dbError;
+        await registrarAuditoria("crear", "docentes", newId, { datos: payload }, usuarioActual);
       }
 
-      setProfesores(actualizados);
+      cargarProfesores();
       limpiarFormulario();
-      return;
+      setActiveTab("lista");
+    } catch (e) {
+      console.error("Error:", e);
+      alert("Error al guardar docente: " + e.message);
     }
-
-    // Iniciar creación del profesor en Supabase Auth y public.usuarios
-    const passwordTemporal = password || payload.numeroDocumento;
-    const normalizedName = String(payload.nombre)
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/[^a-z0-9]/g, "");
-    const emailProfe = `${normalizedName}@caribbeanacademy.com`;
-
-    // Invocar la Edge Function para registrar la cuenta de Auth
-    const { data: funcData, error: funcError } = await supabase.functions.invoke(
-      "crear-coordinador-academico",
-      {
-        body: {
-          nombre: payload.nombre,
-          email: emailProfe,
-          password: passwordTemporal,
-          role: "profesor",
-          tipo_documento: payload.tipoDocumento || "CC",
-          numero_documento: payload.numeroDocumento,
-          telefono: payload.telefono,
-          estado: payload.estado || "activo",
-          observaciones: payload.observaciones || "",
-        }
-      }
-    );
-
-    if (funcError || funcData?.error) {
-      console.error("Error Edge Function:", funcError || funcData?.error);
-      alert("Error registrando profesor en Supabase Auth: " + (funcError?.message || funcData?.error));
-      return;
-    }
-
-    const authUserId = funcData.user.id;
-    const randomId = generarIdProfesorAleatorio(profesores);
-
-    const nuevoProfesor = {
-      id: randomId, // 4 dígitos aleatorios
-      auth_uid: authUserId, // ID de Auth vinculado
-      createdAt: new Date().toISOString(),
-      clasesAsignadas: 0,
-      alumnosActivos: 0,
-      email: emailProfe,
-      password: passwordTemporal,
-      role: "profesor",
-      salario: Number(salario) || 0,
-      ...payload,
-    };
-
-    // guardar perfil en la tabla profesores en Supabase
-    const { error } = await supabase
-      .from("profesores")
-      .insert([
-        {
-          id: String(nuevoProfesor.id),
-          data: nuevoProfesor
-        }
-      ]);
-
-    if (error) {
-      console.error("Error Supabase (profesor):", error);
-      alert("Error guardando el perfil del profesor");
-      return;
-    }
-
-    await registrarAuditoria("crear", "profesores", randomId, {
-      nombre: nuevoProfesor.nombre,
-      email: nuevoProfesor.email,
-      estado: nuevoProfesor.estado
-    }, usuarioActual);
-
-    setProfesores([nuevoProfesor, ...profesores]);
-    limpiarFormulario();
   };
 
-
-
-  const editarProfesor = (profesor) => {
-    setNombre(profesor.nombre || "");
-    setTipoDocumento(profesor.tipoDocumento || "");
-    setNumeroDocumento(profesor.numeroDocumento || "");
-    setDirectorGrupo(profesor.directorGrupo || false);
-    setGrupoDirectorId(profesor.grupoDirectorId || "");
-    setTelefono(profesor.telefono || "");
-    setEspecialidades(profesor.especialidades || []);
-    setModalidad(profesor.modalidad || "");
-    setTipoContrato(profesor.tipoContrato || "");
-    setComision(String(profesor.comision ?? ""));
-    setEstado(profesor.estado || "activo");
-    setObservaciones(profesor.observaciones || "");
-    setEditandoId(profesor.id);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-    setSalario(String(profesor.salario ?? ""));
+  const editarProfesor = (p) => {
+    setNombre(p.nombre || "");
+    setTipoDocumento(p.tipoDocumento || "cc");
+    setNumeroDocumento(p.numeroDocumento || "");
+    setTelefono(p.telefono || "");
+    setEmail(p.email || "");
+    setTemas(p.temas || "");
+    setEsquemaTrabajo(p.esquemaTrabajo || "tiempo_completo");
+    setJornada(p.jornada || "completa");
+    setHorasDadas(p.horasDadas || "");
+    setEstado(p.estado || "activo");
+    setSeguimiento(p.seguimiento || "");
+    setVacacionesInicio(p.vacacionesInicio || "");
+    setVacacionesFin(p.vacacionesFin || "");
+    
+    setEditandoId(p.id);
+    setActiveTab("registro");
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const eliminarProfesor = async (id) => {
-    const puedeEliminarProf = ["owner", "coordinador_academico"].includes(userRole);
-    if (!puedeEliminarProf) {
-      alert("No tienes permiso para eliminar profesores. Solo el Gerente (owner) o Coordinadores Académicos pueden realizar esta acción.");
+    const puedeEliminar = ["owner", "admin", "super_admin"].includes(userRole);
+    if (!puedeEliminar) {
+      alert("No tienes permiso para eliminar docentes.");
       return;
     }
+    if (!window.confirm("¿Seguro que deseas eliminar a este docente? (Se requiere eliminar el usuario en Auth para limpieza total)")) return;
 
-    const profesor = profesores.find((p) => p.id === id);
-    if (!profesor) return;
-
-    const confirmar = window.confirm(
-      `¿Seguro que deseas eliminar a ${profesor.nombre}?`
-    );
-
-    if (!confirmar) return;
-
-    const filtrados = profesores.filter((p) => p.id !== id);
-
-    // Eliminar de Supabase profesores
-    const { error } = await supabase
-      .from("profesores")
-      .delete()
-      .eq("id", id);
-
-    if (error) {
-      console.error("Error al eliminar profesor de Supabase:", error);
-      alert("Error al eliminar el profesor");
-      return;
-    }
-
-    await registrarAuditoria("eliminar", "profesores", id, {
-      nombre: profesor.nombre,
-      email: profesor.email
-    }, usuarioActual);
-
-    setProfesores(filtrados);
-
-    if (editandoId === id) {
-      limpiarFormulario();
-      setSalario("");
-    }
-
-    if (profesorSeleccionado?.id === id) {
-      setProfesorSeleccionado(null);
+    try {
+      await supabase.from("profesores").delete().eq("id", id);
+      cargarProfesores();
+    } catch (e) {
+      console.error(e);
     }
   };
 
-  const refrescarClasesProfesor = async () => {
-  if (!usuarioProfesor?.id) return;
-
-  const { data, error } = await supabase
-    .from("clases")
-    .select("*, alumnos:alumno_id(estado_pago)")
-    .or(
-      `profesor_db_id.eq.${usuarioProfesor.id},profesor_id.eq.${usuarioProfesor.id}`
-    )
-    .order("fecha", { ascending: false });
-
-  if (error) {
-    console.error("Error refrescando clases:", error);
-    return;
-  }
-
-  setClasesProfesor(data || []);
-};
-
-const iniciarClase = async (clase) => {
-  const { error } = await supabase
-    .from("clases")
-    .update({
-      estado: "en_curso",
-      inicio_en: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", clase.id);
-
-  if (error) {
-    console.error("Error iniciando clase:", error);
-    alert("No se pudo iniciar la clase.");
-    return;
-  }
-
-  await refrescarClasesProfesor();
-};
-
-const finalizarClase = async (clase, finalizadaPor = "profesor") => {
-  const { error } = await supabase
-    .from("clases")
-    .update({
-      estado: "finalizada",
-      finalizo_en: new Date().toISOString(),
-      finalizada_por: finalizadaPor,
-      profesor_finalizo_id: usuarioProfesor?.id || null,
-      profesor_finalizo_nombre: usuarioProfesor?.nombre || null,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", clase.id);
-
-  if (error) {
-    console.error("Error finalizando clase:", error);
-    alert("No se pudo finalizar la clase.");
-    return;
-  }
-
-  await refrescarClasesProfesor();
-};
-
-const marcarInasistencia = async (clase) => {
-  const confirmar = window.confirm("¿Estás seguro de marcar Inasistencia? Esta clase no se le descontará al alumno.");
-  if (!confirmar) return;
-
-  const { error } = await supabase
-    .from("clases")
-    .update({
-      estado: "cancelada",
-      observaciones: "Inasistencia del alumno. " + (clase.observaciones || ""),
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", clase.id);
-
-  if (error) {
-    console.error("Error marcando inasistencia:", error);
-    alert("No se pudo registrar la inasistencia.");
-    return;
-  }
-
-  await refrescarClasesProfesor();
-};
-
-const abrirWhatsApp = (telefono) => {
-  if (!telefono) {
-    alert("El alumno no tiene teléfono registrado.");
-    return;
-  }
-  const numeroLimpio = telefono.replace(/\D/g, "");
-  const url = `https://wa.me/57${numeroLimpio}?text=Hola,%20te%20escribo%20para%20recordarte%20nuestra%20clase%20programada.`;
-  window.open(url, "_blank");
-};
-
-  const profesoresFiltrados = useMemo(() => {
-    const term = busqueda.trim().toLowerCase();
-
-    if (!term) return profesores;
-
-    return profesores.filter((p) => {
-      return (
-  p.nombre?.toLowerCase().includes(term) ||
-  p.numeroDocumento?.toLowerCase().includes(term) ||
-  p.especialidades?.some(e => e.toLowerCase().includes(term)) ||
-  p.modalidad?.toLowerCase().includes(term) ||
-  p.estado?.toLowerCase().includes(term)
-);
-    });
-  }, [profesores, busqueda]);
-
   return (
-    <div className="dashboard-layout">
+    <div className="dashboard-layout docentes-page alumnos-page">
       <Sidebar onLogout={handleLogout} />
 
       <main className="dashboard-main">
-        <div className="profesores-header">
-          <div>
-            <h1>Profesores</h1>
-            <p className="profesores-subtitle">
-              Gestión base de profesores, modalidad, contrato y comisión.
-            </p>
+        <div className="page-header-tabs">
+          <div className="header-info">
+            <h1>Staff Docente</h1>
+            <span className="cupo-badge">
+              {profesores.length} de 7 Docentes Activos
+            </span>
           </div>
-
-          <div className="profesores-resumen">
-            <div className="mini-card">
-              <span>Total</span>
-              <strong>{profesores.length}</strong>
-            </div>
-            <div className="mini-card">
-              <span>Activos</span>
-              <strong>
-                {profesores.filter((p) => p.estado === "activo").length}
-              </strong>
-            </div>
-          </div>
-        </div>
-
-        <div className="tabla-container" style={{ marginBottom: "24px" }}>
-  <h2>Mis clases asignadas</h2>
-
-  {cargandoClases && <p>Cargando clases...</p>}
-
-  {!cargandoClases && clasesProfesor.length === 0 && (
-    <p>No tienes clases asignadas todavía.</p>
-  )}
-
- {!cargandoClases && clasesProfesor.length > 0 && (
-  <>
-    <table className="tabla-profesores">
-      <thead>
-        <tr>
-          <th>Clase</th>
-          <th>Fecha</th>
-          <th>Horario</th>
-          <th>Alumno</th>
-          <th>Estado</th>
-          <th>Acción</th>
-        </tr>
-      </thead>
-
-      <tbody>
-        {clasesProfesor.map((clase) => (
-          <tr key={clase.id}>
-            <td>
-              <div className="celda-principal">
-                <strong>{clase.curso}</strong>
-                <span>{clase.formato_clase}</span>
-              </div>
-            </td>
-
-            <td>{clase.fecha}</td>
-
-            <td>
-              {clase.hora} - {clase.hora_fin || "Sin hora fin"}
-            </td>
-
-            <td>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                {clase.alumno_nombre}
-                {clase.alumnos?.estado_pago === "mora" && (
-                  <span style={{ backgroundColor: '#ef4444', color: 'white', fontSize: '10px', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>
-                    EN MORA
-                  </span>
-                )}
-              </div>
-            </td>
-
-            <td>
-              <span className={`estado-chip ${clase.estado}`}>
-                {clase.estado}
-              </span>
-            </td>
-
-            <td>
-              {clase.estado === "programada" && (
-                <>
-                  <button
-                    type="button"
-                    className="btn-editar"
-                    onClick={() => iniciarClase(clase)}
-                    style={{ marginRight: '5px' }}
-                  >
-                    Iniciar clase
-                  </button>
-                  <button
-                    type="button"
-                    className="btn-eliminar"
-                    onClick={() => marcarInasistencia(clase)}
-                    style={{ backgroundColor: '#f59e0b', marginRight: '5px' }}
-                  >
-                    Faltó (Inasistencia)
-                  </button>
-                  <button
-                    type="button"
-                    className="btn-editar"
-                    onClick={() => abrirWhatsApp(clase.alumno_telefono || clase.alumno?.telefono)}
-                    style={{ backgroundColor: '#25D366' }}
-                  >
-                    WhatsApp
-                  </button>
-                </>
-              )}
-
-              {clase.estado === "en_curso" && (
-                <button
-                  type="button"
-                  className="btn-eliminar"
-                  onClick={() => finalizarClase(clase, "profesor")}
-                >
-                  Finalizar clase
-                </button>
-              )}
-
-              {clase.estado === "finalizada" && (
-                <span>Finalizada</span>
-              )}
-              {clase.estado === "cancelada" && (
-                <span style={{ color: '#ef4444' }}>Cancelada / Inasistencia</span>
-              )}
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-
-
-  <div className="clases-profesor-mobile">
-  {clasesProfesor.map((clase) => (
-    <div key={clase.id} className="clase-profesor-card">
-      <div className="clase-profesor-card-head">
-        <div>
-          <h3>{clase.curso}</h3>
-          <span>{clase.formato_clase || "Clase"}</span>
-        </div>
-
-        <span className={`estado-chip ${clase.estado}`}>
-          {clase.estado}
-        </span>
-      </div>
-
-      <div className="clase-profesor-grid">
-        <div>
-          <span>Fecha</span>
-          <strong>{clase.fecha}</strong>
-        </div>
-
-        <div>
-          <span>Horario</span>
-          <strong>
-            {clase.hora} - {clase.hora_fin || "Sin hora fin"}
-          </strong>
-        </div>
-
-        <div>
-          <span>Alumno</span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <strong>{clase.alumno_nombre}</strong>
-            {clase.alumnos?.estado_pago === "mora" && (
-              <span style={{ backgroundColor: '#ef4444', color: 'white', fontSize: '10px', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>
-                MORA
-              </span>
-            )}
-          </div>
-        </div>
-      </div>
-
-      <div className="clase-profesor-actions">
-        {clase.estado === "programada" && (
-          <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
-            <button
-              type="button"
-              className="btn-editar"
-              onClick={() => iniciarClase(clase)}
+          <div className="alumnos-tabs">
+            <button 
+              className={`tab-btn ${activeTab === 'registro' ? 'active' : ''}`} 
+              onClick={() => setActiveTab('registro')}
             >
-              Iniciar clase
+              Registro Docente
             </button>
-            <button
-              type="button"
-              className="btn-eliminar"
-              onClick={() => marcarInasistencia(clase)}
-              style={{ backgroundColor: '#f59e0b' }}
+            <button 
+              className={`tab-btn ${activeTab === 'lista' ? 'active' : ''}`} 
+              onClick={() => setActiveTab('lista')}
             >
-              Faltó (Inasistencia)
-            </button>
-            <button
-              type="button"
-              className="btn-editar"
-              onClick={() => abrirWhatsApp(clase.alumno_telefono || clase.alumno?.telefono)}
-              style={{ backgroundColor: '#25D366' }}
-            >
-              WhatsApp
+              Listado de Docentes
             </button>
           </div>
-        )}
-
-        {clase.estado === "en_curso" && (
-          <button
-            type="button"
-            className="btn-eliminar"
-            onClick={() => finalizarClase(clase, "profesor")}
-          >
-            Finalizar clase
-          </button>
-        )}
-
-        {clase.estado === "finalizada" && (
-          <span className="clase-finalizada-text">Clase finalizada</span>
-        )}
-        {clase.estado === "cancelada" && (
-          <span className="clase-finalizada-text" style={{ color: '#ef4444' }}>Cancelada / Inasistencia</span>
-        )}
-      </div>
-    </div>
-  ))}
-</div>
-  </>
-)}
-</div>
-
-        <div className="profesores-toolbar">
-          <input
-            type="text"
-            placeholder="Buscar por nombre, documento o especialidad"
-            value={busqueda}
-            onChange={(e) => setBusqueda(e.target.value)}
-          />
-
-          <button
-            type="button"
-            className="btn-secundario"
-            onClick={limpiarFormulario}
-          >
-            {editandoId ? "Cancelar edición" : "Limpiar"}
-          </button>
         </div>
 
-        {["owner", "admin", "coordinador_academico"].includes(userRole) && (
-          <div className="form-profesores">
-            <input
-              placeholder="Nombre completo"
-              value={nombre}
-              onChange={(e) => setNombre(e.target.value)}
-            />
-
-            <select
-              value={tipoDocumento}
-              onChange={(e) => setTipoDocumento(e.target.value)}
-            >
-              <option value="">Tipo documento</option>
-              <option value="cedula">Cédula</option>
-              <option value="ce">Cédula extranjería</option>
-              <option value="ppt">PPT</option>
-              <option value="nit">NIT</option>
-            </select>
-
-            <input
-              placeholder="Número de documento"
-              value={numeroDocumento}
-              onChange={(e) => setNumeroDocumento(e.target.value)}
-            />
-
-            {!editandoId && (
-              <>
-                <input
-                  type="password"
-                  placeholder="Contraseña de acceso"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-                <input
-                  type="password"
-                  placeholder="Confirmar contraseña"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                />
-              </>
-            )}
-
-            <input
-              placeholder="Teléfono"
-              value={telefono}
-              onChange={(e) => setTelefono(e.target.value)}
-            />
-
-            <input
-              placeholder="Salario base por hora (ej. 15000)"
-              value={salario}
-              onChange={(e) => setSalario(e.target.value)}
-            />
-
-            <select
-              value={modalidad}
-              onChange={(e) => setModalidad(e.target.value)}
-            >
-              <option value="">Modalidad</option>
-              <option value="presencial">Presencial</option>
-              <option value="virtual">Virtual</option>
-              <option value="hibrida">Híbrida</option>
-            </select>
-
-            <select
-              value={tipoContrato}
-              onChange={(e) => setTipoContrato(e.target.value)}
-            >
-              <option value="">Tipo de contrato</option>
-              <option value="prestacion">Prestación de servicios</option>
-              <option value="nomina">Nómina</option>
-              <option value="horas">Por horas</option>
-            </select>
-
-            <input
-              placeholder="Porcentaje de comisión (ej. 10)"
-              value={comision}
-              onChange={(e) => setComision(e.target.value)}
-            />
-
-            <select value={estado} onChange={(e) => setEstado(e.target.value)}>
-              <option value="activo">Activo</option>
-              <option value="inactivo">Inactivo</option>
-            </select>
-
-            <textarea
-              placeholder="Observaciones internas"
-              value={observaciones}
-              onChange={(e) => setObservaciones(e.target.value)}
-              style={{ gridColumn: "span 2", minHeight: "80px" }}
-            />
-
-            <div className="especialidades-container">
-              <label>Especialidades (materias que dicta):</label>
-              <div className="especialidades-grid">
-                {ESPECIALIDADES.map((esp) => {
-                  const isChecked = especialidades.includes(esp);
-                  return (
-                    <button
-                      key={esp}
-                      type="button"
-                      className={`especialidad-chip ${isChecked ? "active" : ""}`}
-                      onClick={() => {
-                        if (isChecked) {
-                          setEspecialidades(especialidades.filter((item) => item !== esp));
-                        } else {
-                          setEspecialidades([...especialidades, esp]);
-                        }
-                      }}
-                    >
-                      <span className="chip-icon">{isChecked ? "✓" : "+"}</span>
-                      {esp.toUpperCase()}
-                    </button>
-                  );
-                })}
-              </div>
+        {activeTab === 'registro' && (
+        <div className="colegio-form-container">
+          <h3>{editandoId ? "Editar Docente" : "Registrar Nuevo Docente"}</h3>
+          
+          <div className="form-grid">
+            <div className="form-section">
+              <h4>Datos Personales</h4>
+              <input placeholder="Nombre completo" value={nombre} onChange={e => setNombre(e.target.value)} />
+              <CustomSelect
+                value={tipoDocumento}
+                onChange={e => setTipoDocumento(e.target.value)}
+                placeholder="Tipo Doc."
+                options={[{value:"cc",label:"Cédula"},{value:"ce",label:"C. Extranjería"},{value:"passport",label:"Pasaporte"}]}
+              />
+              <input placeholder="No. Documento" value={numeroDocumento} onChange={e => setNumeroDocumento(e.target.value)} />
+              <input placeholder="Teléfono" value={telefono} onChange={e => setTelefono(e.target.value)} />
+              <input placeholder="Email institucional o personal" value={email} onChange={e => setEmail(e.target.value)} />
+              
+              {!editandoId && (
+                <input placeholder="Contraseña de Acceso" type="password" value={password} onChange={e => setPassword(e.target.value)} />
+              )}
             </div>
 
-            {config.tipo === "colegio" && (
-              <div style={{ marginTop: '15px', padding: '15px', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
-                <h4 style={{ marginBottom: '10px' }}>Asignación Académica</h4>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
-                  <input
-                    type="checkbox"
-                    checked={directorGrupo}
-                    onChange={(e) => setDirectorGrupo(e.target.checked)}
-                  />
-                  Es director de grupo
-                </label>
-                {directorGrupo && (
-                  <select
-                    value={grupoDirectorId}
-                    onChange={(e) => setGrupoDirectorId(e.target.value)}
-                    style={{ marginTop: '10px' }}
-                  >
-                    <option value="">Selecciona el grupo a dirigir</option>
-                    {grupos.map(g => (
-                      <option key={g.id} value={g.id}>{g.nombre}</option>
-                    ))}
-                  </select>
-                )}
-              </div>
-            )}
+            <div className="form-section">
+              <h4>Perfil Académico</h4>
+              <input placeholder="Asignaturas que domina (Ej. Matemáticas, Física)" value={temas} onChange={e => setTemas(e.target.value)} />
+              <CustomSelect
+                value={esquemaTrabajo}
+                onChange={e => setEsquemaTrabajo(e.target.value)}
+                placeholder="Esquema Trabajo"
+                options={[
+                  {value:"tiempo_completo",label:"Tiempo Completo"},
+                  {value:"medio_tiempo",label:"Medio Tiempo"},
+                  {value:"catedra",label:"Profesor Cátedra"}
+                ]}
+              />
+              <CustomSelect
+                value={jornada}
+                onChange={e => setJornada(e.target.value)}
+                placeholder="Jornada"
+                options={[
+                  {value:"manana",label:"Mañana"},
+                  {value:"tarde",label:"Tarde"},
+                  {value:"completa",label:"Completa (Única)"}
+                ]}
+              />
+              <input type="number" placeholder="Horas dadas por semana" value={horasDadas} onChange={e => setHorasDadas(e.target.value)} />
+              <CustomSelect
+                value={estado}
+                onChange={e => setEstado(e.target.value)}
+                placeholder="Estado"
+                options={[
+                  {value:"activo",label:"Activo"},
+                  {value:"permiso",label:"En Permiso / Incapacidad"},
+                  {value:"retirado",label:"Retirado"}
+                ]}
+              />
+            </div>
 
-            <button
-              type="button"
+            <div className="form-section">
+              <h4>Desempeño y Vacaciones</h4>
+              <textarea 
+                className="seguimiento-textarea"
+                placeholder="Anotaciones de seguimiento o desempeño..." 
+                value={seguimiento} 
+                onChange={e => setSeguimiento(e.target.value)}
+              />
+              
+              <div className="vacaciones-box">
+                <label>Periodo de Vacaciones Programadas:</label>
+                <div style={{display:'flex', gap:'10px'}}>
+                  <input type="date" value={vacacionesInicio} onChange={e => setVacacionesInicio(e.target.value)} title="Inicio" />
+                  <input type="date" value={vacacionesFin} onChange={e => setVacacionesFin(e.target.value)} title="Fin" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="form-actions">
+            {editandoId && <button type="button" className="btn-outline" onClick={limpiarFormulario}>Cancelar Edición</button>}
+            <button 
+              type="button" 
+              className="btn-primary" 
               onClick={agregarProfesor}
-              className="btn-principal"
+              disabled={!editandoId && profesores.length >= 7}
             >
-              {editandoId ? "Guardar cambios" : "Agregar profesor"}
+              {editandoId ? "Guardar Cambios" : "Crear Docente"}
             </button>
           </div>
+        </div>
         )}
 
+        {activeTab === 'lista' && (
         <div className="tabla-container">
-          <table className="tabla-profesores">
+          <table className="tabla-pagos">
             <thead>
               <tr>
-                <th>Profesor</th>
-          
-                <th>Modalidad</th>
-                <th>Contrato</th>
-                <th>Salario</th>
-                <th>Comisión</th>
+                <th>Docente</th>
+                <th>Temas</th>
+                <th>Jornada</th>
+                <th>Horas / sem</th>
                 <th>Estado</th>
                 <th>Acciones</th>
               </tr>
             </thead>
-
-            <tbody>
-              {profesoresFiltrados.map((p) => (
+            <tbody className="tabla-desktop">
+              {profesores.map((p) => (
                 <tr key={p.id}>
                   <td>
-                    <div className="celda-principal">
-                      <strong>{p.nombre}</strong>
-                      <span>
-                        {p.tipoDocumento} · {p.numeroDocumento}
-                      </span>
-                    </div>
+                    <strong>{p.nombre}</strong><br/>
+                    <small style={{color: '#64748B'}}>{(p.tipoDocumento || "").toUpperCase()} {p.numeroDocumento}</small>
                   </td>
-                 
-                  <td>{p.modalidad}</td>
-                  <td>{p.tipoContrato}</td>
-                   <td>${Number(p.salario || 0).toLocaleString()}</td>
-                  <td>{p.comision}%</td>
+                  <td>{p.temas || "Sin asignar"}</td>
+                  <td style={{textTransform:'capitalize'}}>{(p.jornada || "-").replace("_", " ")}</td>
+                  <td>{p.horasDadas || 0} h</td>
                   <td>
-                    <span className={`estado-chip ${p.estado}`}>
+                    <span className={`badge-estado ${p.estado === 'retirado' ? 'danger' : 'success'}`}>
                       {p.estado}
                     </span>
                   </td>
                   <td>
-                    <button
-                      className="btn-ver"
-                      onClick={() => setProfesorSeleccionado(p)}
-                    >
-                      Ver
-                    </button>
-                    {["owner", "admin", "coordinador_academico"].includes(userRole) && (
-                      <button
-                        className="btn-editar"
-                        onClick={() => editarProfesor(p)}
-                      >
-                        Editar
-                      </button>
-                    )}
-                    {["owner", "coordinador_academico"].includes(userRole) && (
-                      <button
-                        className="btn-eliminar"
-                        onClick={() => eliminarProfesor(p.id)}
-                      >
-                        Eliminar
-                      </button>
-                    )}
+                    <div className="acciones-grupo">
+                      <button className="btn-ver" onClick={() => setProfesorSeleccionado(p)}>Expediente</button>
+                      <button className="btn-editar" onClick={() => editarProfesor(p)}>Editar</button>
+                      {["owner", "admin", "super_admin"].includes(userRole) && (
+                        <button className="btn-eliminar btn-icon" onClick={() => eliminarProfesor(p.id)}>🗑</button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
-
-              {profesoresFiltrados.length === 0 && (
+              
+              {profesores.length === 0 && (
                 <tr>
-                  <td colSpan="7" className="fila-vacia">
-                    No hay profesores registrados.
+                  <td colSpan="6" style={{textAlign: 'center', padding: '40px', color: '#64748B'}}>
+                    No hay docentes registrados. Tienes cupo para 7 docentes.
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
         </div>
+        )}
 
-        <div className="profesores-mobile">
-          {profesoresFiltrados.map((p) => (
-            <div key={p.id} className="profesor-card">
-              <div className="card-header">
-                <h3>{p.nombre}</h3>
-                <span className={`estado-chip ${p.estado}`}>{p.estado}</span>
-              </div>
-
-              <div className="card-grid">
-                
-                <div className="card-item">
-                  <span>Modalidad</span>
-                  <strong>{p.modalidad}</strong>
-                </div>
-                <div className="card-item">
-                  <span>Contrato</span>
-                  <strong>{p.tipoContrato}</strong>
-                </div>
-                <div className="card-item">
-                  <span>Comisión</span>
-                  <strong>{p.comision}%</strong>
-                </div>
-              </div>
-
-              <div className="card-actions">
-                <button
-                  className="btn-ver"
-                  onClick={() => setProfesorSeleccionado(p)}
-                >
-                  Ver
-                </button>
-                 {["owner", "admin", "coordinador_academico"].includes(userRole) && (
-                   <button
-                     className="btn-editar"
-                     onClick={() => editarProfesor(p)}
-                   >
-                     Editar
-                   </button>
-                 )}
-                 {["owner", "coordinador_academico"].includes(userRole) && (
-                   <button
-                     className="btn-eliminar"
-                     onClick={() => eliminarProfesor(p.id)}
-                   >
-                     Eliminar
-                   </button>
-                 )}
-              </div>
-            </div>
-          ))}
-        </div>
-
+        {/* MODAL EXPEDIENTE DOCENTE */}
         {profesorSeleccionado && (
-          <div
-            className="profe-modal-overlay"
-            onClick={() => setProfesorSeleccionado(null)}
-          >
-            <div className="profe-modal-card" onClick={(e) => e.stopPropagation()}>
-              <div className="profe-modal-header">
-                <div className="profe-modal-profile">
-                  <div className="profe-modal-avatar">👨‍🏫</div>
-                  <div>
-                    <h2>{profesorSeleccionado.nombre}</h2>
-                    <span className={`estado-badge ${profesorSeleccionado.estado}`}>
-                      {(profesorSeleccionado.estado || "activo").toUpperCase()}
-                    </span>
-                  </div>
-                </div>
-                <button className="profe-modal-close" onClick={() => setProfesorSeleccionado(null)}>×</button>
+          <div className="modal-overlay" onClick={() => setProfesorSeleccionado(null)}>
+            <div className="modal-content expediente-modal" onClick={e => e.stopPropagation()}>
+              <div className="modal-header">
+                <h2>Expediente del Docente</h2>
+                <button className="btn-close" onClick={() => setProfesorSeleccionado(null)}>×</button>
               </div>
+              <div className="modal-body-scroll" style={{padding: '0 20px 20px'}}>
+                <h3 style={{marginTop: '10px'}}>{profesorSeleccionado.nombre}</h3>
+                
+                <div className="expediente-grid">
+                  <div className="exp-section">
+                    <h4>Datos Personales</h4>
+                    <p><strong>Documento:</strong> {profesorSeleccionado.numeroDocumento} ({(profesorSeleccionado.tipoDocumento || "").toUpperCase()})</p>
+                    <p><strong>Teléfono:</strong> {profesorSeleccionado.telefono || "-"}</p>
+                    <p><strong>Email:</strong> {profesorSeleccionado.email || "-"}</p>
+                    <p><strong>Estado:</strong> <span style={{textTransform:'capitalize'}}>{profesorSeleccionado.estado}</span></p>
+                  </div>
+                  
+                  <div className="exp-section">
+                    <h4>Perfil Laboral</h4>
+                    <p><strong>Esquema:</strong> <span style={{textTransform:'capitalize'}}>{(profesorSeleccionado.esquemaTrabajo || "").replace("_", " ")}</span></p>
+                    <p><strong>Jornada:</strong> <span style={{textTransform:'capitalize'}}>{(profesorSeleccionado.jornada || "-").replace("_", " ")}</span></p>
+                    <p><strong>Temas/Asignaturas:</strong> {profesorSeleccionado.temas || "-"}</p>
+                    <p><strong>Carga Horaria:</strong> {profesorSeleccionado.horasDadas || 0} horas semanales</p>
+                  </div>
 
-              <div className="profe-modal-body">
-                <div className="profe-modal-section-title">Información Personal</div>
-                <div className="profe-modal-grid">
-                  <div className="profe-modal-item">
-                    <span className="profe-item-label">Documento</span>
-                    <strong className="profe-item-value">
-                      {String(profesorSeleccionado.tipoDocumento || "CC").toUpperCase()} - {profesorSeleccionado.numeroDocumento}
-                    </strong>
-                  </div>
-                  <div className="profe-modal-item">
-                    <span className="profe-item-label">Teléfono</span>
-                    <strong className="profe-item-value">{profesorSeleccionado.telefono || "No registrado"}</strong>
-                  </div>
-                </div>
-
-                <div className="profe-modal-section-title">Detalles Académicos</div>
-                <div className="profe-modal-grid">
-                  <div className="profe-modal-item">
-                    <span className="profe-item-label">Modalidad</span>
-                    <strong className="profe-item-value">{profesorSeleccionado.modalidad || "No especificada"}</strong>
-                  </div>
-                  <div className="profe-modal-item">
-                    <span className="profe-item-label">Tipo de Contrato</span>
-                    <strong className="profe-item-value">{profesorSeleccionado.tipoContrato || "No especificado"}</strong>
-                  </div>
-                  <div className="profe-modal-item">
-                    <span className="profe-item-label">Comisión</span>
-                    <strong className="profe-item-value">{profesorSeleccionado.comision}%</strong>
-                  </div>
-                  <div className="profe-modal-item">
-                    <span className="profe-item-label">Especialidades</span>
-                    <div className="profe-chips-list">
-                      {profesorSeleccionado.especialidades && profesorSeleccionado.especialidades.length > 0 ? (
-                        profesorSeleccionado.especialidades.map((e) => (
-                          <span className="profe-chip-view" key={e}>
-                            {e.toUpperCase()}
-                          </span>
-                        ))
-                      ) : (
-                        <span className="no-data">Ninguna</span>
-                      )}
+                  <div className="exp-section full-width">
+                    <h4>Seguimiento y Vacaciones</h4>
+                    <div style={{display: 'flex', gap: '20px', flexWrap: 'wrap'}}>
+                      <div style={{flex:1, minWidth:'250px'}}>
+                        <p><strong>Anotaciones de Desempeño:</strong></p>
+                        <div style={{background: '#F1F5F9', padding: '10px', borderRadius: '8px', minHeight: '60px', marginTop: '5px'}}>
+                          {profesorSeleccionado.seguimiento || "Sin observaciones."}
+                        </div>
+                      </div>
+                      <div style={{flex:1, minWidth:'200px'}}>
+                        <p><strong>Próximas Vacaciones:</strong></p>
+                        <p><strong>Desde:</strong> {profesorSeleccionado.vacacionesInicio || "No definidas"}</p>
+                        <p><strong>Hasta:</strong> {profesorSeleccionado.vacacionesFin || "No definidas"}</p>
+                      </div>
                     </div>
                   </div>
                 </div>
-
-                <div className="profe-modal-section-title">Credenciales de Acceso</div>
-                <div className="profe-modal-grid access-grid">
-                  <div className="profe-modal-item">
-                    <span className="profe-item-label">Correo de Acceso</span>
-                    <strong className="profe-item-value copyable">{profesorSeleccionado.email}</strong>
-                  </div>
-                  <div className="profe-modal-item">
-                    <span className="profe-item-label">Contraseña Inicial</span>
-                    <strong className="profe-item-value password-value">{profesorSeleccionado.password}</strong>
-                  </div>
-                </div>
-
-                {profesorSeleccionado.observaciones && (
-                  <>
-                    <div className="profe-modal-section-title">Observaciones Internas</div>
-                    <div className="profe-modal-observaciones">
-                      {profesorSeleccionado.observaciones}
-                    </div>
-                  </>
-                )}
-              </div>
-
-              <div className="profe-modal-footer">
-                <button
-                  type="button"
-                  className="profe-btn-cerrar"
-                  onClick={() => setProfesorSeleccionado(null)}
-                >
-                  Cerrar Detalles
-                </button>
               </div>
             </div>
           </div>

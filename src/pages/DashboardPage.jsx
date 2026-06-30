@@ -380,7 +380,7 @@ function DashboardPage() {
         )}
 
         {/* KPIs */}
-        <div className="kpi-grid">
+        <div className="dashboard-kpi-grid">
           <div className="colegio-kpi-card blue">
             <div className="colegio-kpi-icon">🎓</div>
             <div className="colegio-kpi-info">

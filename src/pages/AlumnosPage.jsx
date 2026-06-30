@@ -59,15 +59,28 @@ function AlumnosPage() {
   }, []);
 
   const fetchData = async () => {
-    const [resAlumnos, resGrados, resGrupos] = await Promise.all([
-      supabase.from("alumnos").select("*").order('created_at', { ascending: false }),
-      supabase.from("grados").select("*").order('orden', { ascending: true }),
-      supabase.from("grupos").select("*")
-    ]);
+    try {
+      const resAlumnos = await supabase.from("alumnos").select("*").order('created_at', { ascending: false });
+      if (resAlumnos.data) setAlumnos(resAlumnos.data);
+    } catch (e) {
+      console.error("Error fetching alumnos:", e);
+    }
+
+    // Sincronizar grados y grupos con lo que el usuario guardó en AcademicoPage (localStorage)
+    const DEFAULT_GRADOS = [
+      { id: 1, nombre: "Primero" },
+      { id: 2, nombre: "Segundo" }
+    ];
+    const DEFAULT_GRUPOS = [
+      { id: 1, grado_id: 1, nombre: "1A" },
+      { id: 2, grado_id: 2, nombre: "2A" }
+    ];
+
+    const localGrados = JSON.parse(localStorage.getItem("demo_grados")) || DEFAULT_GRADOS;
+    const localGrupos = JSON.parse(localStorage.getItem("demo_grupos")) || DEFAULT_GRUPOS;
     
-    if (resGrados.data) setGrados(resGrados.data);
-    if (resGrupos.data) setGrupos(resGrupos.data);
-    if (resAlumnos.data) setAlumnos(resAlumnos.data);
+    setGrados(localGrados);
+    setGrupos(localGrupos);
   };
 
   const calcularMora = (diaCorte, ultimoMesPagado) => {

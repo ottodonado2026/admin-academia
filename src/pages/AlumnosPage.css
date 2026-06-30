@@ -75,8 +75,9 @@
   background: #FFFFFF;
   border: 1px solid #E2E8F0;
   border-radius: 12px;
-  padding: 24px;
-  margin-bottom: 24px;
+  padding: 40px;
+  margin: 0 auto 40px auto;
+  max-width: 1200px;
   box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
 }
 
@@ -91,13 +92,13 @@
 .alumnos-page .form-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 24px;
+  gap: 32px;
 }
 
 .alumnos-page .form-section {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
 }
 
 .alumnos-page .form-section h4 {
@@ -110,12 +111,12 @@
 
 .alumnos-page .form-section input,
 .alumnos-page .form-section select {
-  height: 42px;
+  height: 48px;
   border-radius: 8px;
   border: 1px solid #E2E8F0;
   background: #F8FAFC;
   color: #1E293B;
-  padding: 0 12px;
+  padding: 0 16px;
   outline: none;
   width: 100%;
 }
@@ -140,20 +141,21 @@
 .alumnos-page .form-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 12px;
-  margin-top: 24px;
-  padding-top: 16px;
+  gap: 16px;
+  margin-top: 32px;
+  padding-top: 24px;
   border-top: 1px solid #E2E8F0;
 }
 
 .alumnos-page .btn-primary {
-  height: 42px;
-  padding: 0 24px;
+  height: 48px;
+  padding: 0 32px;
   background: #0f62fe;
   color: #FFFFFF;
   border: none;
   border-radius: 8px;
   font-weight: 600;
+  font-size: 15px;
   cursor: pointer;
   transition: 0.2s ease;
 }
@@ -162,13 +164,14 @@
 }
 
 .alumnos-page .btn-outline {
-  height: 42px;
-  padding: 0 24px;
+  height: 48px;
+  padding: 0 32px;
   background: #FFFFFF;
   color: #475569;
   border: 1px solid #CBD5E1;
   border-radius: 8px;
   font-weight: 600;
+  font-size: 15px;
   cursor: pointer;
   transition: 0.2s ease;
 }
@@ -838,12 +841,12 @@
   position: relative;
   width: 100%;
   min-width: 0;
-  height: 42px;
+  height: 48px;
 }
 
 .custom-select-trigger {
   width: 100%;
-  height: 42px;
+  height: 48px;
   border-radius: 8px;
   background: #F8FAFC;
   border: 1px solid #E2E8F0;

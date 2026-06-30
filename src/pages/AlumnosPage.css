@@ -71,7 +71,9 @@
    FORMULARIO
 ========================= */
 
-.alumnos-page .colegio-form-container {
+/* Con prefijo (página de alumnos) */
+.alumnos-page .colegio-form-container,
+.docentes-page .colegio-form-container {
   background: #FFFFFF;
   border: 1px solid #E2E8F0;
   border-radius: 12px;
@@ -81,7 +83,8 @@
   box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
 }
 
-.alumnos-page .colegio-form-container h3 {
+.alumnos-page .colegio-form-container h3,
+.docentes-page .colegio-form-container h3 {
   margin: 0 0 20px 0;
   color: #1E293B;
   font-size: 18px;
@@ -89,19 +92,22 @@
   padding-bottom: 12px;
 }
 
-.alumnos-page .form-grid {
+.alumnos-page .form-grid,
+.docentes-page .form-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 32px;
 }
 
-.alumnos-page .form-section {
+.alumnos-page .form-section,
+.docentes-page .form-section {
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
 
-.alumnos-page .form-section h4 {
+.alumnos-page .form-section h4,
+.docentes-page .form-section h4 {
   margin: 0 0 4px 0;
   color: #64748B;
   font-size: 14px;
@@ -110,7 +116,9 @@
 }
 
 .alumnos-page .form-section input,
-.alumnos-page .form-section select {
+.alumnos-page .form-section select,
+.docentes-page .form-section input,
+.docentes-page .form-section select {
   height: 48px;
   border-radius: 8px;
   border: 1px solid #E2E8F0;
@@ -122,7 +130,9 @@
 }
 
 .alumnos-page .form-section input:focus,
-.alumnos-page .form-section select:focus {
+.alumnos-page .form-section select:focus,
+.docentes-page .form-section input:focus,
+.docentes-page .form-section select:focus {
   border-color: #0f62fe;
   background: #FFFFFF;
   box-shadow: 0 0 0 2px rgba(15,98,254,0.1);
@@ -138,7 +148,8 @@
   gap: 12px;
 }
 
-.alumnos-page .form-actions {
+.alumnos-page .form-actions,
+.docentes-page .form-actions {
   display: flex;
   justify-content: flex-end;
   gap: 16px;
@@ -147,7 +158,8 @@
   border-top: 1px solid #E2E8F0;
 }
 
-.alumnos-page .btn-primary {
+.alumnos-page .btn-primary,
+.docentes-page .btn-primary {
   height: 48px;
   padding: 0 32px;
   background: #0f62fe;
@@ -159,11 +171,13 @@
   cursor: pointer;
   transition: 0.2s ease;
 }
-.alumnos-page .btn-primary:hover {
+.alumnos-page .btn-primary:hover,
+.docentes-page .btn-primary:hover {
   background: #0043ce;
 }
 
-.alumnos-page .btn-outline {
+.alumnos-page .btn-outline,
+.docentes-page .btn-outline {
   height: 48px;
   padding: 0 32px;
   background: #FFFFFF;
@@ -175,7 +189,8 @@
   cursor: pointer;
   transition: 0.2s ease;
 }
-.alumnos-page .btn-outline:hover {
+.alumnos-page .btn-outline:hover,
+.docentes-page .btn-outline:hover {
   background: #F8FAFC;
   color: #1E293B;
 }
@@ -183,19 +198,23 @@
 /* =========================
    CUSTOM SELECT OVERRIDE
 ========================= */
-.alumnos-page .custom-select-trigger {
+.alumnos-page .custom-select-trigger,
+.docentes-page .custom-select-trigger {
   background: #F8FAFC !important;
   color: #1E293B !important;
   border-color: #E2E8F0 !important;
 }
-.alumnos-page .custom-select-dropdown {
+.alumnos-page .custom-select-dropdown,
+.docentes-page .custom-select-dropdown {
   background: #FFFFFF !important;
   border-color: #E2E8F0 !important;
 }
-.alumnos-page .custom-select-option {
+.alumnos-page .custom-select-option,
+.docentes-page .custom-select-option {
   color: #1E293B !important;
 }
-.alumnos-page .custom-select-option:hover {
+.alumnos-page .custom-select-option:hover,
+.docentes-page .custom-select-option:hover {
   background: #F1F5F9 !important;
 }
 

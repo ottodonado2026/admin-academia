@@ -78,8 +78,10 @@
   border: 1px solid #E2E8F0;
   border-radius: 12px;
   padding: 40px;
-  margin: 0 auto 40px auto;
+  margin: 20px auto 40px auto;
   max-width: 1200px;
+  width: 100%;
+  box-sizing: border-box;
   box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
 }
 
@@ -97,6 +99,7 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 32px;
+  width: 100%;
 }
 
 .alumnos-page .form-section,

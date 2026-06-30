@@ -81,7 +81,7 @@
   font-size: 14px;
 }
 
-.form-grid {
+.profesor-clases-page .form-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 14px;
@@ -305,7 +305,7 @@
   }
 
   .toolbar-filtros,
-  .form-grid {
+  .profesor-clases-page .form-grid {
     grid-template-columns: 1fr;
   }
 

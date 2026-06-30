@@ -381,33 +381,33 @@ function DashboardPage() {
 
         {/* KPIs */}
         <div className="kpi-grid">
-          <div className="kpi-card blue">
-            <div className="kpi-icon">🎓</div>
-            <div className="kpi-info">
+          <div className="colegio-kpi-card blue">
+            <div className="colegio-kpi-icon">🎓</div>
+            <div className="colegio-kpi-info">
               <h3>Estudiantes Activos</h3>
               <h2>{alumnosActivos}</h2>
               <p>Total en el sistema</p>
             </div>
           </div>
-          <div className="kpi-card green">
-            <div className="kpi-icon">💰</div>
-            <div className="kpi-info">
+          <div className="colegio-kpi-card green">
+            <div className="colegio-kpi-icon">💰</div>
+            <div className="colegio-kpi-info">
               <h3>Ingresos ({meses[mesSeleccionado]})</h3>
               <h2>{formatearPesos(totalIngresosMes)}</h2>
               <p>Recaudos y pensiones</p>
             </div>
           </div>
-          <div className="kpi-card red">
-            <div className="kpi-icon">📉</div>
-            <div className="kpi-info">
+          <div className="colegio-kpi-card red">
+            <div className="colegio-kpi-icon">📉</div>
+            <div className="colegio-kpi-info">
               <h3>Egresos ({meses[mesSeleccionado]})</h3>
               <h2>{formatearPesos(totalEgresosMes)}</h2>
               <p>Gastos operativos</p>
             </div>
           </div>
-          <div className="kpi-card purple">
-            <div className="kpi-icon">⚖️</div>
-            <div className="kpi-info">
+          <div className="colegio-kpi-card purple">
+            <div className="colegio-kpi-icon">⚖️</div>
+            <div className="colegio-kpi-info">
               <h3>Balance Neto</h3>
               <h2>{formatearPesos(utilidadNeta)}</h2>
               <p>Flujo de caja libre</p>
@@ -421,10 +421,10 @@ function DashboardPage() {
             <h3>Flujo Financiero (Ingresos vs Egresos)</h3>
             <div className="chart-container">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartDataMensual}>
+                <BarChart data={chartDataMensual} margin={{ left: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
                   <XAxis dataKey="mes" axisLine={false} tickLine={false} tick={{fill: '#64748B'}} />
-                  <YAxis axisLine={false} tickLine={false} tick={{fill: '#64748B'}} tickFormatter={(v) => `$${v/1000}k`} />
+                  <YAxis width={80} axisLine={false} tickLine={false} tick={{fill: '#64748B'}} tickFormatter={(v) => v >= 1000 ? `$${(v/1000).toFixed(0)}k` : `$${v}`} />
                   <Tooltip formatter={(val) => formatearPesos(val)} />
                   <Legend />
                   <Bar dataKey="Ingresos" fill="#22c55e" radius={[4,4,0,0]} />

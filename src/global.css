@@ -43,6 +43,25 @@ body,
 }
 
 /* =========================================
+   LAYOUT GLOBAL DEL SISTEMA
+========================================= */
+
+.dashboard-layout {
+  display: flex;
+  min-height: 100vh;
+  background: #F8FAFC;
+  width: 100%;
+}
+
+.dashboard-main {
+  flex: 1;
+  padding: 32px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* =========================================
    TIPOGRAFÍA GLOBAL
 ========================================= */
 

@@ -9,7 +9,7 @@ function AppContent() {
     return (
       <div style={{
         width: "100%", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center",
-        background: "#080b12", color: "white", fontSize: "18px", fontWeight: "700"
+        background: "#F8FAFC", color: "#1E293B", fontSize: "18px", fontWeight: "700"
       }}>
         Cargando sistema...
       </div>

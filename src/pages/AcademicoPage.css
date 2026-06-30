@@ -1,0 +1,307 @@
+.academico-page {
+  width: 100%;
+  min-width: 0;
+  overflow-x: hidden;
+}
+
+.academico-page .dashboard-main {
+  width: 100%;
+  min-width: 0;
+  padding: 24px;
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+
+.academico-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.academico-header h1 {
+  margin: 0 0 8px 0;
+  color: var(--text-main);
+}
+
+.academico-header p {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.tabs-academico {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 12px;
+}
+
+.tab-btn {
+  background: transparent;
+  border: none;
+  font-size: 15px;
+  color: #64748B;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 8px 16px;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.tab-btn:hover {
+  background: #EEF2FF;
+  color: #0f62fe !important;
+}
+
+.tab-btn.active,
+.tab-btn.active:hover {
+  background: var(--primary);
+  color: #FFFFFF !important;
+}
+
+.academico-content {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+}
+
+.grid-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.academico-card {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  background: var(--bg-main);
+}
+
+.academico-card h3 {
+  margin: 0 0 16px 0;
+  font-size: 18px;
+  color: var(--text-main);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.badge-tag {
+  background: #E0E7FF;
+  color: #4F46E5;
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+.lista-subitems {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.subitem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--bg-card);
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  font-size: 14px;
+  color: var(--text-main);
+}
+
+.subitem-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.subitem-info small {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.btn-agregar {
+  width: 100%;
+  margin-top: 16px;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px dashed var(--border);
+  background: transparent;
+  color: var(--primary);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-agregar:hover {
+  background: var(--bg-main);
+  border-color: var(--primary);
+}
+
+.form-group-inline {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.form-group-inline input,
+.form-group-inline select {
+  flex: 1;
+  height: 42px;
+  margin: 0;
+  box-sizing: border-box;
+  border-radius: 8px;
+  border: 1px solid #E2E8F0;
+  padding: 0 12px;
+  font-size: 14px;
+  color: #1E293B;
+  background: #FFFFFF;
+}
+
+.academico-page .btn-primary {
+  height: 42px;
+  margin: 0;
+  box-sizing: border-box;
+  padding: 0 20px;
+  background: var(--primary);
+  color: #FFFFFF;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-primary:hover {
+  filter: brightness(0.9);
+}
+
+/* MODALES */
+.academico-page .modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(15, 23, 42, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.academico-page .modal-content {
+  background: #FFFFFF;
+  width: 100%;
+  max-width: 450px;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  border: 1px solid #E2E8F0;
+}
+
+.academico-page .modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.academico-page .modal-header h2 {
+  margin: 0;
+  font-size: 18px;
+  color: #1E293B;
+}
+
+.academico-page .btn-close {
+  background: transparent;
+  border: none;
+  font-size: 24px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.academico-page .form-group {
+  margin-bottom: 16px;
+}
+
+.academico-page .form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 14px;
+  color: #475569;
+}
+
+.academico-page .form-group input,
+.academico-page .form-group select {
+  width: 100%;
+  height: 42px;
+  border-radius: 8px;
+  border: 1px solid #E2E8F0;
+  padding: 0 12px;
+  background: #F8FAFC;
+  color: #1E293B;
+}
+
+.academico-page .modal-footer {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.academico-page .btn-outline {
+  height: 42px;
+  margin: 0;
+  box-sizing: border-box;
+  padding: 0 20px;
+  border: 1px solid #E2E8F0;
+  background: #FFFFFF;
+  color: #1E293B;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.academico-page .btn-outline:hover {
+  background: #F8FAFC;
+}
+
+.btn-icon-delete {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 20px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.btn-icon-delete:hover {
+  color: #e11d48;
+}
+
+.text-danger {
+  background: transparent;
+  border: none;
+  color: #e11d48;
+  font-size: 12px;
+  cursor: pointer;
+  text-decoration: underline;
+}
+

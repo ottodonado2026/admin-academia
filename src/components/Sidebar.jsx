@@ -1,10 +1,10 @@
 import "./Sidebar.css";
-import logo from "../assets/logo.png";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { supabase } from "../services/supabaseClient";
 import { useAuth } from "../context/AuthContext";
 import MFAModal from "./MFAModal";
+import { config } from "../config/institucion";
 
 let sidebarUserCache = null;
 
@@ -49,21 +49,22 @@ useEffect(() => {
   const [pendientes, setPendientes] = useState(0);
 
   const [nombre, setNombre] = useState(
-    sidebarUserCache?.nombre || ""
+    sidebarUserCache?.nombre || "Administrador"
   );
 
   const [role, setRole] = useState(
-    sidebarUserCache?.role || ""
+    sidebarUserCache?.role || userRole || "admin"
   );
 
   const roleLabel =
-    roleLabels[role] || sidebarUserCache?.roleLabel || "Usuario";
+    roleLabels[role || userRole] || sidebarUserCache?.roleLabel || "Usuario";
 
-  const isSuperAdmin = ["owner", "gerente", "super_admin"].includes(role);
-  const isAdmin = role === "admin";
-  const isContador = role === "contador";
-  const isEmpleado = ["coordinador", "coordinador_academico", "empleado"].includes(role);
-  const isConsulta = role === "consulta";
+  const activeRole = role || userRole || "admin";
+  const isSuperAdmin = ["owner", "gerente", "super_admin"].includes(activeRole);
+  const isAdmin = activeRole === "admin";
+  const isContador = activeRole === "contador";
+  const isEmpleado = ["coordinador", "coordinador_academico", "empleado"].includes(activeRole);
+  const isConsulta = activeRole === "consulta";
 
   useEffect(() => {
     const data = JSON.parse(localStorage.getItem("solicitudesCambios") || "[]");
@@ -92,7 +93,7 @@ useEffect(() => {
           return;
         }
 
-        const rolNormalizado = String(usuario?.role || "").toLowerCase();
+        const rolNormalizado = String(usuario?.role || user?.role || userRole || "").toLowerCase();
 
         const datosSidebar = {
           nombre: usuario?.nombre || user.email || "Usuario",
@@ -125,24 +126,14 @@ useEffect(() => {
       </NavLink>
 
       <NavLink to="/profesores" onClick={() => setOpen(false)}>
-        Profesores
+        {config.terminologia.profesor.charAt(0).toUpperCase() + config.terminologia.profesor.slice(1)}s
       </NavLink>
-
-      <NavLink to="/asesores-admin" onClick={() => setOpen(false)}>
-        Registro asesores
-      </NavLink>
-
-      <NavLink to="/registro-coordinadores" onClick={() => setOpen(false)}>
-        Registro de coordinadores
-      </NavLink>
-
-      <NavLink to="/coordinador" onClick={() => setOpen(false)}>
-      Agenda académica
-      </NavLink>
-
-      <NavLink to="/leads" onClick={() => setOpen(false)}>
-        Leads
-      </NavLink>
+      
+      {config.modulos.notas && (
+        <NavLink to="/coordinador" onClick={() => setOpen(false)}>
+          Agenda académica
+        </NavLink>
+      )}
     </>
   );
 
@@ -152,33 +143,39 @@ useEffect(() => {
         Dashboard
       </NavLink>
 
-      <NavLink to="/pagos" onClick={() => setOpen(false)}>
-        Pagos
-      </NavLink>
+      {config.modulos.cuentas_por_cobrar && (
+        <>
+          <NavLink to="/pagos" onClick={() => setOpen(false)}>
+            Pagos
+          </NavLink>
+          <NavLink to="/historial-pagos" onClick={() => setOpen(false)}>
+            Historial de pagos
+          </NavLink>
+          <NavLink to="/cuentas" onClick={() => setOpen(false)}>
+            Cuentas por cobrar
+          </NavLink>
+        </>
+      )}
 
-      <NavLink to="/historial-pagos" onClick={() => setOpen(false)}>
-        Historial de pagos
-      </NavLink>
+      {config.modulos.nomina && (
+        <NavLink to="/nomina" onClick={() => setOpen(false)}>
+          Nómina
+        </NavLink>
+      )}
 
-      <NavLink to="/nomina" onClick={() => setOpen(false)}>
-        Nómina
-      </NavLink>
-
-      <NavLink to="/ingresos" onClick={() => setOpen(false)}>
-        Ingresos
-      </NavLink>
-
-      <NavLink to="/egresos" onClick={() => setOpen(false)}>
-        Egresos
-      </NavLink>
-
-      <NavLink to="/cuentas" onClick={() => setOpen(false)}>
-        Cuentas por cobrar
-      </NavLink>
-
-      <NavLink to="/balance" onClick={() => setOpen(false)}>
-        Balance General
-      </NavLink>
+      {config.modulos.contabilidad && (
+        <>
+          <NavLink to="/ingresos" onClick={() => setOpen(false)}>
+            Ingresos
+          </NavLink>
+          <NavLink to="/egresos" onClick={() => setOpen(false)}>
+            Egresos
+          </NavLink>
+          <NavLink to="/balance" onClick={() => setOpen(false)}>
+            Balance General
+          </NavLink>
+        </>
+      )}
     </>
   );
 
@@ -187,45 +184,11 @@ useEffect(() => {
       <NavLink to="/dashboard" onClick={() => setOpen(false)}>
         Dashboard
       </NavLink>
-
       <NavLink to="/alumnos" onClick={() => setOpen(false)}>
-        Alumnos
+        {config.terminologia.alumno.charAt(0).toUpperCase() + config.terminologia.alumno.slice(1)}s
       </NavLink>
-
-      <NavLink to="/coordinador" onClick={() => setOpen(false)}>
-        Coordinador académico
-      </NavLink>
-
       <NavLink to="/profesores" onClick={() => setOpen(false)}>
-        Profesores
-      </NavLink>
-
-      <NavLink to="/asesores" onClick={() => setOpen(false)}>
-        Asesores
-      </NavLink>
-
-      <NavLink to="/leads" onClick={() => setOpen(false)}>
-        Leads
-      </NavLink>
-
-      <NavLink to="/pagos" onClick={() => setOpen(false)}>
-        Pagos
-      </NavLink>
-
-      <NavLink to="/historial-pagos" onClick={() => setOpen(false)}>
-        Historial de pagos
-      </NavLink>
-
-      <NavLink to="/ingresos" onClick={() => setOpen(false)}>
-        Ingresos
-      </NavLink>
-
-      <NavLink to="/egresos" onClick={() => setOpen(false)}>
-        Egresos
-      </NavLink>
-
-      <NavLink to="/balance" onClick={() => setOpen(false)}>
-        Balance General
+        {config.terminologia.profesor.charAt(0).toUpperCase() + config.terminologia.profesor.slice(1)}s
       </NavLink>
     </>
   );
@@ -236,64 +199,54 @@ useEffect(() => {
         Dashboard
       </NavLink>
 
+      <NavLink to="/academico" onClick={() => setOpen(false)}>
+        Estructura Académica
+      </NavLink>
+
       <NavLink to="/alumnos" onClick={() => setOpen(false)}>
-        Alumnos
+        {config.terminologia.alumno.charAt(0).toUpperCase() + config.terminologia.alumno.slice(1)}s
       </NavLink>
-
-      <NavLink to="/coordinador" onClick={() => setOpen(false)}>
-        Coordinador académico
-      </NavLink>
-
+      
       <NavLink to="/profesores" onClick={() => setOpen(false)}>
-        Profesores
+        {config.terminologia.profesor.charAt(0).toUpperCase() + config.terminologia.profesor.slice(1)}s
       </NavLink>
 
-      <NavLink to="/asesores" onClick={() => setOpen(false)}>
-        Asesores
-      </NavLink>
+      {config.modulos.cuentas_por_cobrar && (
+        <>
+          <NavLink to="/pagos" onClick={() => setOpen(false)}>
+            Pagos
+          </NavLink>
+          <NavLink to="/historial-pagos" onClick={() => setOpen(false)}>
+            Historial de pagos
+          </NavLink>
+          <NavLink to="/cuentas" onClick={() => setOpen(false)}>
+            Cuentas por cobrar
+          </NavLink>
+        </>
+      )}
 
-      <NavLink to="/leads" onClick={() => setOpen(false)}>
-        Leads
-      </NavLink>
+      {config.modulos.nomina && (
+        <NavLink to="/nomina" onClick={() => setOpen(false)}>
+          Nómina
+        </NavLink>
+      )}
 
-      <NavLink to="/asesores-admin" onClick={() => setOpen(false)}>
-        Registro asesores
-      </NavLink>
+      {config.modulos.contabilidad && (
+        <>
+          <NavLink to="/ingresos" onClick={() => setOpen(false)}>
+            Ingresos
+          </NavLink>
+          <NavLink to="/egresos" onClick={() => setOpen(false)}>
+            Egresos
+          </NavLink>
+          <NavLink to="/balance" onClick={() => setOpen(false)}>
+            Balance General
+          </NavLink>
+        </>
+      )}
 
-      <NavLink to="/registro-coordinadores" onClick={() => setOpen(false)}>
-        Registro de coordinadores
-      </NavLink>
-
-      <NavLink to="/solicitudes" onClick={() => setOpen(false)}>
-        Solicitudes {pendientes > 0 && <span className="badge">{pendientes}</span>}
-      </NavLink>
-
-      <NavLink to="/pagos" onClick={() => setOpen(false)}>
-        Pagos
-      </NavLink>
-
-      <NavLink to="/historial-pagos" onClick={() => setOpen(false)}>
-        Historial de pagos
-      </NavLink>
-
-      <NavLink to="/nomina" onClick={() => setOpen(false)}>
-        Nómina
-      </NavLink>
-
-      <NavLink to="/ingresos" onClick={() => setOpen(false)}>
-        Ingresos
-      </NavLink>
-
-      <NavLink to="/egresos" onClick={() => setOpen(false)}>
-        Egresos
-      </NavLink>
-
-      <NavLink to="/cuentas" onClick={() => setOpen(false)}>
-        Cuentas por cobrar
-      </NavLink>
-
-      <NavLink to="/balance" onClick={() => setOpen(false)}>
-        Balance General
+      <NavLink to="/seguridad" onClick={() => setOpen(false)}>
+        Panel de Seguridad
       </NavLink>
     </>
   );
@@ -321,7 +274,8 @@ useEffect(() => {
       <aside className={`sidebar ${open ? "open" : ""}`}>
         <div className="sidebar-content">
           <div className="sidebar-brand">
-            <img src={logo} alt="logo" className="sidebar-logo" />
+            <img src={config.logo} alt="logo" className="sidebar-logo" />
+            <span style={{color: 'var(--text-primary)', fontWeight: 'bold', fontSize: '1.2rem', marginTop: '10px', textAlign: 'center', display: 'block'}}>{config.nombre}</span>
           </div>
 
           <div className="sidebar-user-card">

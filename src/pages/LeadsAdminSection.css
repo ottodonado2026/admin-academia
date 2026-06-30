@@ -29,13 +29,13 @@
   border-radius: 16px;
   font-size: 14px;
   font-weight: 700;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid #E2E8F0;
 }
 
 .leads-alert-success {
-  color: #39ff14;
-  background: rgba(57, 255, 20, 0.1);
-  border-color: rgba(57, 255, 20, 0.25);
+  color: #0f62fe;
+  background: rgba(15, 98, 254, 0.1);
+  border-color: rgba(15, 98, 254, 0.25);
 }
 
 .leads-alert-error {
@@ -88,11 +88,11 @@
 }
 
 .leads-form-card input[readonly] {
-  color: #39ff14;
+  color: #0f62fe;
   font-weight: 900;
   cursor: not-allowed;
-  background: rgba(57, 255, 20, 0.06);
-  border-color: rgba(57, 255, 20, 0.24);
+  background: rgba(15, 98, 254, 0.06);
+  border-color: rgba(15, 98, 254, 0.24);
 }
 
 .leads-form-card .form-actions {
@@ -139,7 +139,7 @@
   gap: 14px;
 
   border-radius: 18px;
-  border: 1px solid var(--asesor-border, rgba(255, 255, 255, 0.08));
+  border: 1px solid var(--asesor-border, #E2E8F0);
   background: rgba(255, 255, 255, 0.035);
   color: var(--asesor-text, #f5f7ff);
 
@@ -151,15 +151,15 @@
 .advisor-filter-card:hover {
   transform: translateY(-1px);
   background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(57, 255, 20, 0.24);
+  border-color: rgba(15, 98, 254, 0.24);
 }
 
 .advisor-filter-card.active {
   background:
-    linear-gradient(135deg, rgba(57, 255, 20, 0.12), rgba(0, 200, 255, 0.08)),
+    linear-gradient(135deg, rgba(15, 98, 254, 0.12), rgba(0, 200, 255, 0.08)),
     rgba(255, 255, 255, 0.035);
-  border-color: rgba(57, 255, 20, 0.36);
-  box-shadow: 0 14px 32px rgba(57, 255, 20, 0.08);
+  border-color: rgba(15, 98, 254, 0.36);
+  box-shadow: 0 14px 32px rgba(15, 98, 254, 0.08);
 }
 
 .advisor-filter-card strong {
@@ -187,7 +187,7 @@
 
   border-radius: 14px;
   color: #061208;
-  background: linear-gradient(135deg, var(--asesor-green, #39ff14), var(--asesor-cyan, #00c8ff));
+  background: linear-gradient(135deg, var(--asesor-green, #0f62fe), var(--asesor-cyan, #00c8ff));
 
   font-style: normal;
   font-weight: 900;
@@ -233,7 +233,7 @@
   width: 100%;
   min-height: 46px;
   border-radius: 14px;
-  border: 1px solid var(--asesor-border, rgba(255, 255, 255, 0.08));
+  border: 1px solid var(--asesor-border, #E2E8F0);
   background: rgba(255, 255, 255, 0.035);
   color: var(--asesor-text, #f5f7ff);
   padding: 11px 14px;
@@ -243,8 +243,8 @@
 
 .leads-toolbar-filters input:focus,
 .leads-toolbar-filters select:focus {
-  border-color: rgba(57, 255, 20, 0.45);
-  box-shadow: 0 0 0 3px rgba(57, 255, 20, 0.12);
+  border-color: rgba(15, 98, 254, 0.45);
+  box-shadow: 0 0 0 3px rgba(15, 98, 254, 0.12);
 }
 
 .leads-toolbar-filters select option {
@@ -326,7 +326,7 @@
 }
 
 .lead-money-cell {
-  color: #39ff14;
+  color: #0f62fe;
   white-space: nowrap;
 }
 
@@ -405,9 +405,9 @@
 
 .lead-status-select.estado-activo,
 .lead-status-select.estado-pagado {
-  color: #39ff14;
-  background: rgba(57, 255, 20, 0.12);
-  border-color: rgba(57, 255, 20, 0.34);
+  color: #0f62fe;
+  background: rgba(15, 98, 254, 0.12);
+  border-color: rgba(15, 98, 254, 0.34);
 }
 
 .lead-status-select.estado-curso_pausado {
@@ -468,9 +468,9 @@
 }
 
 .lead-status-badge.estado-activo {
-  background: rgba(57, 255, 20, 0.12);
-  border-color: rgba(57, 255, 20, 0.28);
-  color: #9dff8a;
+  background: rgba(15, 98, 254, 0.12);
+  border-color: rgba(15, 98, 254, 0.28);
+  color: #0f62fe;
 }
 
 .lead-status-badge.estado-curso_pausado {
@@ -620,7 +620,7 @@
       rgba(255, 255, 255, 0.04),
       rgba(255, 255, 255, 0.02)
     );
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid #E2E8F0;
   }
 
   /* ROW ITEM */
@@ -670,7 +670,7 @@
   .lead-money-cell {
     font-size: 16px;
     font-weight: 900;
-    color: #39ff14;
+    color: #0f62fe;
   }
 
   /* FECHA */

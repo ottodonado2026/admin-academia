@@ -1,18 +1,10 @@
 import Sidebar from "../components/Sidebar";
 import { useNavigate } from "react-router-dom";
 import "./AlumnosPage.css";
-
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import CustomSelect from "../components/CustomSelect";
-
-import { generarIdAlumnoBonito, generarIdCurso } from "../utils/idGenerator";
 import { supabase } from "../services/supabaseClient";
-import { CURSOS_BASE } from "../data/cursosBase";
 import { useAuth } from "../context/AuthContext";
-import { registrarAuditoria } from "../services/auditoriaService";
-
-
-
 
 function AlumnosPage() {
   const navigate = useNavigate();
@@ -22,447 +14,201 @@ function AlumnosPage() {
     localStorage.removeItem("auth");
     navigate("/");
   };
-const [alumnos, setAlumnos] = useState([]);
 
-useEffect(() => {
-  const fetchAlumnos = async () => {
-    const { data, error } = await supabase
-  .from("alumnos")
-  .select("*");
+  const [alumnos, setAlumnos] = useState([]);
+  const [grados, setGrados] = useState([]);
+  const [grupos, setGrupos] = useState([]);
 
-if (error) {
-  console.error(error);
-  return;
-}
-const alumnosAdaptados = (data || []).map((a) => ({
-  ...a,
-
-  // 🔥 compatibilidad total
-  alumnoId: a.alumno_id || a.alumnoId,
-  cursoId: a.curso_id || a.cursoId,
-  cursoNombre: a.curso_nombre || a.cursoNombre,
-  valorBase: a.valor_base || a.valorBase,
-  tipoPrograma: a.tipo_programa || a.tipoPrograma,
-  tipoDocumento: a.tipo_documento || a.tipoDocumento,
-  numeroDocumento: a.numero_documento || a.numeroDocumento,
-  nombreAcudiente: a.nombre_acudiente || a.nombreAcudiente,
-  telefonoAcudiente: a.telefono_acudiente || a.telefonoAcudiente,
-  formatoClase: a.formato_clase || a.formatoClase || "",
-}));
-
-setAlumnos(alumnosAdaptados);
-
-  };
-
-  fetchAlumnos();
-}, []);
-
-  const [nombre, setNombre] = useState("");
-  const [curso, setCurso] = useState("");
-  const [valor, setValor] = useState("");
-  const [descuento, setDescuento] = useState("");
-  const [valorEditadoManual, setValorEditadoManual] = useState(false);
-  const [modalidad, setModalidad] = useState("");
-  const [formatoClase, setFormatoClase] = useState("");
-  const [tipo, setTipo] = useState("");
-  const [duracion, setDuracion] = useState("");
-  const [estado, setEstado] = useState("activo");
-
+  // Estados de formulario
   const [editandoId, setEditandoId] = useState(null);
+  
+  // Datos personales
+  const [nombre, setNombre] = useState("");
+  const [tipoDocumento, setTipoDocumento] = useState("ti");
+  const [numeroDocumento, setNumeroDocumento] = useState("");
+  const [edad, setEdad] = useState("");
   const [telefono, setTelefono] = useState("");
   const [email, setEmail] = useState("");
-  const [tipoDocumento, setTipoDocumento] = useState("");
-  const [numeroDocumento, setNumeroDocumento] = useState("");
-  const [alumnoSeleccionado, setAlumnoSeleccionado] = useState(null);
- 
-  const [planesPagos, setPlanesPagos] = useState([]);
-  const [edad, setEdad] = useState("");
+  
+  // Datos escolares
+  const [gradoId, setGradoId] = useState("");
+  const [grupoId, setGrupoId] = useState("");
+  
+  // Financiero
+  const [valorMatricula, setValorMatricula] = useState("");
+  const [valorMensualidad, setValorMensualidad] = useState("");
+  const [diaCortePago, setDiaCortePago] = useState("5");
+  
+  // Acudiente
   const [nombreAcudiente, setNombreAcudiente] = useState("");
   const [telefonoAcudiente, setTelefonoAcudiente] = useState("");
-  const [planesCursos, setPlanesCursos] = useState([]);
-
-  useEffect(() => {
-  const cursosConId = CURSOS_BASE.map((curso, index) => ({
-    ...curso,
-    id: generarIdCurso(curso.nombre, index),
-  }));
-
-  setPlanesCursos(cursosConId);
-}, []);
-
-
-
-  const tipoLabels = {
-  personalizado: "Personalizado",
-  semi: "Semi-personalizado",
-  grupal: "Grupal",
-};
-
-const modalidadLabels = {
-  regular: "Regular",
-  intensiva: "Intensiva",
-  superintensiva: "Super-intensiva",
-};
-
-const formatoClaseLabels = {
-  presencial: "Presencial",
-  virtual: "Virtual",
-};
-
-  useEffect(() => {
-   
-  }, [alumnos]);
-
-
-useEffect(() => {
-  const fetchPagos = async () => {
-    const { data, error } = await supabase
-      .from("pagos")
-      .select("*");
-
-    if (error) {
-      console.error("Error cargando pagos en alumnos:", error);
-      setPlanesPagos([]);
-      return;
-    }
-
-    const adaptados = (data || []).map((p) => ({
-      ...p,
-      alumnoId: p.alumno_id,
-      alumnoDbId: p.alumno_db_id,
-      fechaInicio: p.fecha_inicio,
-      cuotaMensual: p.cuota,
-      valorTotal: p.valor_total,
-      saldoPendiente: p.saldo_pendiente,
-      montoPagado: p.monto_pagado,
-    }));
-
-    setPlanesPagos(adaptados);
-  };
-
-  fetchPagos();
-}, []);
-
-
-  const cursoSeleccionado = useMemo(() => {
-    return planesCursos.find((c) => c.id === curso) || null;
-  }, [curso, planesCursos]);
-
-  const inicioCurso = cursoSeleccionado?.tipos?.[tipo]?.inicio || "";
-  const precioBaseCurso = cursoSeleccionado?.tipos?.[tipo]?.precio || 0;
-
-  const descuentoAplicado = Math.min(
-    Math.max(Number(descuento) || 0, 0),
-    100
-  );
-
-  const valorCalculado = precioBaseCurso
-    ? Math.round(precioBaseCurso * (1 - descuentoAplicado / 100))
-    : 0;
-
-  useEffect(() => {
-    if (!curso || !tipo || planesCursos.length === 0) {
-      if (editandoId === null) {
-        setValor("");
-        setValorEditadoManual(false);
-      }
-      return;
-    }
-
-    if (!valorEditadoManual) {
-      setValor(String(valorCalculado));
-    }
-  }, [
-    curso,
-    tipo,
-    planesCursos,
-    descuento,
-    valorCalculado,
-    valorEditadoManual,
-    editandoId,
-  ]);
-
- const obtenerNombreCurso = (cursoId, cursoNombre) => {
-  if (cursoNombre) return cursoNombre;
-
-  const encontrado = planesCursos.find((c) => c.id === cursoId);
-  return encontrado?.nombre || cursoId;
-};
-  const sumarDias = (fecha, dias) => {
-    const nuevaFecha = new Date(fecha);
-    nuevaFecha.setDate(nuevaFecha.getDate() + dias);
-    return nuevaFecha;
-  };
-
-  const sumarMeses = (fecha, meses) => {
-    const nuevaFecha = new Date(fecha);
-    nuevaFecha.setMonth(nuevaFecha.getMonth() + meses);
-    return nuevaFecha;
-  };
-
-const formatearMonedaCOP = (valor) => {
-  if (!valor) return "";
-
-  const soloNumeros = valor.toString().replace(/\D/g, "");
-
-  return Number(soloNumeros).toLocaleString("es-CO");
-};
-
-  const formatearFechaPago = (fecha) => {
-    return fecha.toLocaleDateString("es-CO", {
-      weekday: "long",
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-    });
-  };
-
-  const obtenerProximoPagoTexto = (alumno) => {
-    const plan = planesPagos.find(
-      (p) =>
-        String(p.alumnoId) === String(alumno.alumnoId) ||
-        String(p.alumnoId) === String(alumno.id) ||
-        String(p.alumnoDbId) === String(alumno.id)
-    );
-
-    if (!plan) return "Sin plan de pago";
-    if (plan.estado === "Pagado") return "Pago completado";
-    if (!plan.fechaInicio || !plan.modalidad) return "Fecha no disponible";
-
-    const fechaInicio = new Date(plan.fechaInicio);
-    if (Number.isNaN(fechaInicio.getTime())) return "Fecha no disponible";
-
-    let proximaFecha = new Date(fechaInicio);
-    const hoy = new Date();
-
-    while (proximaFecha <= hoy) {
-      if (plan.modalidad === "semanal") {
-        proximaFecha = sumarDias(proximaFecha, 7);
-      } else if (plan.modalidad === "quincenal") {
-        proximaFecha = sumarDias(proximaFecha, 15);
-      } else {
-        proximaFecha = sumarMeses(proximaFecha, 1);
-      }
-    }
-
-    return formatearFechaPago(proximaFecha);
-  };
-
- const limpiarFormulario = () => {
-  setNombre("");
-  setCurso("");
-  setValor("");
-  setDescuento("");
-  setValorEditadoManual(false);
-  setModalidad("");
-  setFormatoClase("");
-  setTipo("");
-  setDuracion("");
-  setTelefono("");
-  setEmail("");
-  setTipoDocumento("");
-  setNumeroDocumento("");
-  setEdad("");
-  setNombreAcudiente("");
-  setTelefonoAcudiente("");
-  setEstado("activo");
-  setEditandoId(null);
-};
-
+  const [parentescoAcudiente, setParentescoAcudiente] = useState("");
   
-const agregarAlumno = async () => {
-  if (userRole === "consulta") {
-    alert("🔒 Seguridad: Tu cuenta tiene permisos de solo consulta. No puedes agregar ni editar alumnos.");
-    return;
-  }
+  // Médico
+  const [tipoSangre, setTipoSangre] = useState("");
+  const [alergias, setAlergias] = useState("");
+  const [contactoEmergencia, setContactoEmergencia] = useState("");
+  
+  const [estado, setEstado] = useState("activo");
+  
+  const [alumnoSeleccionado, setAlumnoSeleccionado] = useState(null);
 
-  if (!nombre || !curso || !valor || !tipo) {
-    alert("Completa los campos obligatorios");
-    return;
-  }
+  useEffect(() => {
+    fetchData();
+  }, []);
 
-  const cursoIdBonito = generarIdCurso(cursoSeleccionado?.nombre || "");
-
-  const alumnoData = {
-    nombre,
-    telefono: telefono || "",
-    email: email && email.trim() !== "" ? email : "sin-email@temp.com",
-
-    tipo_documento: tipoDocumento || "",
-    numero_documento: numeroDocumento || "",
-    edad: edad || "",
-    nombre_acudiente: nombreAcudiente || "",
-    telefono_acudiente: telefonoAcudiente || "",
-
-    curso_id: cursoIdBonito || "",
-    curso_nombre: cursoSeleccionado?.nombre || "",
-
-    valor: Number(valor || 0),
-    valor_base: Number(precioBaseCurso || 0),
-    descuento: Number(descuento || 0),
-
-    modalidad: modalidad || "",
-    formato_clase: formatoClase || "",
-    tipo_programa: tipo || "",
-    duracion: duracion || "",
-
-    estado: estado || "activo",
+  const fetchData = async () => {
+    const [resAlumnos, resGrados, resGrupos] = await Promise.all([
+      supabase.from("alumnos").select("*").order('created_at', { ascending: false }),
+      supabase.from("grados").select("*").order('orden', { ascending: true }),
+      supabase.from("grupos").select("*")
+    ]);
+    
+    if (resGrados.data) setGrados(resGrados.data);
+    if (resGrupos.data) setGrupos(resGrupos.data);
+    if (resAlumnos.data) setAlumnos(resAlumnos.data);
   };
 
-  try {
-    if (editandoId !== null) {
-      const { error } = await supabase
-        .from("alumnos")
-        .update({
-          ...alumnoData,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", editandoId);
-
-      if (error) {
-        console.error("Error editando alumno:", error);
-        alert("Error editando alumno: " + error.message);
-        return;
-      }
-      // 🔥 ACTUALIZAR PLAN DE PAGOS DEL ALUMNO
-const { error: errorPago } = await supabase
-  .from("pagos")
-  .update({
-    valor_total: Number(valor || 0),
-    cuota: Number(valor || 0) / Number(duracion || 1),
-    plazo: Number(duracion || 1),
-    tipo_cuota: tipo || "mensual",
-    updated_at: new Date().toISOString(),
-  })
-  .eq("alumno_db_id", editandoId);
-
-if (errorPago) {
-  console.error("Error actualizando pagos:", errorPago);
-}
-
-
-    } else {
-      const nuevoAlumnoId = await generarIdAlumnoBonito(nombre);
-
-      const { error } = await supabase.from("alumnos").insert([
-        {
-          alumno_id: nuevoAlumnoId,
-          ...alumnoData,
-          asesor_id: null,
-          created_at: new Date().toISOString(),
-        },
-      ]);
-
-      if (error) {
-        console.error("Error guardando alumno:", error);
-        alert("Error Supabase: " + error.message);
-        return;
-      }
+  const calcularMora = (diaCorte, ultimoMesPagado) => {
+    if (!ultimoMesPagado) return "En Mora"; // Nunca ha pagado
+    
+    const hoy = new Date();
+    const diaActual = hoy.getDate();
+    const mesActual = hoy.getMonth() + 1; // 1-12
+    const anoActual = hoy.getFullYear();
+    
+    const fechaUltimoPago = new Date(ultimoMesPagado);
+    const mesUltimoPago = fechaUltimoPago.getMonth() + 1;
+    const anoUltimoPago = fechaUltimoPago.getFullYear();
+    
+    // Si pagó el mes actual o uno futuro, está al día
+    if (anoUltimoPago > anoActual || (anoUltimoPago === anoActual && mesUltimoPago >= mesActual)) {
+      return "Al Día";
     }
-
-    const { data, error } = await supabase.from("alumnos").select("*");
-
-    if (!error) {
-     const alumnosAdaptados = (data || []).map((a) => ({
-  ...a,
-
-  // 🔥 compatibilidad total
-  alumnoId: a.alumno_id || a.alumnoId,
-  cursoId: a.curso_id || a.cursoId,
-  cursoNombre: a.curso_nombre || a.cursoNombre,
-  valorBase: a.valor_base || a.valorBase,
-  tipoPrograma: a.tipo_programa || a.tipoPrograma,
-  tipoDocumento: a.tipo_documento || a.tipoDocumento,
-  numeroDocumento: a.numero_documento || a.numeroDocumento,
-  nombreAcudiente: a.nombre_acudiente || a.nombreAcudiente,
-  telefonoAcudiente: a.telefono_acudiente || a.telefonoAcudiente,
-
-  // ✅ Nuevo campo separado de modalidad
-  formatoClase: a.formato_clase || a.formatoClase || "",
-}));
-
-      setAlumnos(alumnosAdaptados);
+    
+    // Si el último mes pagado fue el anterior, depende del día de corte
+    if (anoUltimoPago === anoActual && mesUltimoPago === mesActual - 1) {
+      if (diaActual > (diaCorte || 5)) return "En Mora";
+      return "Al Día";
     }
+    
+    // Si debe 2 o más meses
+    return "En Mora";
+  };
 
-    limpiarFormulario();
-  } catch (error) {
-    console.error("Error guardando alumno:", error);
-    alert("Error guardando alumno");
-  }
-};
+  const formatearMoneda = (valor) => {
+    if (!valor) return "";
+    const soloNumeros = valor.toString().replace(/\D/g, "");
+    return Number(soloNumeros).toLocaleString("es-CO");
+  };
 
+  const limpiarFormulario = () => {
+    setNombre(""); setTipoDocumento("ti"); setNumeroDocumento(""); setEdad("");
+    setTelefono(""); setEmail(""); setGradoId(""); setGrupoId("");
+    setValorMatricula(""); setValorMensualidad(""); setDiaCortePago("5");
+    setNombreAcudiente(""); setTelefonoAcudiente(""); setParentescoAcudiente("");
+    setTipoSangre(""); setAlergias(""); setContactoEmergencia("");
+    setEstado("activo"); setEditandoId(null);
+  };
 
-const eliminarAlumno = async (id) => {
-  if (userRole === "consulta") {
-    alert("🔒 Seguridad: Tu cuenta tiene permisos de solo consulta. No puedes eliminar alumnos.");
-    return;
-  }
-
-  if (!["owner", "gerente", "admin", "super_admin"].includes(userRole)) {
-    alert("No tienes permiso para eliminar alumnos. Solo el Gerente o Administrador puede realizar esta acción.");
-    return;
-  }
-
-  if (!window.confirm("¿Eliminar este alumno?")) return;
-
-  try {
-    const alumnoObj = alumnos.find(a => a.id === id);
-
-    const { error } = await supabase
-      .from("alumnos")
-      .delete()
-      .eq("id", id);
-
-    if (error) {
-      console.error("Error eliminando:", error);
-      alert("Error al eliminar");
+  const agregarAlumno = async () => {
+    if (userRole === "consulta") {
+      alert("🔒 Seguridad: Tu cuenta tiene permisos de solo consulta.");
       return;
     }
 
-    await registrarAuditoria("eliminar", "alumnos", id, {
-      nombre: alumnoObj?.nombre || "Desconocido",
-      email: alumnoObj?.email || "sin-email",
-    }, usuarioActual);
+    if (!nombre || !gradoId || !grupoId) {
+      alert("Por favor completa el Nombre, Grado y Grupo como mínimo.");
+      return;
+    }
 
-    // 🔥 refrescar correctamente
-    const { data } = await supabase.from("alumnos").select("*");
+    const alumnoData = {
+      nombre,
+      tipo_documento: tipoDocumento,
+      numero_documento: numeroDocumento,
+      edad: edad,
+      telefono: telefono,
+      email: email || "sin-email@temp.com",
+      
+      grado_id: gradoId,
+      grupo_id: grupoId,
+      
+      valor_matricula: Number(valorMatricula.toString().replace(/\D/g, "") || 0),
+      valor_mensualidad: Number(valorMensualidad.toString().replace(/\D/g, "") || 0),
+      dia_corte_pago: Number(diaCortePago || 5),
+      
+      nombre_acudiente: nombreAcudiente,
+      telefono_acudiente: telefonoAcudiente,
+      parentesco_acudiente: parentescoAcudiente,
+      
+      tipo_sangre: tipoSangre,
+      alergias: alergias,
+      contacto_emergencia: contactoEmergencia,
+      estado
+    };
 
-    const alumnosAdaptados = (data || []).map((a) => ({
-      ...a,
-      alumnoId: a.alumno_id,
-      cursoId: a.curso_id,
-      cursoNombre: a.curso_nombre,
-      valorBase: a.valor_base,
-      tipoPrograma: a.tipo_programa,
-      tipoDocumento: a.tipo_documento,
-      numeroDocumento: a.numero_documento,
-      nombreAcudiente: a.nombre_acudiente,
-      telefonoAcudiente: a.telefono_acudiente,
-    }));
+    try {
+      if (editandoId !== null) {
+        const { error } = await supabase.from("alumnos").update(alumnoData).eq("id", editandoId);
+        if (error) throw error;
+      } else {
+        // Al matricular, asumimos que paga su primer mes o está al día temporalmente
+        alumnoData.ultimo_mes_pagado = new Date().toISOString().split('T')[0]; 
+        
+        const { error } = await supabase.from("alumnos").insert([alumnoData]);
+        if (error) throw error;
+      }
 
-    setAlumnos(alumnosAdaptados);
+      fetchData();
+      limpiarFormulario();
+    } catch (error) {
+      console.error("Error guardando alumno:", error);
+      alert("Error guardando alumno: " + error.message);
+    }
+  };
 
-  } catch (error) {
-    console.error("Error eliminando alumno:", error);
-  }
-};
+  const editarAlumno = (a) => {
+    setNombre(a.nombre || "");
+    setTipoDocumento(a.tipo_documento || "ti");
+    setNumeroDocumento(a.numero_documento || "");
+    setEdad(a.edad || "");
+    setTelefono(a.telefono || "");
+    setEmail(a.email === "sin-email@temp.com" ? "" : a.email);
+    
+    setGradoId(a.grado_id || "");
+    setGrupoId(a.grupo_id || "");
+    
+    setValorMatricula(a.valor_matricula ? String(a.valor_matricula) : "");
+    setValorMensualidad(a.valor_mensualidad ? String(a.valor_mensualidad) : "");
+    setDiaCortePago(a.dia_corte_pago ? String(a.dia_corte_pago) : "5");
+    
+    setNombreAcudiente(a.nombre_acudiente || "");
+    setTelefonoAcudiente(a.telefono_acudiente || "");
+    setParentescoAcudiente(a.parentesco_acudiente || "");
+    
+    setTipoSangre(a.tipo_sangre || "");
+    setAlergias(a.alergias || "");
+    setContactoEmergencia(a.contacto_emergencia || "");
+    
+    setEstado(a.estado || "activo");
+    setEditandoId(a.id);
+    
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
-
-  const editarAlumno = (alumno) => {
-    setNombre(alumno.nombre || "");
-    setCurso(alumno.cursoId || alumno.curso || "");
-    setValor(String(alumno.valor ?? ""));
-    setDescuento(String(alumno.descuento ?? ""));
-    setValorEditadoManual(Boolean(alumno.valorEditadoManual));
-    setModalidad(alumno.modalidad || "");
-    setFormatoClase(alumno.formatoClase || alumno.formato_clase || "");
-    setTipo(alumno.tipoPrograma || "");
-    setDuracion(alumno.duracion || "");
-    setEstado(alumno.estado || "activo");
-    setEditandoId(alumno.id);
-    setTelefono(alumno.telefono || "");
-    setTipoDocumento(alumno.tipoDocumento || "");
-    setNumeroDocumento(alumno.numeroDocumento || "");
+  const eliminarAlumno = async (id) => {
+    if (userRole === "consulta" || !["owner", "gerente", "admin", "super_admin"].includes(userRole)) {
+      alert("No tienes permiso para eliminar alumnos.");
+      return;
+    }
+    if (!window.confirm("¿Estás seguro de retirar o eliminar este alumno del colegio?")) return;
+    
+    try {
+      await supabase.from("alumnos").delete().eq("id", id);
+      fetchData();
+    } catch (error) {
+      console.error("Error eliminando:", error);
+    }
   };
 
   return (
@@ -470,454 +216,196 @@ const eliminarAlumno = async (id) => {
       <Sidebar onLogout={handleLogout} />
 
       <main className="dashboard-main">
-        <h1>Alumnos</h1>
+        <h1>Alumnos Matriculados</h1>
 
-        <div className="alumnos-form">
-          <input
-            placeholder="Nombre del alumno"
-            value={nombre}
-            onChange={(e) => setNombre(e.target.value)}
-          />
+        <div className="colegio-form-container">
+          <h3>{editandoId ? "Editar Estudiante" : "Nueva Matrícula"}</h3>
+          
+          <div className="form-grid">
+            <div className="form-section">
+              <h4>Datos Personales</h4>
+              <input placeholder="Nombre completo" value={nombre} onChange={e => setNombre(e.target.value)} />
+              <CustomSelect
+                value={tipoDocumento}
+                onChange={e => setTipoDocumento(e.target.value)}
+                placeholder="Tipo Doc."
+                options={[{value:"ti",label:"T. Identidad"},{value:"cedula",label:"Cédula"},{value:"rc",label:"Registro Civil"},{value:"extranjeria",label:"C. Extranjería"}]}
+              />
+              <input placeholder="No. Documento" value={numeroDocumento} onChange={e => setNumeroDocumento(e.target.value)} />
+              <input placeholder="Edad" type="number" value={edad} onChange={e => setEdad(e.target.value)} />
+              <input placeholder="Teléfono" value={telefono} onChange={e => setTelefono(e.target.value)} />
+              <input placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} />
+            </div>
 
-         <CustomSelect
-  value={tipoDocumento}
-  onChange={(e) => setTipoDocumento(e.target.value)}
-  placeholder="Tipo documento"
-  options={[
-    { value: "cedula", label: "Cédula" },
-    { value: "ti", label: "Tarjeta de identidad" },
-    { value: "nit", label: "NIT" },
-    { value: "ppt", label: "PPT" },
-    { value: "extranjeria", label: "Cédula extranjería" },
-  ]}
-/>
+            <div className="form-section">
+              <h4>Académico & Financiero</h4>
+              <CustomSelect
+                value={gradoId}
+                onChange={e => setGradoId(e.target.value)}
+                placeholder="Seleccionar Grado"
+                options={grados.map(g => ({value: g.id, label: g.nombre}))}
+              />
+              <CustomSelect
+                value={grupoId}
+                onChange={e => setGrupoId(e.target.value)}
+                placeholder="Seleccionar Grupo"
+                options={grupos.filter(g => g.grado_id === gradoId).map(g => ({value: g.id, label: g.nombre}))}
+              />
+              <CustomSelect
+                value={estado}
+                onChange={e => setEstado(e.target.value)}
+                placeholder="Estado"
+                options={[{value:"activo",label:"Activo"},{value:"retirado",label:"Retirado"},{value:"graduado",label:"Graduado"}]}
+              />
+              
+              <div className="financiero-box">
+                <input 
+                  placeholder="Valor Matrícula $" 
+                  value={formatearMoneda(valorMatricula)}
+                  onChange={e => setValorMatricula(e.target.value)}
+                />
+                <input 
+                  placeholder="Mensualidad (Pensión) $" 
+                  value={formatearMoneda(valorMensualidad)}
+                  onChange={e => setValorMensualidad(e.target.value)}
+                />
+                <input 
+                  placeholder="Día límite pago mensual (1-31)" 
+                  type="number" min="1" max="31"
+                  value={diaCortePago}
+                  onChange={e => setDiaCortePago(e.target.value)}
+                />
+              </div>
+            </div>
 
-          <input
-            placeholder="Número de documento"
-            value={numeroDocumento}
-            onChange={(e) => setNumeroDocumento(e.target.value)}
-          />
+            <div className="form-section">
+              <h4>Acudiente & Salud</h4>
+              <input placeholder="Nombre Acudiente" value={nombreAcudiente} onChange={e => setNombreAcudiente(e.target.value)} />
+              <input placeholder="Parentesco (Ej. Madre)" value={parentescoAcudiente} onChange={e => setParentescoAcudiente(e.target.value)} />
+              <input placeholder="Teléfono Acudiente" value={telefonoAcudiente} onChange={e => setTelefonoAcudiente(e.target.value)} />
+              
+              <input placeholder="Tipo de Sangre" value={tipoSangre} onChange={e => setTipoSangre(e.target.value)} />
+              <input placeholder="Alergias" value={alergias} onChange={e => setAlergias(e.target.value)} />
+              <input placeholder="Contacto Emergencia" value={contactoEmergencia} onChange={e => setContactoEmergencia(e.target.value)} />
+            </div>
+          </div>
 
-          <input
-            placeholder="Teléfono"
-            value={telefono}
-            onChange={(e) => setTelefono(e.target.value)}
-          />
-
-<input
-  placeholder="Email"
-  value={email}
-  onChange={(e) => setEmail(e.target.value)}
-/>
-<CustomSelect
-  value={curso}
-  onChange={(e) => setCurso(e.target.value)}
-  placeholder="Seleccionar curso"
-  options={planesCursos.map((c) => ({
-    value: c.id,
-    label: c.nombre,
-  }))}
-/>
-<CustomSelect
-  className="duracion-select"
-  value={duracion}
-  onChange={(e) => setDuracion(e.target.value)}
-  placeholder="Duración"
-  options={[...Array(12)].map((_, i) => ({
-    value: i + 1,
-    label: `${i + 1} mes${i + 1 > 1 ? "es" : ""}`,
-  }))}
-/>
-
-<CustomSelect
-  value={modalidad}
-  onChange={(e) => setModalidad(e.target.value)}
-  placeholder="Modalidad"
-  options={[
-    { value: "presencial", label: "Presencial" },
-    { value: "virtual", label: "Virtual" },
-  ]}
-/>
-
-<CustomSelect
-  value={formatoClase}
-  onChange={(e) => setFormatoClase(e.target.value)}
-  placeholder="Formato clase"
-  options={[
-    { value: "regular", label: "Regular" },
-    { value: "intensiva", label: "Intensiva" },
-    { value: "superintensiva", label: "Super-intensiva" },
-  ]}
-/>
-
-<div className="tipo-row">
-  
-<input
-  type="text"
-  placeholder="Precio"
-  value={formatearMonedaCOP(valor)}
-  onChange={(e) => {
-    const valorLimpio = e.target.value.replace(/\D/g, "");
-
-    setValor(valorLimpio);
-    setValorEditadoManual(true);
-  }}
-  className="input-precio"
-/>
-
-  <input
-    type="number"
-    placeholder="% Desc"
-    value={descuento}
-    onChange={(e) => {
-      setDescuento(e.target.value);
-      setValorEditadoManual(false);
-    }}
-    className="input-descuento"
-  />
-
- 
-</div>
-
-  <CustomSelect
-    value={tipo}
-    onChange={(e) => {
-      setTipo(e.target.value);
-      setValorEditadoManual(false);
-    }}
-    placeholder="Tipo"
-    options={[
-      { value: "personalizado", label: "Personalizado" },
-      { value: "semi", label: "Semi-personalizado" },
-      { value: "grupal", label: "Grupal" },
-    ]}
-  />
-
-   {curso && tipo && inicioCurso && (
-    <div className="inicio-badge">🚀 {inicioCurso}</div>
-  )}
-
-          <button type="button" onClick={agregarAlumno}>
-            {editandoId ? "Guardar cambios" : "Agregar alumno"}
-          </button>
+          <div className="form-actions">
+            {editandoId && <button type="button" className="btn-outline" onClick={limpiarFormulario}>Cancelar Edición</button>}
+            <button type="button" className="btn-primary" onClick={agregarAlumno}>{editandoId ? "Guardar Cambios" : "Matricular Alumno"}</button>
+          </div>
         </div>
 
         <div className="tabla-container">
           <table className="tabla-pagos">
             <thead>
               <tr>
-                <th>Alumno</th>
-                <th>ID alumno</th>
-                <th>Curso</th>
-      
-                <th>Valor</th>
-          
-                
-                <th>Duración</th>
-                <th>Estado</th>
+                <th>Estudiante</th>
+                <th>Grado / Grupo</th>
+                <th>Acudiente</th>
+                <th>Mensualidad</th>
+                <th>Estado Financiero</th>
                 <th>Acciones</th>
               </tr>
             </thead>
-
             <tbody className="tabla-desktop">
-              {alumnos.map((a) => (
-                <tr key={a.id}>
-                  <td>{a.nombre}</td>
-                  <td>{a.alumnoId}</td>
-                  <td>{obtenerNombreCurso(a.cursoId || a.curso)}</td>
-                  
-                  <td>${Number(a.valor || 0).toLocaleString()}</td>
-                 
-                 
-                  <td>{a.duracion ? `${a.duracion} meses` : "-"}</td>
-                  <td>{a.estado}</td>
-              <td>
-  <div className="acciones-grupo">
-    <button
-      className="btn-ver"
-      onClick={() => setAlumnoSeleccionado(a)}
-    >
-      Ver
-    </button>
-
-    <button
-      className="btn-editar"
-      onClick={() => editarAlumno(a)}
-    >
-      Editar
-    </button>
-
-    {userRole === "owner" && (
-      <button
-        className="btn-eliminar btn-icon"
-        onClick={() => eliminarAlumno(a.id)}
-        title="Eliminar"
-        aria-label={`Eliminar alumno ${a.nombre}`}
-      >
-        🗑
-      </button>
-    )}
-  </div>
-</td>
+              {alumnos.map((a) => {
+                const grado = grados.find(g => g.id === a.grado_id)?.nombre || "-";
+                const grupo = grupos.find(g => g.id === a.grupo_id)?.nombre || "-";
+                const estadoMora = calcularMora(a.dia_corte_pago, a.ultimo_mes_pagado);
+                
+                return (
+                  <tr key={a.id}>
+                    <td>
+                      <strong>{a.nombre}</strong><br/>
+                      <small style={{color: '#64748B'}}>{a.tipo_documento.toUpperCase()} {a.numero_documento}</small>
+                    </td>
+                    <td>{grado}<br/><small style={{color: '#64748B'}}>Grupo {grupo}</small></td>
+                    <td>
+                      {a.nombre_acudiente || "-"}<br/>
+                      <small style={{color: '#64748B'}}>{a.telefono_acudiente}</small>
+                    </td>
+                    <td>
+                      <span className="badge-precio">${Number(a.valor_mensualidad || 0).toLocaleString()}</span>
+                    </td>
+                    <td>
+                      <span className={`badge-estado ${estadoMora === 'En Mora' ? 'danger' : 'success'}`}>
+                        {estadoMora}
+                      </span>
+                    </td>
+                    <td>
+                      <div className="acciones-grupo">
+                        <button className="btn-ver" onClick={() => setAlumnoSeleccionado(a)}>Ver</button>
+                        <button className="btn-editar" onClick={() => editarAlumno(a)}>Editar</button>
+                        {userRole === "owner" && (
+                          <button className="btn-eliminar btn-icon" onClick={() => eliminarAlumno(a.id)}>🗑</button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+              
+              {alumnos.length === 0 && (
+                <tr>
+                  <td colSpan="6" style={{textAlign: 'center', padding: '40px', color: '#64748B'}}>
+                    No hay estudiantes matriculados en el sistema. Utiliza el formulario superior para crear la primera matrícula.
+                  </td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>
 
-        <div className="alumnos-mobile">
-          {alumnos.map((a) => (
-            <div key={a.id} className="alumno-card">
-              <div className="card-header">
-                <div>
-                  <h3>{a.nombre}</h3>
-                  <small className="alumno-id-mobile">{a.alumnoId}</small>
-                </div>
-                <span>{a.estado}</span>
-              </div>
-
-              <div className="card-body">
-              <div className="card-grid">
-
-  {/* FILA 1 */}
-  <div className="card-item">
-    <span>Curso</span>
-    <strong>{obtenerNombreCurso(a.cursoId || a.curso)}</strong>
-  </div>
-
-  <div className="card-item">
-    <span>Valor</span>
-    <strong>${Number(a.valor || 0).toLocaleString()}</strong>
-  </div>
-
-  {/* FILA 2 */}
-{/* FILA 2 */}
-<div className="card-item">
-  <span>Modalidad académica</span>
-  <strong>
-    {modalidadLabels[a.modalidad] || a.modalidad || "-"}
-  </strong>
-</div>
-
-<div className="card-item">
-  <span>Formato de clase</span>
-  <strong>
-    {formatoClaseLabels[a.formatoClase || a.formato_clase] ||
-      a.formatoClase ||
-      a.formato_clase ||
-      "-"}
-  </strong>
-</div>
-
-<div className="card-item">
-  <span>Tipo</span>
-  <strong>
-    {tipoLabels[a.tipoPrograma || a.tipo_programa || a.tipo] ||
-      a.tipoPrograma ||
-      a.tipo_programa ||
-      a.tipo ||
-      "-"}
-  </strong>
-</div>
-
-  {/* FILA 3 */}
-  <div className="card-item">
-    <span>Duración</span>
-    <strong>{a.duracion ? `${a.duracion} meses` : "-"}</strong>
-  </div>
-
-  {/* 👇 OPCIONAL: para que no quede hueco */}
-  <div className="card-item">
-    <span>Estado</span>
-    <strong>{a.estado}</strong>
-  </div>
-
-</div>
-</div> 
-              <div className="card-actions">
-                <button
-                  className="btn-ver"
-                  onClick={() => setAlumnoSeleccionado(a)}
-                >
-                  Ver
-                </button>
-                <button className="btn-editar" onClick={() => editarAlumno(a)}>
-                  Editar
-                </button>
-                 {userRole === "owner" && (
-                   <button
-                     className="btn-eliminar"
-                     onClick={() => eliminarAlumno(a.id)}
-                   >
-                     Eliminar
-                   </button>
-                 )}
-              </div>
-            </div>
-          ))}
-        </div>
-
+        {/* MODAL DE EXPEDIENTE */}
         {alumnoSeleccionado && (
-          <div
-            className="modal-overlay"
-            onClick={() => setAlumnoSeleccionado(null)}
-          >
-            <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-overlay" onClick={() => setAlumnoSeleccionado(null)}>
+            <div className="modal-content expediente-modal" onClick={e => e.stopPropagation()}>
               <div className="modal-header">
-                <div className="modal-title-block">
-                  <h2>{alumnoSeleccionado.nombre}</h2>
-                  <p className="modal-alumno-id">
-                    ID alumno: {alumnoSeleccionado.alumnoId}
-                  </p>
-                </div>
-
-                <div className="modal-icons">
-                  <span>🎧</span>
-                </div>
+                <h2>Expediente Académico</h2>
+                <button className="btn-close" onClick={() => setAlumnoSeleccionado(null)}>×</button>
               </div>
-
-              <div className="modal-grid">
-                <div className="modal-item">
-                  <span>Curso</span>
-                  <strong>
-                    {obtenerNombreCurso(
-  alumnoSeleccionado.cursoId,
-  alumnoSeleccionado.cursoNombre
-)}
-                  </strong>
-                </div>
+              <div className="modal-body-scroll">
+                <h3>{alumnoSeleccionado.nombre}</h3>
                 
-
-
-                <div className="modal-item">
-                  <span>ID curso</span>
-                  <strong>
-                    {alumnoSeleccionado.cursoId ||
-                      alumnoSeleccionado.curso ||
-                      "-"}
-                  </strong>
-                </div>
-
-                <div className="modal-item">
-                  <span>Próximo pago</span>
-                  <strong>{obtenerProximoPagoTexto(alumnoSeleccionado)}</strong>
-                </div>
-
-                <div className="modal-item">
-                  <span>Precio real</span>
-                  <strong>
-                    $
-                    {Number(
-                      alumnoSeleccionado.valorBase ||
-                        alumnoSeleccionado.valor ||
-                        0
-                    ).toLocaleString()}
-                  </strong>
-                </div>
-
-                <div className="modal-item">
-                  <span>Descuento</span>
-                  <strong>{Number(alumnoSeleccionado.descuento || 0)}%</strong>
-                </div>
-
-                {Number(alumnoSeleccionado.descuento || 0) > 0 && (
-                  <div className="modal-item">
-                    <span>Precio final</span>
-                    <strong>
-                      ${Number(alumnoSeleccionado.valor || 0).toLocaleString()}
-                    </strong>
+                <div className="expediente-grid">
+                  <div className="exp-section">
+                    <h4>Identificación</h4>
+                    <p><strong>Documento:</strong> {alumnoSeleccionado.numero_documento} ({alumnoSeleccionado.tipo_documento.toUpperCase()})</p>
+                    <p><strong>Edad:</strong> {alumnoSeleccionado.edad || "-"}</p>
+                    <p><strong>Teléfono:</strong> {alumnoSeleccionado.telefono || "-"}</p>
+                    <p><strong>Estado:</strong> <span style={{textTransform:'capitalize'}}>{alumnoSeleccionado.estado}</span></p>
                   </div>
-                )}
+                  
+                  <div className="exp-section">
+                    <h4>Académico & Financiero</h4>
+                    <p><strong>Grado:</strong> {grados.find(g => g.id === alumnoSeleccionado.grado_id)?.nombre || "-"}</p>
+                    <p><strong>Grupo:</strong> {grupos.find(g => g.id === alumnoSeleccionado.grupo_id)?.nombre || "-"}</p>
+                    <p><strong>Matrícula:</strong> ${Number(alumnoSeleccionado.valor_matricula || 0).toLocaleString()}</p>
+                    <p><strong>Pensión:</strong> ${Number(alumnoSeleccionado.valor_mensualidad || 0).toLocaleString()}</p>
+                    <p><strong>Día de corte:</strong> {alumnoSeleccionado.dia_corte_pago || 5} de cada mes</p>
+                  </div>
 
-                <div className="modal-item">
-                  <span>Cédula</span>
-                  <strong>{alumnoSeleccionado.numeroDocumento || "-"}</strong>
+                  <div className="exp-section full-width">
+                    <h4>Acudiente y Salud</h4>
+                    <div style={{display: 'flex', gap: '20px', flexWrap: 'wrap'}}>
+                      <div style={{flex:1, minWidth:'200px'}}>
+                        <p><strong>Nombre:</strong> {alumnoSeleccionado.nombre_acudiente || "-"}</p>
+                        <p><strong>Parentesco:</strong> {alumnoSeleccionado.parentesco_acudiente || "-"}</p>
+                        <p><strong>Teléfono:</strong> {alumnoSeleccionado.telefono_acudiente || "-"}</p>
+                      </div>
+                      <div style={{flex:1, minWidth:'200px'}}>
+                        <p><strong>Tipo Sangre:</strong> {alumnoSeleccionado.tipo_sangre || "-"}</p>
+                        <p><strong>Alergias:</strong> {alumnoSeleccionado.alergias || "-"}</p>
+                        <p><strong>Emergencia:</strong> {alumnoSeleccionado.contacto_emergencia || "-"}</p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-
-                <div className="modal-item">
-                  <span>Estado</span>
-                  <strong>{alumnoSeleccionado.estado || "-"}</strong>
-                </div>
-
-<div className="modal-item">
-  <span>Modalidad académica</span>
-  <strong>
-    {modalidadLabels[alumnoSeleccionado?.modalidad] ||
-      alumnoSeleccionado?.modalidad ||
-      "-"}
-  </strong>
-</div>
-
-<div className="modal-item">
-  <span>Formato de clase</span>
-  <strong>
-    {formatoClaseLabels[
-      alumnoSeleccionado?.formatoClase || alumnoSeleccionado?.formato_clase
-    ] ||
-      alumnoSeleccionado?.formatoClase ||
-      alumnoSeleccionado?.formato_clase ||
-      "-"}
-  </strong>
-</div>
-
-<div className="modal-item">
-  <span>Tipo</span>
-  <strong>
-    {tipoLabels[
-      alumnoSeleccionado?.tipoPrograma ||
-        alumnoSeleccionado?.tipo_programa ||
-        alumnoSeleccionado?.tipo
-    ] ||
-      alumnoSeleccionado?.tipoPrograma ||
-      alumnoSeleccionado?.tipo_programa ||
-      alumnoSeleccionado?.tipo ||
-      "-"}
-  </strong>
-</div>
-
-                <div className="modal-item">
-                  <span>Duración</span>
-                  <strong>
-                    {alumnoSeleccionado.duracion
-                      ? `${alumnoSeleccionado.duracion} meses`
-                      : "-"}
-                  </strong>
-                </div>
-
-                <div className="modal-item">
-                  <span>Teléfono</span>
-                  <strong>{alumnoSeleccionado.telefono || "-"}</strong>
-                </div>
-{alumnoSeleccionado.tipoDocumento === "ti" && (
-  <>
-    <div className="modal-info-card">
-      <small>Edad</small>
-      <strong>{alumnoSeleccionado.edad || "-"}</strong>
-    </div>
-
-    <div className="modal-info-card">
-      <small>Acudiente</small>
-      <strong>{alumnoSeleccionado.nombreAcudiente || "-"}</strong>
-    </div>
-
-    <div className="modal-info-card">
-      <small>Teléfono acudiente</small>
-      <strong>{alumnoSeleccionado.telefonoAcudiente || "-"}</strong>
-    </div>
-  </>
-)}
               </div>
-
-         
-
-
-
-              <button
-                className="btn-cerrar"
-                onClick={() => setAlumnoSeleccionado(null)}
-              >
-                Cerrar
-              </button>
+              <div className="modal-footer">
+                <button className="btn-outline" onClick={() => setAlumnoSeleccionado(null)}>Cerrar</button>
+              </div>
             </div>
           </div>
         )}

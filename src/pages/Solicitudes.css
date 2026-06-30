@@ -34,7 +34,7 @@
 }
 
 .kpi-card-pro {
-  background: linear-gradient(145deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+  background: linear-gradient(145deg, #FFFFFF, rgba(255,255,255,0.01));
   border: 1px solid rgba(255,255,255,0.05);
   border-radius: 16px;
   padding: 20px;
@@ -95,7 +95,7 @@
   padding: 6px;
   border-radius: 12px;
   width: fit-content;
-  border: 1px solid rgba(255,255,255,0.03);
+  border: 1px solid #FFFFFF;
 }
 
 .tab-btn-pro {
@@ -118,7 +118,7 @@
 }
 
 .tab-btn-pro.active {
-  background: rgba(255,255,255,0.08);
+  background: #E2E8F0;
   color: #fff;
   box-shadow: 0 2px 8px rgba(0,0,0,0.2);
 }
@@ -388,7 +388,7 @@
 .estado-pill-premium.rechazado { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
 
 .motivo-box-premium {
-  background: rgba(255,255,255,0.03);
+  background: #FFFFFF;
   border: 1px solid rgba(255,255,255,0.05);
   border-radius: 12px;
   padding: 16px;

@@ -27,7 +27,7 @@
   height: 42px;
   border-radius: 10px;
   border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.03);
+  background: #FFFFFF;
   color: white;
   padding: 0 16px;
   font-size: 14px;
@@ -41,7 +41,7 @@
   display: flex;
   gap: 12px;
   margin-bottom: 24px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid #E2E8F0;
   padding-bottom: 10px;
 }
 
@@ -63,8 +63,8 @@
 }
 
 .tab-btn.active {
-  color: #39ff14;
-  border-bottom: 2px solid #39ff14;
+  color: #0f62fe;
+  border-bottom: 2px solid #0f62fe;
 }
 
 /* =========================================
@@ -79,7 +79,7 @@
 
 .nomina-kpi-card {
   background: rgba(16, 18, 27, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid #E2E8F0;
   border-radius: 20px;
   padding: 22px;
   backdrop-filter: blur(10px);
@@ -109,7 +109,7 @@
 }
 
 .nomina-kpi-card.kpi-pagado p {
-  color: #39ff14;
+  color: #0f62fe;
 }
 
 .nomina-kpi-card.kpi-restante p {
@@ -141,9 +141,9 @@
 }
 
 .nomina-estado-badge.abierto {
-  background: rgba(57, 255, 20, 0.12);
-  color: #39ff14;
-  border: 1px solid rgba(57, 255, 20, 0.25);
+  background: rgba(15, 98, 254, 0.12);
+  color: #0f62fe;
+  border: 1px solid rgba(15, 98, 254, 0.25);
 }
 
 .nomina-estado-badge.cerrado {
@@ -166,7 +166,7 @@
   color: var(--text-muted);
   text-transform: uppercase;
   padding: 14px 12px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid #E2E8F0;
 }
 
 .tabla-nomina td {
@@ -201,14 +201,14 @@
 .progreso-bar-bg {
   width: 100%;
   height: 6px;
-  background: rgba(255, 255, 255, 0.08);
+  background: #E2E8F0;
   border-radius: 4px;
   overflow: hidden;
 }
 
 .progreso-bar-fill {
   height: 100%;
-  background: linear-gradient(90deg, #39ff14, #00c8ff);
+  background: linear-gradient(90deg, #0f62fe, #00c8ff);
   border-radius: 4px;
   transition: width 0.3s ease;
 }
@@ -244,9 +244,9 @@
 }
 
 .estado-liquidación.pagado {
-  background: rgba(57, 255, 20, 0.12);
-  color: #39ff14;
-  border: 1px solid rgba(57, 255, 20, 0.2);
+  background: rgba(15, 98, 254, 0.12);
+  color: #0f62fe;
+  border: 1px solid rgba(15, 98, 254, 0.2);
 }
 
 /* =========================================
@@ -258,9 +258,9 @@
 }
 
 .btn-nomina-abonar {
-  background: rgba(57, 255, 20, 0.12);
-  color: #39ff14;
-  border: 1px solid rgba(57, 255, 20, 0.3);
+  background: rgba(15, 98, 254, 0.12);
+  color: #0f62fe;
+  border: 1px solid rgba(15, 98, 254, 0.3);
   padding: 6px 12px;
   border-radius: 8px;
   font-size: 12px;
@@ -270,8 +270,8 @@
 }
 
 .btn-nomina-abonar:hover {
-  background: rgba(57, 255, 20, 0.2);
-  border-color: #39ff14;
+  background: rgba(15, 98, 254, 0.2);
+  border-color: #0f62fe;
 }
 
 .btn-nomina-ver {
@@ -299,7 +299,7 @@
   text-align: center;
   padding: 60px 20px;
   background: rgba(255, 255, 255, 0.01);
-  border: 1px dashed rgba(255, 255, 255, 0.08);
+  border: 1px dashed #E2E8F0;
   border-radius: 20px;
 }
 
@@ -314,7 +314,7 @@
 }
 
 .btn-inicializar {
-  background: linear-gradient(135deg, #39ff14, #00c8ff);
+  background: linear-gradient(135deg, #0f62fe, #00c8ff);
   border: none;
   color: black;
   font-weight: bold;
@@ -327,7 +327,7 @@
 
 .btn-inicializar:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 15px rgba(57, 255, 20, 0.35);
+  box-shadow: 0 4px 15px rgba(15, 98, 254, 0.35);
 }
 
 /* =========================================
@@ -364,8 +364,8 @@
   font-size: 16px !important;
   font-family: var(--font-mono);
   font-weight: 700;
-  color: #39ff14 !important;
-  border-color: rgba(57, 255, 20, 0.3) !important;
+  color: #0f62fe !important;
+  border-color: rgba(15, 98, 254, 0.3) !important;
 }
 
 .abonos-resumen-cabecera {
@@ -421,7 +421,7 @@
   text-transform: uppercase;
   padding: 10px 14px;
   background: rgba(255, 255, 255, 0.02);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid #E2E8F0;
 }
 
 .tabla-abonos-historial td {

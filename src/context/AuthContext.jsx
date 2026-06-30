@@ -148,6 +148,15 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = async (email, password) => {
+    // 🔥 BYPASS TEMPORAL PARA DEMO (Sin conexión a Supabase)
+    if (email === "admin@test.com" && password === "123456") {
+      const fakeUser = { id: "demo-id", email: "admin@test.com" };
+      setUser(fakeUser);
+      setRole("admin");
+      setLoadingAuth(false);
+      return { user: fakeUser };
+    }
+
     try {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) {

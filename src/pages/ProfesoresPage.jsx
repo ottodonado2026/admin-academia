@@ -2,6 +2,7 @@ import Sidebar from "../components/Sidebar";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import "./ProfesoresPage.css";
+import { config } from "../config/institucion";
 import { supabase } from "../services/supabaseClient";
 import { useAuth } from "../context/AuthContext";
 import { registrarAuditoria } from "../services/auditoriaService";
@@ -49,6 +50,16 @@ function ProfesoresPage() {
   const [profesorSeleccionado, setProfesorSeleccionado] = useState(null);
   const [busqueda, setBusqueda] = useState("");
   const [salario, setSalario] = useState("");
+
+  const [directorGrupo, setDirectorGrupo] = useState(false);
+  const [grupoDirectorId, setGrupoDirectorId] = useState("");
+  const [grupos, setGrupos] = useState([]);
+
+  useEffect(() => {
+    if (config.tipo === "colegio") {
+      supabase.from("grupos").select("*").then(({data}) => data && setGrupos(data));
+    }
+  }, []);
 
   const [usuarioProfesor, setUsuarioProfesor] = useState(null);
 const [clasesProfesor, setClasesProfesor] = useState([]);
@@ -226,6 +237,8 @@ useEffect(() => {
     setComision("");
     setEstado("activo");
     setObservaciones("");
+    setDirectorGrupo(false);
+    setGrupoDirectorId("");
     setPassword("");
     setConfirmPassword("");
     setEditandoId(null);
@@ -329,6 +342,8 @@ useEffect(() => {
       comision: Number(comision),
       estado,
       observaciones: observaciones.trim(),
+      directorGrupo,
+      grupoDirectorId,
       updatedAt: new Date().toISOString(),
     };
 
@@ -448,6 +463,8 @@ useEffect(() => {
     setNombre(profesor.nombre || "");
     setTipoDocumento(profesor.tipoDocumento || "");
     setNumeroDocumento(profesor.numeroDocumento || "");
+    setDirectorGrupo(profesor.directorGrupo || false);
+    setGrupoDirectorId(profesor.grupoDirectorId || "");
     setTelefono(profesor.telefono || "");
     setEspecialidades(profesor.especialidades || []);
     setModalidad(profesor.modalidad || "");
@@ -978,6 +995,32 @@ const abrirWhatsApp = (telefono) => {
                 })}
               </div>
             </div>
+
+            {config.tipo === "colegio" && (
+              <div style={{ marginTop: '15px', padding: '15px', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
+                <h4 style={{ marginBottom: '10px' }}>Asignación Académica</h4>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                  <input
+                    type="checkbox"
+                    checked={directorGrupo}
+                    onChange={(e) => setDirectorGrupo(e.target.checked)}
+                  />
+                  Es director de grupo
+                </label>
+                {directorGrupo && (
+                  <select
+                    value={grupoDirectorId}
+                    onChange={(e) => setGrupoDirectorId(e.target.value)}
+                    style={{ marginTop: '10px' }}
+                  >
+                    <option value="">Selecciona el grupo a dirigir</option>
+                    {grupos.map(g => (
+                      <option key={g.id} value={g.id}>{g.nombre}</option>
+                    ))}
+                  </select>
+                )}
+              </div>
+            )}
 
             <button
               type="button"

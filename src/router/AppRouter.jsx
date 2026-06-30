@@ -4,6 +4,7 @@ import DashboardPage from "../pages/DashboardPage";
 import ProtectedRoute from "../components/ProtectedRoute";
 import PagosPage from "../pages/PagosPage";
 import AlumnosPage from "../pages/AlumnosPage";
+import AcademicoPage from "../pages/AcademicoPage";
 import IngresosPage from "../pages/IngresosPage";
 import EgresosPage from "../pages/EgresosPage";
 import BalanceGeneral from "../pages/BalanceGeneral";
@@ -12,6 +13,7 @@ import ProfesoresPage from "../pages/ProfesoresPage";
 import LoginProfesor from "../profesor/LoginProfesor";
 import HistorialDePagos from "../historialdepagos/HistorialPagosPage";
 import NominaPage from "../pages/NominaPage";
+import SecurityDashboard from "../pages/SecurityDashboard";
 
 import AsesoresLogin from "../asesores/AsesoresLogin";
 import AsesoresPanel from "../asesores/AsesoresPanel";
@@ -76,6 +78,7 @@ function AppRouter() {
 />
 
         <Route path="/alumnos" element={<ProtectedRoute role="admin"><AlumnosPage /></ProtectedRoute>} />
+        <Route path="/academico" element={<ProtectedRoute role="admin"><AcademicoPage /></ProtectedRoute>} />
                 
                 <Route
           path="/profesores"
@@ -100,6 +103,7 @@ function AppRouter() {
         <Route path="/egresos" element={<ProtectedRoute role="admin"><EgresosPage /></ProtectedRoute>} />
         <Route path="/cuentas" element={<ProtectedRoute role="admin"><CuentasPorCobrar /></ProtectedRoute>} />
         <Route path="/balance" element={<ProtectedRoute role="admin"><BalanceGeneral /></ProtectedRoute>} />
+        <Route path="/seguridad" element={<ProtectedRoute role="admin"><SecurityDashboard /></ProtectedRoute>} />
 
         {/* 🔥 ASESORES (AQUÍ VA BIEN) */}
         <Route path="/login-asesor" element={<AsesoresLogin />} />

@@ -21,7 +21,7 @@
   min-width: 140px;
   border-radius: 10px;
   border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.03);
+  background: #FFFFFF;
   color: var(--text-main);
   padding: 0 12px;
   outline: none;
@@ -46,8 +46,8 @@
   height: 45px;
   padding: 0 18px;
   border-radius: 10px;
-  border: 1px solid rgba(57, 255, 20, 0.3);
-  background: rgba(57, 255, 20, 0.12);
+  border: 1px solid rgba(15, 98, 254, 0.3);
+  background: rgba(15, 98, 254, 0.12);
   color: var(--primary);
   font-weight: 600;
   cursor: pointer;
@@ -55,7 +55,7 @@
 }
 
 .pagos-page .form-row button:hover {
-  background: rgba(57, 255, 20, 0.25);
+  background: rgba(15, 98, 254, 0.25);
   border-color: var(--primary);
 }
 
@@ -105,7 +105,7 @@
 }
 
 .pagos-page .tabla-pagos thead {
-  background: rgba(255, 255, 255, 0.03);
+  background: #FFFFFF;
 }
 
 .pagos-page .tabla-pagos th,
@@ -227,7 +227,7 @@
 ========================= */
 
 .pagos-page .tabla-pagos td:nth-child(4) {
-  color: #39ff14;
+  color: #0f62fe;
 }
 
 .pagos-page .tabla-pagos td:nth-child(5) {
@@ -260,8 +260,8 @@
 }
 
 .pagos-page .estado.al-día {
-  background: rgba(57, 255, 20, 0.15);
-  color: #39ff14;
+  background: rgba(15, 98, 254, 0.15);
+  color: #0f62fe;
 }
 
 .pagos-page .estado.en-mora {
@@ -314,13 +314,13 @@
 }
 
 .pagos-page .btn-editar {
-  background: rgba(57, 255, 20, 0.15);
-  border: 1px solid rgba(57, 255, 20, 0.4);
-  color: #39ff14;
+  background: rgba(15, 98, 254, 0.15);
+  border: 1px solid rgba(15, 98, 254, 0.4);
+  color: #0f62fe;
 }
 
 .pagos-page .btn-editar:hover {
-  background: rgba(57, 255, 20, 0.3);
+  background: rgba(15, 98, 254, 0.3);
 }
 
 .pagos-page .btn-eliminar {
@@ -353,12 +353,12 @@
   width: 100%;
   max-width: 560px;
   background: linear-gradient(145deg, #0a0a0a, #111);
-  border: 1px solid rgba(57, 255, 20, 0.2);
+  border: 1px solid rgba(15, 98, 254, 0.2);
   border-radius: 18px;
   padding: 28px;
   color: white;
   box-sizing: border-box;
-  box-shadow: 0 0 30px rgba(57, 255, 20, 0.15);
+  box-shadow: 0 0 30px rgba(15, 98, 254, 0.15);
   animation: fadeIn 0.25s ease;
 }
 
@@ -400,7 +400,7 @@
   height: 42px;
   border-radius: 10px;
   border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.03);
+  background: #FFFFFF;
   color: white;
   padding: 0 12px;
   margin-bottom: 10px;
@@ -427,13 +427,13 @@
 }
 
 .pagos-page .modal-content > button:first-of-type {
-  background: rgba(57, 255, 20, 0.2);
+  background: rgba(15, 98, 254, 0.2);
   color: var(--primary);
   margin-bottom: 10px;
 }
 
 .pagos-page .modal-content > button:first-of-type:hover {
-  background: rgba(57, 255, 20, 0.32);
+  background: rgba(15, 98, 254, 0.32);
 }
 
 .pagos-page .modal-content > button:last-of-type {
@@ -491,9 +491,9 @@
 }
 
 .pagos-page .btn-guardar {
-  background: rgba(57, 255, 20, 0.2);
-  border: 1px solid rgba(57, 255, 20, 0.4);
-  color: #39ff14;
+  background: rgba(15, 98, 254, 0.2);
+  border: 1px solid rgba(15, 98, 254, 0.4);
+  color: #0f62fe;
 }
 
 /* =========================
@@ -672,7 +672,7 @@
 }
 
 .pagos-page .tabla-papelera td:nth-child(4) {
-  color: #39ff14;
+  color: #0f62fe;
   font-variant-numeric: tabular-nums;
   font-weight: 600;
 }

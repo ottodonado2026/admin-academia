@@ -31,118 +31,140 @@
    FORMULARIO
 ========================= */
 
-.alumnos-page .alumnos-form {
+.alumnos-page .colegio-form-container {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+}
+
+.alumnos-page .colegio-form-container h3 {
+  margin: 0 0 20px 0;
+  color: #1E293B;
+  font-size: 18px;
+  border-bottom: 1px solid #E2E8F0;
+  padding-bottom: 12px;
+}
+
+.alumnos-page .form-grid {
   display: grid;
-  grid-template-columns: repeat(12, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+}
+
+.alumnos-page .form-section {
+  display: flex;
+  flex-direction: column;
   gap: 12px;
-  margin: 20px 0 24px;
-  width: 100%;
 }
 
-.alumnos-page .alumnos-form > * {
-  min-width: 0;
+.alumnos-page .form-section h4 {
+  margin: 0 0 4px 0;
+  color: #64748B;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
-.alumnos-page .alumnos-form input,
-.alumnos-page .alumnos-form select,
-.alumnos-page .alumnos-form button {
-  width: 100%;
-  box-sizing: border-box;
-}
-
-.alumnos-page .alumnos-form input,
-.alumnos-page .alumnos-form select {
-  height: 45px;
-  border-radius: 10px;
-  border: 1px solid var(--border);
-  background: rgba(255,255,255,0.03);
-  color: var(--text-main);
+.alumnos-page .form-section input,
+.alumnos-page .form-section select {
+  height: 42px;
+  border-radius: 8px;
+  border: 1px solid #E2E8F0;
+  background: #F8FAFC;
+  color: #1E293B;
   padding: 0 12px;
   outline: none;
+  width: 100%;
 }
 
-.alumnos-page .alumnos-form input::placeholder {
-  color: rgba(255,255,255,0.45);
+.alumnos-page .form-section input:focus,
+.alumnos-page .form-section select:focus {
+  border-color: #0f62fe;
+  background: #FFFFFF;
+  box-shadow: 0 0 0 2px rgba(15,98,254,0.1);
 }
 
-.alumnos-page .alumnos-form > button {
-  height: 45px;
-  padding: 0 20px;
-  border-radius: 12px;
-  border: 1px solid rgba(57,255,20,0.3);
-  background: rgba(57,255,20,0.12);
-  color: var(--primary);
+.alumnos-page .financiero-box {
+  background: #F1F5F9;
+  border: 1px dashed #CBD5E1;
+  padding: 12px;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.alumnos-page .form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid #E2E8F0;
+}
+
+.alumnos-page .btn-primary {
+  height: 42px;
+  padding: 0 24px;
+  background: #0f62fe;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 8px;
   font-weight: 600;
   cursor: pointer;
   transition: 0.2s ease;
 }
+.alumnos-page .btn-primary:hover {
+  background: #0043ce;
+}
+
+.alumnos-page .btn-outline {
+  height: 42px;
+  padding: 0 24px;
+  background: #FFFFFF;
+  color: #475569;
+  border: 1px solid #CBD5E1;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+.alumnos-page .btn-outline:hover {
+  background: #F8FAFC;
+  color: #1E293B;
+}
+
 /* =========================
-   SELECT PRO DARK
+   BADGES Y ESTILOS DE TABLA
 ========================= */
-
-
-/* HOVER */
-.alumnos-page select:hover {
-  border-color: rgba(57,255,20,0.4);
+.badge-precio {
+  background: #F0FDF4;
+  color: #166534;
+  padding: 4px 10px;
+  border-radius: 99px;
+  font-weight: 600;
+  font-size: 13px;
+  border: 1px solid #BBF7D0;
 }
 
-/* FOCUS */
-.alumnos-page select:focus {
-  outline: none;
-  border-color: #39ff14;
-  box-shadow: 0 0 0 2px rgba(57,255,20,0.15);
+.badge-estado {
+  padding: 4px 10px;
+  border-radius: 99px;
+  font-weight: 600;
+  font-size: 12px;
 }
-
-/* OPTIONS (IMPORTANTE) */
-.alumnos-page select option {
-  background: #0d0d0d;
-  color: #fff;
+.badge-estado.success {
+  background: #EFF6FF;
+  color: #1D4ED8;
+  border: 1px solid #BFDBFE;
 }
-
-
-.alumnos-page .alumnos-form > button:hover {
-  transform: translateY(-1px);
-}
-
-.alumnos-page .alumnos-form > *:nth-child(1) { grid-column: span 3; } /* Nombre */
-.alumnos-page .alumnos-form > *:nth-child(2) { grid-column: span 2; } /* Tipo doc */
-.alumnos-page .alumnos-form > *:nth-child(3) { grid-column: span 2; } /* Documento */
-.alumnos-page .alumnos-form > *:nth-child(4) { grid-column: span 2; } /* Teléfono */
-.alumnos-page .alumnos-form > *:nth-child(5) { grid-column: span 3; } /* Email */
-
-.alumnos-page .alumnos-form > *:nth-child(6) { grid-column: span 3; } /* Curso */
-.alumnos-page .alumnos-form > *:nth-child(7) { grid-column: span 2; } /* Duración */
-
-.alumnos-page .alumnos-form > *:nth-child(8) { 
-  grid-column: span 2; 
-} /* Modalidad */
-
-.alumnos-page .alumnos-form > *:nth-child(9) { 
-  grid-column: span 2; 
-} /* Formato clase */
-
-.alumnos-page .alumnos-form > *:nth-child(10) { 
-  grid-column: span 2; 
-} /* Tipo */
-
-.alumnos-page .alumnos-form > *:nth-child(11) { 
-  grid-column: span 3; 
-} /* Tipo row */
-
-.alumnos-page .alumnos-form > *:nth-child(12) { 
-  grid-column: span 2; 
-} /* Botón */
-
-.alumnos-page .tipo-row {
-  grid-template-columns: 1.3fr 1fr 1fr;
-}
-
-.alumnos-page .tipo-row {
-  display: grid;
- grid-template-columns: 1.3fr 1fr;
-  gap: 10px;
-  align-items: center;
-  min-width: 0;
+.badge-estado.danger {
+  background: #FEF2F2;
+  color: #DC2626;
+  border: 1px solid #FECACA;
 }
 
 .alumnos-page .tipo-row .input-precio,
@@ -160,10 +182,10 @@
 
   border-radius: 999px;
 
-  background: rgba(57,255,20,0.1);
-  border: 1px solid rgba(57,255,20,0.18);
+  background: rgba(15,98,254,0.1);
+  border: 1px solid rgba(15,98,254,0.18);
 
-  color: #9dff8a;
+  color: #0f62fe;
   font-size: 13px;
   font-weight: 600;
 
@@ -205,7 +227,7 @@
 
 }
 .alumnos-page .tabla-pagos thead {
-  background: rgba(255, 255, 255, 0.03);
+  background: #FFFFFF;
 }
 
 .alumnos-page .tabla-pagos tbody tr:hover {
@@ -331,9 +353,9 @@
 }
 
 .alumnos-page .btn-editar {
-  background: rgba(57,255,20,0.15);
-  border: 1px solid rgba(57,255,20,0.4);
-  color: #39ff14;
+  background: rgba(15,98,254,0.15);
+  border: 1px solid rgba(15,98,254,0.4);
+  color: #0f62fe;
 }
 
 .alumnos-page .btn-eliminar {
@@ -409,7 +431,7 @@
   padding: 4px 10px;
   border-radius: 999px;
   background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.08);
+  border: 1px solid #E2E8F0;
   font-size: 12px;
   text-transform: capitalize;
   white-space: nowrap;
@@ -429,7 +451,7 @@
   min-width: 0;
   padding: 10px;
   border-radius: 12px;
-  background: rgba(255,255,255,0.03);
+  background: #FFFFFF;
   border: 1px solid rgba(255,255,255,0.04);
 }
 
@@ -461,6 +483,54 @@
 /* =========================
    MODAL
 ========================= */
+
+.alumnos-page .alumnos-page .modal-content.expediente-modal {
+  width: 90%;
+  max-width: 800px;
+  background: #FFFFFF;
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  max-height: 85vh;
+}
+
+.expediente-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-top: 20px;
+}
+
+.exp-section {
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.exp-section.full-width {
+  grid-column: 1 / -1;
+}
+
+.exp-section h4 {
+  margin: 0 0 12px 0;
+  color: #0f62fe;
+  font-size: 15px;
+  border-bottom: 2px solid #E2E8F0;
+  padding-bottom: 8px;
+}
+
+.exp-section p {
+  margin: 8px 0;
+  font-size: 14px;
+  color: #334155;
+}
+
+.exp-section p strong {
+  color: #1E293B;
+  display: inline-block;
+  min-width: 120px;
+}
 
 .alumnos-page .modal-overlay {
   position: fixed;
@@ -541,7 +611,7 @@
   margin-top: 20px;
   height: 48px;
   border-radius: 12px;
-  background: linear-gradient(135deg, #39ff14, #1db954);
+  background: linear-gradient(135deg, #0f62fe, #1db954);
   color: #000;
   font-weight: 700;
   border: none;
@@ -551,7 +621,7 @@
 
 .alumnos-page .btn-cerrar:hover {
   transform: translateY(-1px);
-  box-shadow: 0 6px 18px rgba(57,255,20,0.25);
+  box-shadow: 0 6px 18px rgba(15,98,254,0.25);
 }
 
 /* =========================
@@ -729,7 +799,7 @@
   max-width: 100%;
   z-index: 9999;
   background: #0b0b0b;
-  border: 1px solid rgba(255,255,255,0.08);
+  border: 1px solid #E2E8F0;
   border-radius: 12px;
   box-shadow: 0 14px 34px rgba(0,0,0,0.45);
   overflow: hidden;

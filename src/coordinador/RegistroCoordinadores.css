@@ -14,7 +14,7 @@
 
 .registro-kicker {
   margin: 0 0 8px;
-  color: #39ff14;
+  color: #0f62fe;
   font-size: 12px;
   font-weight: 900;
   letter-spacing: 0.12em;
@@ -52,9 +52,9 @@
 
 .registro-primary-btn {
   border: none;
-  background: linear-gradient(135deg, #39ff14, #00c8ff);
+  background: linear-gradient(135deg, #0f62fe, #00c8ff);
   color: #061208;
-  box-shadow: 0 14px 34px rgba(57, 255, 20, 0.16);
+  box-shadow: 0 14px 34px rgba(15, 98, 254, 0.16);
 }
 
 .registro-primary-btn:hover {
@@ -71,8 +71,8 @@
 
 .registro-secondary-btn:hover {
   transform: translateY(-1px);
-  border-color: rgba(57, 255, 20, 0.3);
-  background: rgba(57, 255, 20, 0.08);
+  border-color: rgba(15, 98, 254, 0.3);
+  background: rgba(15, 98, 254, 0.08);
 }
 
 .registro-primary-btn:disabled,
@@ -112,9 +112,9 @@
 }
 
 .registro-alert-success {
-  color: #39ff14;
-  background: rgba(57, 255, 20, 0.1);
-  border-color: rgba(57, 255, 20, 0.25);
+  color: #0f62fe;
+  background: rgba(15, 98, 254, 0.1);
+  border-color: rgba(15, 98, 254, 0.25);
 }
 
 .registro-alert-error {
@@ -138,7 +138,7 @@
 
 .registro-kpi-card,
 .registro-card {
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid #E2E8F0;
   background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.02)),
     rgba(10, 11, 18, 0.82);
@@ -172,7 +172,7 @@
 
 .registro-kpi-card.highlight strong,
 .registro-kpi-card.highlight-wide strong {
-  color: #39ff14;
+  color: #0f62fe;
 }
 
 .registro-kpi-card.cyan strong {
@@ -272,7 +272,7 @@
   width: 100%;
   min-height: 46px;
   border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid #E2E8F0;
   background: rgba(255, 255, 255, 0.035);
   color: #f5f7ff;
   padding: 11px 14px;
@@ -289,8 +289,8 @@
 .registro-field select:focus,
 .registro-field textarea:focus,
 .registro-search:focus {
-  border-color: rgba(57, 255, 20, 0.45);
-  box-shadow: 0 0 0 3px rgba(57, 255, 20, 0.12);
+  border-color: rgba(15, 98, 254, 0.45);
+  box-shadow: 0 0 0 3px rgba(15, 98, 254, 0.12);
 }
 
 .registro-field select option {
@@ -311,8 +311,8 @@
   align-items: center;
   padding: 16px 18px;
   border-radius: 16px;
-  background: rgba(57, 255, 20, 0.07);
-  border: 1px solid rgba(57, 255, 20, 0.18);
+  background: rgba(15, 98, 254, 0.07);
+  border: 1px solid rgba(15, 98, 254, 0.18);
   color: #e8edf7;
   font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-size: 15px;
@@ -334,7 +334,7 @@
 .registro-check input {
   width: 18px;
   height: 18px;
-  accent-color: #39ff14;
+  accent-color: #0f62fe;
 }
 
 .registro-actions {
@@ -479,8 +479,8 @@
   border-radius: 14px;
   font-weight: 900;
   color: #061208;
-  background: linear-gradient(135deg, #39ff14, #00c8ff);
-  box-shadow: 0 12px 26px rgba(57, 255, 20, 0.12);
+  background: linear-gradient(135deg, #0f62fe, #00c8ff);
+  box-shadow: 0 12px 26px rgba(15, 98, 254, 0.12);
 }
 
 .registro-status,
@@ -498,9 +498,9 @@
 }
 
 .registro-status-activo {
-  color: #39ff14;
-  background: rgba(57, 255, 20, 0.12);
-  border-color: rgba(57, 255, 20, 0.28);
+  color: #0f62fe;
+  background: rgba(15, 98, 254, 0.12);
+  border-color: rgba(15, 98, 254, 0.28);
 }
 
 .registro-status-inactivo {
@@ -537,9 +537,9 @@
   min-height: 32px;
   padding: 0 10px;
   border-radius: 10px;
-  border: 1px solid rgba(57, 255, 20, 0.22);
-  background: rgba(57, 255, 20, 0.08);
-  color: #39ff14;
+  border: 1px solid rgba(15, 98, 254, 0.22);
+  background: rgba(15, 98, 254, 0.08);
+  color: #0f62fe;
   font-size: 12px;
   font-weight: 900;
   cursor: pointer;
@@ -563,9 +563,9 @@
 }
 
 .registro-mini-btn.success {
-  border-color: rgba(57, 255, 20, 0.3);
-  background: rgba(57, 255, 20, 0.1);
-  color: #39ff14;
+  border-color: rgba(15, 98, 254, 0.3);
+  background: rgba(15, 98, 254, 0.1);
+  color: #0f62fe;
 }
 
 .registro-empty {
@@ -592,7 +592,7 @@
   overflow-y: auto;
   border-radius: 26px;
   padding: 24px;
-  background: #080b12;
+  background: #F8FAFC;
   border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: 0 30px 90px rgba(0, 0, 0, 0.55);
 }
@@ -637,7 +637,7 @@
   border-radius: 20px;
   padding: 18px;
   background: rgba(255, 255, 255, 0.045);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid #E2E8F0;
 }
 
 .registro-modal-kpis small,
@@ -685,14 +685,14 @@
   margin: 14px 0 8px;
   border-radius: 999px;
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #E2E8F0;
+  border: 1px solid #E2E8F0;
 }
 
 .registro-progress-bar {
   height: 100%;
   border-radius: 999px;
-  background: linear-gradient(135deg, #39ff14, #00c8ff);
+  background: linear-gradient(135deg, #0f62fe, #00c8ff);
   transition: width 0.3s ease;
 }
 
@@ -771,7 +771,7 @@
     padding: 14px;
     border-radius: 16px;
     background: rgba(255, 255, 255, 0.035);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid #E2E8F0;
   }
 
   .registro-table tbody td {
@@ -842,9 +842,9 @@
   min-height: 76px;
   padding: 18px 20px;
   border-radius: 20px;
-  border: 1px solid rgba(57, 255, 20, 0.2);
+  border: 1px solid rgba(15, 98, 254, 0.2);
   background:
-    linear-gradient(135deg, rgba(57, 255, 20, 0.1), rgba(0, 200, 255, 0.06)),
+    linear-gradient(135deg, rgba(15, 98, 254, 0.1), rgba(0, 200, 255, 0.06)),
     rgba(10, 11, 18, 0.82);
   color: #ffffff;
   display: flex;
@@ -858,9 +858,9 @@
 
 .registro-coordinadores-btn:hover {
   transform: translateY(-1px);
-  border-color: rgba(57, 255, 20, 0.38);
+  border-color: rgba(15, 98, 254, 0.38);
   background:
-    linear-gradient(135deg, rgba(57, 255, 20, 0.14), rgba(0, 200, 255, 0.09)),
+    linear-gradient(135deg, rgba(15, 98, 254, 0.14), rgba(0, 200, 255, 0.09)),
     rgba(10, 11, 18, 0.88);
 }
 
@@ -877,7 +877,7 @@
   align-items: center;
   justify-content: center;
   color: #061208;
-  background: linear-gradient(135deg, #39ff14, #00c8ff);
+  background: linear-gradient(135deg, #0f62fe, #00c8ff);
   font-size: 20px;
 }
 
@@ -897,7 +897,7 @@
   gap: 12px;
   margin-top: 22px;
   padding-top: 18px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid #E2E8F0;
 }
 
 .registro-modal-actions button {
@@ -933,7 +933,7 @@
   width: 100%;
   min-height: 44px;
   border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid #E2E8F0;
   background: rgba(255, 255, 255, 0.04);
   color: #ffffff;
   padding: 10px 14px;
@@ -942,8 +942,8 @@
 
 .registro-edit-grid input:focus,
 .registro-edit-grid select:focus {
-  border-color: rgba(57, 255, 20, 0.45);
-  box-shadow: 0 0 0 3px rgba(57, 255, 20, 0.12);
+  border-color: rgba(15, 98, 254, 0.45);
+  box-shadow: 0 0 0 3px rgba(15, 98, 254, 0.12);
 }
 
 .registro-edit-grid select option {

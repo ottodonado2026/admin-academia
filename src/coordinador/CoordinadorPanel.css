@@ -14,7 +14,7 @@
 
 .coordinador-kicker {
   margin: 0 0 8px;
-  color: #39ff14;
+  color: #0f62fe;
   font-size: 12px;
   font-weight: 900;
   letter-spacing: 0.12em;
@@ -39,11 +39,11 @@
   padding: 0 18px;
   border: none;
   border-radius: 14px;
-  background: linear-gradient(135deg, #39ff14, #00c8ff);
+  background: linear-gradient(135deg, #0f62fe, #00c8ff);
   color: #061208;
   font-weight: 900;
   cursor: pointer;
-  box-shadow: 0 14px 34px rgba(57, 255, 20, 0.16);
+  box-shadow: 0 14px 34px rgba(15, 98, 254, 0.16);
   transition: 0.2s ease;
 }
 
@@ -86,9 +86,9 @@
 }
 
 .coordinador-alert-success {
-  color: #39ff14;
-  background: rgba(57, 255, 20, 0.1);
-  border-color: rgba(57, 255, 20, 0.25);
+  color: #0f62fe;
+  background: rgba(15, 98, 254, 0.1);
+  border-color: rgba(15, 98, 254, 0.25);
 }
 
 .coordinador-alert-error {
@@ -112,7 +112,7 @@
 
 .coordinador-kpi-card,
 .coordinador-card {
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid #E2E8F0;
   background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.02)),
     rgba(10, 11, 18, 0.82);
@@ -145,7 +145,7 @@
 }
 
 .coordinador-kpi-card.highlight strong {
-  color: #39ff14;
+  color: #0f62fe;
 }
 
 .coordinador-kpi-card.highlight-cyan strong {
@@ -298,7 +298,7 @@
   width: 100%;
   min-height: 46px;
   border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid #E2E8F0;
   background: rgba(255, 255, 255, 0.035);
   color: #f5f7ff;
   padding: 11px 14px;
@@ -323,8 +323,8 @@
 .coordinador-field input:focus,
 .coordinador-field select:focus,
 .coordinador-field textarea:focus {
-  border-color: rgba(57, 255, 20, 0.45);
-  box-shadow: 0 0 0 3px rgba(57, 255, 20, 0.12);
+  border-color: rgba(15, 98, 254, 0.45);
+  box-shadow: 0 0 0 3px rgba(15, 98, 254, 0.12);
 }
 .visitas-card .coordinador-field input,
 .visitas-card .coordinador-field select,
@@ -410,7 +410,7 @@
 }
 
 .money-cell {
-  color: #39ff14 !important;
+  color: #0f62fe !important;
   font-weight: 900;
   white-space: nowrap;
 }
@@ -429,9 +429,9 @@
 }
 
 .status-pagado {
-  color: #39ff14 !important;
-  background: rgba(57, 255, 20, 0.12);
-  border-color: rgba(57, 255, 20, 0.28);
+  color: #0f62fe !important;
+  background: rgba(15, 98, 254, 0.12);
+  border-color: rgba(15, 98, 254, 0.28);
 }
 
 .status-pendiente {
@@ -529,7 +529,7 @@
     padding: 14px;
     border-radius: 16px;
     background: rgba(255, 255, 255, 0.035);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid #E2E8F0;
   }
 
   .coordinador-table tbody td {
@@ -578,11 +578,11 @@
 .coordinador-shortcut-card {
   position: relative;
 
-  border: 1px solid rgba(57,255,20,0.18);
+  border: 1px solid rgba(15,98,254,0.18);
   background:
     linear-gradient(135deg,
-      rgba(57,255,20,0.08),
-      rgba(255,255,255,0.03)
+      rgba(15,98,254,0.08),
+      #FFFFFF
     );
 
   border-radius: 24px;
@@ -606,14 +606,14 @@
   background:
     linear-gradient(135deg,
       rgba(0,200,255,0.08),
-      rgba(255,255,255,0.03)
+      #FFFFFF
     );
 }
 
 .coordinador-shortcut-card.blue {
   border: 1px solid rgba(0, 120, 255, 0.22);
   background:
-    linear-gradient(135deg, rgba(0, 120, 255, 0.1), rgba(255,255,255,0.03));
+    linear-gradient(135deg, rgba(0, 120, 255, 0.1), #FFFFFF);
 }
 
 .coordinador-shortcut-card.blue small {
@@ -631,7 +631,7 @@
 
   box-shadow:
     0 18px 40px rgba(0,0,0,0.35),
-    0 0 18px rgba(57,255,20,0.12);
+    0 0 18px rgba(15,98,254,0.12);
 }
 
 .coordinador-shortcut-card.cyan:hover {
@@ -645,7 +645,7 @@
 
   margin-bottom: 12px;
 
-  color: #39ff14;
+  color: #0f62fe;
 
   font-size: 12px;
 
@@ -736,9 +736,9 @@
 .coordinador-secondary-btn:hover {
   transform: translateY(-1px);
 
-  border-color: rgba(57,255,20,0.3);
+  border-color: rgba(15,98,254,0.3);
 
-  background: rgba(57,255,20,0.08);
+  background: rgba(15,98,254,0.08);
 }
 
 .coordinador-finance-view {
@@ -784,9 +784,9 @@
   min-height: 32px;
   padding: 0 10px;
   border-radius: 10px;
-  border: 1px solid rgba(57,255,20,0.22);
-  background: rgba(57,255,20,0.08);
-  color: #39ff14;
+  border: 1px solid rgba(15,98,254,0.22);
+  background: rgba(15,98,254,0.08);
+  color: #0f62fe;
   font-size: 12px;
   font-weight: 900;
   cursor: pointer;
@@ -829,11 +829,11 @@
   overflow-y: auto;
   border-radius: 26px;
   padding: 24px;
-  background: #080b12;
+  background: #F8FAFC;
   border: 1px solid rgba(255,255,255,0.1);
   box-shadow: 0 30px 90px rgba(0,0,0,0.55);
   scrollbar-width: thin;
-scrollbar-color: rgba(57,255,20,0.3) transparent;
+scrollbar-color: rgba(15,98,254,0.3) transparent;
 }
 
 .coordinador-modal-head {
@@ -876,7 +876,7 @@ scrollbar-color: rgba(57,255,20,0.3) transparent;
   border-radius: 20px;
   padding: 18px;
   background: rgba(255,255,255,0.045);
-  border: 1px solid rgba(255,255,255,0.08);
+  border: 1px solid #E2E8F0;
 }
 
 .coordinador-modal-kpis small,
@@ -931,8 +931,8 @@ scrollbar-color: rgba(57,255,20,0.3) transparent;
 }
 
 .coordinador-alumno-chip.principal {
-  background: rgba(57,255,20,0.08);
-  border-color: rgba(57,255,20,0.2);
+  background: rgba(15,98,254,0.08);
+  border-color: rgba(15,98,254,0.2);
 }
 
 .coordinador-alumno-chip strong,
@@ -1030,14 +1030,14 @@ scrollbar-color: rgba(57,255,20,0.3) transparent;
   margin: 14px 0 8px;
   border-radius: 999px;
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #E2E8F0;
+  border: 1px solid #E2E8F0;
 }
 
 .coordinador-progress-bar {
   height: 100%;
   border-radius: 999px;
-  background: linear-gradient(135deg, #39ff14, #00c8ff);
+  background: linear-gradient(135deg, #0f62fe, #00c8ff);
   transition: width 0.3s ease;
 }
 
@@ -1093,9 +1093,9 @@ scrollbar-color: rgba(57,255,20,0.3) transparent;
 
   border-radius: 14px;
 
-  background: rgba(57,255,20,0.08);
+  background: rgba(15,98,254,0.08);
 
-  border: 1px solid rgba(57,255,20,0.18);
+  border: 1px solid rgba(15,98,254,0.18);
 }
 
 .coordinador-alumno-temporal strong {
@@ -1167,8 +1167,8 @@ scrollbar-color: rgba(57,255,20,0.3) transparent;
   z-index: 50;
   margin: -24px -24px 18px;
   padding: 24px 24px 18px;
-  background: #080b12;
-  border-bottom: 1px solid rgba(255,255,255,0.08);
+  background: #F8FAFC;
+  border-bottom: 1px solid #E2E8F0;
 }
 @media (max-width: 620px) {
   .visita-detalle-head {
@@ -1180,7 +1180,7 @@ scrollbar-color: rgba(57,255,20,0.3) transparent;
 
 .visita-detalle-kicker {
   margin: 0 0 8px;
-  color: #39ff14;
+  color: #0f62fe;
   font-size: 12px;
   font-weight: 900;
   letter-spacing: 0.12em;
@@ -1203,9 +1203,9 @@ scrollbar-color: rgba(57,255,20,0.3) transparent;
 }
 
 .visita-detalle-card.principal {
-  border-color: rgba(57,255,20,0.18);
+  border-color: rgba(15,98,254,0.18);
   background:
-    linear-gradient(135deg, rgba(57,255,20,0.1), rgba(0,200,255,0.045)),
+    linear-gradient(135deg, rgba(15,98,254,0.1), rgba(0,200,255,0.045)),
     rgba(255,255,255,0.035);
 }
 
@@ -1271,9 +1271,9 @@ scrollbar-color: rgba(57,255,20,0.3) transparent;
 }
 
 .estado-agendada {
-  color: #39ff14;
-  background: rgba(57,255,20,0.12);
-  border: 1px solid rgba(57,255,20,0.24);
+  color: #0f62fe;
+  background: rgba(15,98,254,0.12);
+  border: 1px solid rgba(15,98,254,0.24);
 }
 
 .estado-reprogramada {
@@ -1527,7 +1527,7 @@ scrollbar-color: rgba(57,255,20,0.3) transparent;
   border-radius: 18px;
   padding: 16px;
   background: rgba(255,255,255,0.045);
-  border: 1px solid rgba(255,255,255,0.08);
+  border: 1px solid #E2E8F0;
 }
 
 .coordinador-detail-item span {
@@ -1610,7 +1610,7 @@ scrollbar-color: rgba(57,255,20,0.3) transparent;
 }
 
 .gratis-resumen-grid strong {
-  color: #39ff14;
+  color: #0f62fe;
   font-size: 24px;
   line-height: 1;
 }
@@ -1632,9 +1632,9 @@ scrollbar-color: rgba(57,255,20,0.3) transparent;
 }
 
 .status-finalizada {
-  color: #39ff14 !important;
-  background: rgba(57, 255, 20, 0.12);
-  border-color: rgba(57, 255, 20, 0.28);
+  color: #0f62fe !important;
+  background: rgba(15, 98, 254, 0.12);
+  border-color: rgba(15, 98, 254, 0.28);
 }
 
 .status-cancelada {
@@ -1669,8 +1669,8 @@ scrollbar-color: rgba(57,255,20,0.3) transparent;
 
 .coordinador-secondary-btn:hover {
   transform: translateY(-1px);
-  border-color: rgba(57, 255, 20, 0.28);
-  background: rgba(57, 255, 20, 0.08);
+  border-color: rgba(15, 98, 254, 0.28);
+  background: rgba(15, 98, 254, 0.08);
 }
 
 .gratis-resumen-compacto {
@@ -1697,8 +1697,8 @@ scrollbar-color: rgba(57,255,20,0.3) transparent;
   height: 30px;
   padding: 0 9px;
   border-radius: 999px;
-  background: rgba(57, 255, 20, 0.15);
-  color: #39ff14;
+  background: rgba(15, 98, 254, 0.15);
+  color: #0f62fe;
   font-size: 13px;
 }
 
@@ -1772,7 +1772,7 @@ scrollbar-color: rgba(57,255,20,0.3) transparent;
   width: 100%;
   min-height: 46px;
   border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid #E2E8F0;
   background: rgba(255, 255, 255, 0.04);
   color: #f5f7ff;
   padding: 11px 14px;
@@ -1786,8 +1786,8 @@ scrollbar-color: rgba(57,255,20,0.3) transparent;
 
 .clases-gratis-search:focus,
 .clases-gratis-filter:focus {
-  border-color: rgba(57, 255, 20, 0.45);
-  box-shadow: 0 0 0 3px rgba(57, 255, 20, 0.12);
+  border-color: rgba(15, 98, 254, 0.45);
+  box-shadow: 0 0 0 3px rgba(15, 98, 254, 0.12);
 }
 
 .clases-gratis-modal-summary {
@@ -1801,7 +1801,7 @@ scrollbar-color: rgba(57,255,20,0.3) transparent;
 }
 
 .clases-gratis-modal-summary strong {
-  color: #39ff14;
+  color: #0f62fe;
 }
 
 .clases-gratis-modal .gratis-table-wrap {

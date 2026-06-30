@@ -1,12 +1,23 @@
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300..800;1,300..800&family=Outfit:wght@100..900&display=swap');
 
 :root {
-  --font-primary: 'Outfit', Inter, system-ui, -apple-system, sans-serif;
+  --font-primary: 'Geist', 'Outfit', Inter, system-ui, -apple-system, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 
-  --text-primary: #f5f7ff;
-  --text-secondary: #cfd7e6;
-  --text-muted: #9da6b8;
+  --text-primary: #1E293B; /* Slate 800 */
+  --text-secondary: #475569; /* Slate 600 */
+  --text-muted: #94A3B8; /* Slate 400 */
+  
+  /* Fallback por si main.jsx no carga rápido */
+  --color-primario: #1E3A5F; 
+  --color-secundario: #D4A017;
+  
+  /* Variables de componentes internos migrados a Light Theme */
+  --bg-card: #FFFFFF;
+  --bg-main: #F8FAFC;
+  --border: #E2E8F0;
+  --text-main: #1E293B;
+  --primary: #0f62fe;
 }
 
 /* =========================================
@@ -24,7 +35,7 @@ body,
   padding: 0;
   min-height: 100%;
   font-family: var(--font-primary);
-  background: #050816;
+  background: #F8FAFC; /* Slate 50 */
   color: var(--text-primary);
 
   -webkit-font-smoothing: antialiased;

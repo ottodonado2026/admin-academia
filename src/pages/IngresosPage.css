@@ -13,7 +13,7 @@
   height: 45px;
   border-radius: 10px;
   border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.03);
+  background: #FFFFFF;
   color: var(--text-main);
   padding: 0 12px;
   outline: none;
@@ -49,9 +49,9 @@
 .filtro-select {
   height: 38px;
   border-radius: 12px;
-  border: 1px solid rgba(57,255,20,0.4);
-  background: rgba(57,255,20,0.08);
-  color: #39ff14;
+  border: 1px solid rgba(15,98,254,0.4);
+  background: rgba(15,98,254,0.08);
+  color: #0f62fe;
   padding: 0 12px;
   cursor: pointer;
   box-shadow:
@@ -64,7 +64,7 @@
 
 .filtro-select option {
   background: #0a0a0a;
-  color: #39ff14;
+  color: #0f62fe;
 }
 /* contenido controlado */
 .tabla-ingresos td {
@@ -112,9 +112,9 @@
 }
 
 .btn-editar {
-  background: rgba(57, 255, 20, 0.15);
-  border: 1px solid rgba(57, 255, 20, 0.4);
-  color: #39ff14;
+  background: rgba(15, 98, 254, 0.15);
+  border: 1px solid rgba(15, 98, 254, 0.4);
+  color: #0f62fe;
 }
 
 .btn-eliminar {
@@ -152,7 +152,7 @@
     margin-bottom: 12px;
     padding: 12px;
     border-radius: 12px;
-    background: rgba(255,255,255,0.03);
+    background: #FFFFFF;
   }
 
   .tabla-ingresos td {

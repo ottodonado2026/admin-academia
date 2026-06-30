@@ -2,6 +2,7 @@ import { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import "./DashboardPage.css";
+import { config } from "../config/institucion";
 
 import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
@@ -613,7 +614,7 @@ rol: usuarioActual?.rol || "sin-rol",
       // 🔹 NOMBRE EMPRESA
       resumenSheet.mergeCells("A1:G1");
       const empresaCell = resumenSheet.getCell("A1");
-      empresaCell.value = "CARIBBEAN STUDIO ACADEMY";
+      empresaCell.value = config.nombre.toUpperCase();
       empresaCell.font = {
         size: 18,
         bold: true,
@@ -1204,7 +1205,7 @@ rol: usuarioActual?.rol || "sin-rol",
         body: tableRows,
         theme: "striped",
         headStyles: {
-          fillColor: colorNavy,
+          fillColor: [30, 58, 95], // Azul institucional
           textColor: [255, 255, 255],
           fontStyle: "bold",
           fontSize: 8.5,
@@ -1218,9 +1219,8 @@ rol: usuarioActual?.rol || "sin-rol",
           6: { halign: "right", fontStyle: "bold" }
         },
         didParseCell: (data) => {
-          // Destacar la última fila (el TOTAL GENERAL)
           if (data.row.index === tableRows.length - 1) {
-            data.cell.styles.fillColor = [226, 239, 218]; // Verde suave
+            data.cell.styles.fillColor = [238, 242, 255]; // Azul suave en lugar de verde
             data.cell.styles.fontStyle = "bold";
             data.cell.styles.textColor = [0, 0, 0];
           }
@@ -1241,7 +1241,7 @@ rol: usuarioActual?.rol || "sin-rol",
         doc.setTextColor(colorGray[0], colorGray[1], colorGray[2]);
         
         // Texto de pie de página
-        doc.text("Este documento es un reporte financiero oficial generado por el sistema de Caribbean Studio Academy.", 15, 287);
+        doc.text(`Este documento es un reporte financiero oficial generado por el sistema de ${config.nombre}.`, 15, 287);
         doc.text(`Página ${i} de ${totalPages}`, 195, 287, { align: "right" });
       }
 
@@ -1274,7 +1274,7 @@ rol: usuarioActual?.rol || "sin-rol",
   <div style={{ display: "flex", alignItems: "center", gap: "12px", marginLeft: "auto" }}>
     
     <div className="badge-alumnos">
-      Alumnos activos: {alumnosActivos}
+      {config.terminologia.alumno.charAt(0).toUpperCase() + config.terminologia.alumno.slice(1)}s activos: {alumnosActivos}
     </div>
 
     <div className="export-menu-container">
@@ -1326,7 +1326,7 @@ rol: usuarioActual?.rol || "sin-rol",
           <div className="filtros-busqueda-avanzada" style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center' }}>
             <input
               type="text"
-              placeholder="Buscar alumno, curso o referencia"
+              placeholder={`Buscar ${config.terminologia.alumno}, ${config.terminologia.grupo} o referencia`}
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
               style={{ flex: 1, minWidth: '250px' }}
@@ -1338,7 +1338,7 @@ rol: usuarioActual?.rol || "sin-rol",
               ))}
             </select>
             <select value={filtroCurso} onChange={(e) => setFiltroCurso(e.target.value)}>
-              <option value="todos">Todos los cursos</option>
+              <option value="todos">Todos los {config.terminologia.grupo}s</option>
               {[...new Set(historialBase.map(i => i.curso))].map((curso) => (
                 <option key={curso} value={curso}>{curso}</option>
               ))}
@@ -1408,73 +1408,28 @@ rol: usuarioActual?.rol || "sin-rol",
 
         {/* TARJETAS */}
         <section className="stats-grid">
-          <div className="stat-card">
-            <h3>Ingresos manuales</h3>
-        <p>{formatearPesos(revenueMes)}</p>         
-       </div>
-
-          <div className="stat-card">
-            <h3>Pagos alumnos</h3>
-           <p>{formatearPesos(totalPagosMes)}</p>
+          <div className="stat-card" style={{ borderLeft: '4px solid var(--color-primario)' }}>
+            <h3>Estudiantes Activos</h3>
+            <p>{alumnosActivos}</p>
           </div>
 
-
-          <div className="stat-card">
-            <h3>Total ingresos</h3>
-            <p>{formatearPesos(totalIngresos)}</p>
+          <div className="stat-card" style={{ borderLeft: '4px solid #10b981' }}>
+            <h3>Recaudación Mensual</h3>
+            <p>{formatearPesos(totalIngresosMes)}</p>
           </div>
 
-          <div className="stat-card">
-            <h3>Egresos</h3>
-            <p>{formatearPesos(totalEgresosMes)}</p>
+          <div className="stat-card" style={{ borderLeft: '4px solid var(--color-secundario)' }}>
+            <h3>Estudiantes en Mora</h3>
+            <p>{pagosPendientes || 0}</p>
           </div>
-          <div className="stat-card stat-costos">
-          <h3>Costos</h3>
-          <p>{formatearPesos(totalCostosMes)}</p>
-        </div>
 
-        <div className="stat-card stat-gastos">
-          <h3>Gastos</h3>
-          <p>{formatearPesos(totalGastosMes)}</p>
-        </div>
-
-          <div className="stat-card">
-  <h3>Utilidad real</h3>
- <p style={{ color: utilidad >= 0 ? "#39ff14" : "#ff3c3c" }}>
-  {formatearPesos(utilidadReal)}
-</p>
-</div>
-
-<div className="stat-card">
-  <h3>Margen</h3>
-  <p style={{ color: margen >= 0 ? "#39ff14" : "#ff3c3c" }}>
-    {margenReal.toFixed(1)}%
-  </p>
-</div>
-
-<div className="stat-card stat-highlight">
-  <h3>Total recaudado</h3>
-  <p>{formatearPesos(totalRecaudado)}</p>
-</div>
-
-<div className="stat-card">
-  <h3>Movimientos</h3>
-  <p>{totalMovimientos}</p>
-</div>
-
-<div className="stat-card">
-  <h3>Alumnos con pagos</h3>
-  <p>{alumnosConPagos}</p>
-</div>
-
-<div className="stat-card">
-  <h3>Último pago</h3>
-  <p>
-    {ultimoMovimiento
-      ? formatearPesos(ultimoMovimiento.monto)
-      : "$0"}
-  </p>
-</div>
+          <div className="stat-card" style={{ borderLeft: '4px solid #f59e0b' }}>
+            <h3>Alertas</h3>
+            <p style={{ fontSize: '0.9rem', whiteSpace: 'pre-line', marginTop: '10px' }}>
+              0 notas pendientes{"\n"}
+              0 próximos eventos
+            </p>
+          </div>
         </section>
 
         {/* TABLA */}

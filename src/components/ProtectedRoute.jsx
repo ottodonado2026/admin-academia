@@ -14,8 +14,8 @@ function ProtectedRoute({ children, role }) {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: "#080b12",
-          color: "white",
+          background: "#F8FAFC",
+          color: "#1E293B",
           fontSize: "18px",
           fontWeight: "700",
         }}

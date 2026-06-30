@@ -25,6 +25,10 @@ function CuentasPorCobrar() {
 const [cuentaManualSeleccionada, setCuentaManualSeleccionada] = useState(null);
 const [montoAbono, setMontoAbono] = useState("");
 
+const [voucherFile, setVoucherFile] = useState(null);
+const [isUploading, setIsUploading] = useState(false);
+const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+
 
 const obtenerCuentasManuales = async () => {
   const { data, error } = await supabase
@@ -55,6 +59,38 @@ const cuentasAdaptadas = (data || []).map(c => ({
 
 setCuentasManuales(cuentasAdaptadas);
 
+};
+
+const subirVoucher = async () => {
+  if (!voucherFile || !cuentaManualSeleccionada) return;
+  setIsUploading(true);
+  try {
+    const fileName = `voucher_${cuentaManualSeleccionada.id}_${Date.now()}`;
+    const { data, error } = await supabase.storage.from("vouchers").upload(fileName, voucherFile);
+    if (error) {
+      if (error.message.includes("Bucket not found")) {
+        alert("El bucket 'vouchers' no existe en Supabase. Créalo público para poder subir archivos.");
+      } else {
+        throw error;
+      }
+    } else {
+      alert("Comprobante subido correctamente");
+      setVoucherFile(null);
+    }
+  } catch (error) {
+    console.error("Error al subir voucher", error);
+    alert("No se pudo subir el comprobante.");
+  } finally {
+    setIsUploading(false);
+  }
+};
+
+const generarPdf = () => {
+  setIsGeneratingPdf(true);
+  setTimeout(() => {
+    window.print();
+    setIsGeneratingPdf(false);
+  }, 500);
 };
 
 useEffect(() => {
@@ -1033,7 +1069,23 @@ const registrarAbonoManual = async (cuenta, montoAbono) => {
     className="input-abono"
   />
 
-  
+  <div style={{ marginTop: '15px' }}>
+    <h4 style={{ fontSize: '0.9rem', marginBottom: '8px' }}>Adjuntar Comprobante</h4>
+    <input 
+      type="file" 
+      accept="image/*,.pdf" 
+      onChange={(e) => setVoucherFile(e.target.files[0])} 
+      style={{ display: 'block', marginBottom: '10px', fontSize: '0.85rem' }}
+    />
+    <button 
+      className="btn-secundario" 
+      onClick={subirVoucher} 
+      disabled={!voucherFile || isUploading}
+      style={{ padding: '6px 12px', fontSize: '0.85rem' }}
+    >
+      {isUploading ? "Subiendo..." : "Subir comprobante"}
+    </button>
+  </div>
 
 </div>
 
@@ -1052,6 +1104,14 @@ const registrarAbonoManual = async (cuenta, montoAbono) => {
       }}
     >
       Registrar abono
+    </button>
+
+    <button
+      className="btn-neutral"
+      onClick={generarPdf}
+      disabled={isGeneratingPdf}
+    >
+      📄 PDF
     </button>
 
     <button

@@ -15,7 +15,7 @@
   height: 45px;
   border-radius: 10px;
   border: 1px solid var(--border);
-  background: rgba(255,255,255,0.03);
+  background: #FFFFFF;
   color: var(--text-main);
   padding: 0 12px;
   flex: 1 1 160px;
@@ -229,7 +229,7 @@
     margin-bottom: 14px;
     padding: 12px;
     border-radius: 12px;
-    background: rgba(255,255,255,0.03);
+    background: #FFFFFF;
   }
 
   .tabla-ingresos td {
@@ -285,7 +285,7 @@
 
 .modal-content {
   background: #0c0c0c;
-  border: 1px solid rgba(255,255,255,0.08);
+  border: 1px solid #E2E8F0;
   border-radius: 16px;
 
   width: 95%;
@@ -318,7 +318,7 @@
 }
 
 .btn-cerrar {
-  background: rgba(255,255,255,0.08);
+  background: #E2E8F0;
   border: none;
   color: #ccc;
   padding: 10px;
@@ -371,7 +371,7 @@
 }
 
 .modal-item-cc {
-  background: rgba(255,255,255,0.03);
+  background: #FFFFFF;
   border-radius: 14px;
   padding: 14px 16px;
 
@@ -454,7 +454,7 @@
 }
 
 .btn-neutral {
-  background: rgba(255,255,255,0.08);
+  background: #E2E8F0;
   border: none;
   color: #ccc;
   padding: 12px;
@@ -471,7 +471,7 @@
 
 .input-abono {
   background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.08);
+  border: 1px solid #E2E8F0;
   border-radius: 10px;
   padding: 12px;
   color: #fff;

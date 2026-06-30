@@ -485,9 +485,9 @@ function DashboardPage() {
               ) : (
                 ultimasMatriculas.map(a => (
                   <div key={a.id} className="alumno-item">
-                    <div className="avatar">{a.nombre.charAt(0).toUpperCase()}</div>
+                    <div className="avatar">{(a.nombre || "S").charAt(0).toUpperCase()}</div>
                     <div className="alumno-info">
-                      <h4>{a.nombre}</h4>
+                      <h4>{a.nombre || "Sin nombre"}</h4>
                       <span>Fecha: {normalizarFecha(a.created_at)}</span>
                     </div>
                     <span className="badge-estado success">Matriculado</span>

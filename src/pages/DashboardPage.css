@@ -102,6 +102,7 @@
   grid-template-columns: repeat(4, 1fr);
   gap: 24px;
   margin-bottom: 30px;
+  width: 100%;
 }
 
 @media (max-width: 1200px) {
@@ -126,6 +127,8 @@
   box-shadow: 0 4px 12px rgba(0,0,0,0.03);
   border-left: 6px solid #CBD5E1;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .colegio-kpi-card:hover {

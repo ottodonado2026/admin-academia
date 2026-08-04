@@ -248,6 +248,10 @@ useEffect(() => {
       <NavLink to="/seguridad" onClick={() => setOpen(false)}>
         Panel de Seguridad
       </NavLink>
+
+      <NavLink to="/seguridad" onClick={() => setOpen(false)}>
+        Panel de Seguridad
+      </NavLink>
     </>
   );
 
